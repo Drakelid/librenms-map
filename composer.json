@@ -2,7 +2,26 @@
     "name": "libremap/librenms-plugin",
     "description": "AGG-first interactive network topology for LibreNMS",
     "type": "library",
+    "keywords": [
+        "librenms",
+        "network",
+        "topology",
+        "monitoring",
+        "network-map",
+        "laravel"
+    ],
+    "homepage": "https://github.com/Drakelid/librenms-map",
     "license": "MIT",
+    "authors": [
+        {
+            "name": "Fredrik Drakelid",
+            "email": "fredrik@drakelid.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/Drakelid/librenms-map/issues",
+        "source": "https://github.com/Drakelid/librenms-map"
+    },
     "require": {
         "php": "^8.2",
         "illuminate/database": "^12.0",
