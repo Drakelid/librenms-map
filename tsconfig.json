@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "ESNext", "moduleResolution": "bundler",
+    "strict": true, "esModuleInterop": true, "skipLibCheck": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"], "types": ["vite/client", "node"],
+    "noEmit": true
+  },
+  "include": ["frontend", "tests", "vite.config.ts", "playwright.config.ts"]
+}

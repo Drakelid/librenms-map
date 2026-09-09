@@ -1,0 +1,7 @@
+node_modules/
+vendor/
+.tools/
+test-results/
+playwright-report/
+dist/
+.env
