@@ -1,0 +1,19 @@
+# Built assets ship byte-for-byte: never normalize their line endings, and
+# keep the minified bundles out of diffs.
+/dist/**                  -text -diff linguist-generated=true
+
+# Trim the Composer dist archive (git archive) to what a LibreNMS host needs.
+# Node tooling and browser tests are for working on the source repo only.
+/frontend                 export-ignore
+/tests/browser            export-ignore
+/tests/topology.test.ts   export-ignore
+/tests/view-state.test.ts export-ignore
+/tests/php-syntax.cjs     export-ignore
+/index.html               export-ignore
+/package.json             export-ignore
+/package-lock.json        export-ignore
+/playwright.config.ts     export-ignore
+/tsconfig.json            export-ignore
+/vite.config.ts           export-ignore
+/.gitattributes           export-ignore
+/.gitignore               export-ignore
