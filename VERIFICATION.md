@@ -4,8 +4,8 @@
 
 - `npm test`: 13 passing domain tests covering topology/metrics, root-group boundaries, search scope, corrupt/unauthorized saved-state filtering, pin collision avoidance, dense placement across 400 colliding nodes, distinct lateral arcs with reversed observations, Unicode filter limits, the sysName classification fallback with malformed config, and saved views above 2,000 positions.
 - `npm run build`: TypeScript strict checking and production asset build pass. ELK runs in a separately emitted web worker with a relative asset URL.
-- `node tests/php-syntax.cjs`: 16 PHP files, including both migrations and expanded host tests, parse in PHP 8.2 mode. This uses a JavaScript PHP parser; PHP itself is unavailable locally.
-- `npm run test:browser`: 17 Chromium tests pass: original topology/controls/failure/compiled-bundle checks, drag persistence, authorization loss, root focus/pin/named-view persistence, mocked live CRUD with CSRF and revision conflict recovery, migration-pending error isolation, workspace survival across a failed refresh, independently selectable parallel lateral links, stale selected details with retained keyboard focus, server-sized Unicode names/filters, staleness under a skewed browser clock, the server's reason for a rejected save, the map following LibreNMS's `dark` class and page background live, and the standalone map following the OS color scheme. The LibreNMS case uses a fixture that reproduces LibreNMS's body backgrounds (`#fff`, and `#272b30` under `.dark`); it has not been checked inside a running LibreNMS.
+- `node tests/php-syntax.cjs`: 17 PHP files, including both migrations and expanded host tests, parse in PHP 8.2 mode. This uses a JavaScript PHP parser; PHP itself is unavailable locally.
+- `npm run test:browser`: 18 Chromium tests pass: original topology/controls/failure/compiled-bundle checks, drag persistence, authorization loss, root focus/pin/named-view persistence, malformed demo-view storage recovery, mocked live CRUD with CSRF and revision conflict recovery, migration-pending error isolation, workspace survival across a failed refresh, independently selectable parallel lateral links, stale selected details with retained keyboard focus, server-sized Unicode names/filters, staleness under a skewed browser clock, the server's reason for a rejected save, the map following LibreNMS's `dark` class and page background live, and the standalone map following the OS color scheme. The LibreNMS case uses a fixture that reproduces LibreNMS's body backgrounds (`#fff`, and `#272b30` under `.dark`); it has not been checked inside a running LibreNMS browser session.
 - Light/dark screenshots and `test-results/libremap-views.png` captured. The operator-controls screenshot was inspected visually with a focused root, pinned AGG and selected named view.
 - Dependency installation audit reported zero vulnerabilities at installation time.
 
@@ -24,11 +24,11 @@ The local Node runtime was found at `C:/Users/ex_410156/AppData/Local/node24/PFi
 
 ## Host CI added in this update
 
-[Host workflow](.github/workflows/host.yml) targets LibreNMS 26.7.0 and 26.8.0, PHP 8.4, and MySQL 8.0/MariaDB 11.7. Its 23 test methods cover real port enum/string attributes, partial permissions, deleted ports, private views, revision conflicts, batched authorization, Unicode limits, migration schema, cached routes, concurrent creates, sanitized config, the octet-rate column ceiling, view deletion with the owner account, the position limit and the named rate limiter. The concurrency method exercises both isolation levels, first creates, the 49-to-50 boundary and a deliberately held owner lock. CI fails if a required test is skipped.
+[Host workflow](.github/workflows/host.yml) targets LibreNMS 26.7.0 and 26.8.0, PHP 8.4, and MySQL 8.0/MariaDB 11.7. Its 27 test methods cover real port enum/string attributes, partial permissions, deleted ports, private views, revision conflicts, batched authorization, Unicode limits, migration schema, cached routes, map and navbar rendering, concurrent creates, sanitized config, the octet-rate column ceiling, view deletion with the owner account, the position limit and the named rate limiter. The concurrency method exercises both isolation levels, first creates, the 49-to-50 boundary and a deliberately held owner lock. CI fails if a required test is skipped.
 
 The workflow performs migration, repeated migration, rollback and reapply before the suite. Cached-route tests run separately after enabling the plugin and building a real Laravel route cache. [Frontend workflow](.github/workflows/frontend.yml) also verifies committed assets match the build.
 
-Both workflows pass on GitHub Actions as of commit `4cb8174`: every host combination ran the 23 host test methods with `--fail-on-skipped`, so the concurrency test executed rather than skipping, followed by the cached-route suite against a real route cache. Failing, erroring and skipped host tests are published as public check-run annotations, because job logs need authentication to read. Local PHP syntax parsing does not validate database behavior or framework bootstrapping.
+The v0.3.0 workflows passed on GitHub Actions at commit `63b7eeb`: every host combination ran the host suite with `--fail-on-skipped`, so the concurrency test executed rather than skipping, followed by the cached-route suite against a real route cache. Failing, erroring and skipped host tests are published as public check-run annotations, because job logs need authentication to read. Local PHP syntax parsing does not validate database behavior or framework bootstrapping.
 
 ## Audit fixes in 0.2.0
 
@@ -45,9 +45,13 @@ An audit of 0.1.0 led to these changes. The local suites above pass with them, a
 
 The new unit and browser tests were written together with the fixes and were not run against the previous code. The layout-worker reset has no automated test.
 
+## Audit fix in 0.3.1
+
+- Malformed JSON in the demo's saved-view browser storage is discarded and replaced with an empty list. Listing and saving views remain usable without asking the operator to clear site data manually. A Chromium regression covers load, reset and a successful save after recovery. Production LibreNMS-backed views are unchanged.
+
 ## Not yet verified
 
-- A Packagist install with `scripts/install.sh` on a real LibreNMS host, the rendered Blade page (including its asset version and stylesheet stack) and the menu entry. Host CI installs the package from a path repository and exercises its routes, models and migrations, but never renders the map page.
+- A Packagist install with `scripts/install.sh` on a real LibreNMS host, and browser loading of the published assets from a real LibreNMS page. Host CI installs the package from a path repository and exercises its routes, models, migrations, Blade page and menu entry, but does not publish or load the frontend assets in a browser hosted by LibreNMS.
 - A request actually being rate-limited. Host CI only confirms the named `libremap` limiter is registered.
 - The layout-worker reset after a timed-out layout, which has no automated test.
 - Behavior against actual neighbor coverage, interface data, and naming conventions beyond supplied examples.

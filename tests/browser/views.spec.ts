@@ -5,6 +5,19 @@ import type { SavedView } from '../../frontend/types';
 
 const graph = (page:Page) => page.evaluate(()=>(window as unknown as {libremapDebug:()=>{nodes:{id:string;visible:boolean;position:{x:number;y:number}}[]}}).libremapDebug());
 
+test('corrupt demo view storage resets and remains usable',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('libremap:v2:demo:views','{corrupt'));
+  await page.goto('/');
+  await expect(page.getByRole('status')).toContainText('Demo topology');
+  await expect(page.locator('.lm-view-status')).toHaveText('Demo views · this browser only');
+  expect(await page.evaluate(()=>localStorage.getItem('libremap:v2:demo:views'))).toBe('[]');
+
+  await page.getByRole('button',{name:'Save view',exact:true}).click();
+  await page.getByRole('textbox',{name:'View name'}).fill('Recovered view');
+  await page.getByRole('button',{name:'Save as new',exact:true}).click();
+  await expect(page.locator('.lm-view-status')).toHaveText('Saved “Recovered view”.');
+});
+
 test('server-sized names and filters round-trip without truncation, including Unicode',async({page})=>{
   const site='s'.repeat(200);
   const search='😀'.repeat(200);

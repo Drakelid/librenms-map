@@ -18784,8 +18784,22 @@ function zg() {
 }
 function Bg(e) {
 	function t() {
-		let t = JSON.parse(localStorage.getItem(e) ?? "[]");
-		return Array.isArray(t) ? t.filter((e) => e && typeof e.id == "string" && typeof e.name == "string" && Number.isInteger(e.revision)).slice(0, 50).map((e) => ({
+		let t;
+		try {
+			t = localStorage.getItem(e);
+		} catch {
+			return [];
+		}
+		let n;
+		try {
+			n = JSON.parse(t ?? "[]");
+		} catch {
+			try {
+				localStorage.setItem(e, "[]");
+			} catch {}
+			return [];
+		}
+		return Array.isArray(n) ? n.filter((e) => e && typeof e.id == "string" && typeof e.name == "string" && Number.isInteger(e.revision)).slice(0, 50).map((e) => ({
 			...e,
 			state: kg(e.state)
 		})) : [];

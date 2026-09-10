@@ -69,7 +69,16 @@ function uuid():string {
 /** Explicit demo-only persistence. Never used as a fallback for a live HTTP failure. */
 export function demoViewStore(key:string):ViewStore {
   function read():SavedView[]{
-    const value:unknown=JSON.parse(localStorage.getItem(key) ?? '[]');
+    let raw:string|null;
+    try {raw=localStorage.getItem(key);} catch {return [];}
+    let value:unknown;
+    try {value=JSON.parse(raw ?? '[]');}
+    catch {
+      // Browser storage is untrusted. Replace malformed demo data so one bad
+      // value cannot permanently disable listing and saving named views.
+      try {localStorage.setItem(key,'[]');} catch { /* Storage is optional. */ }
+      return [];
+    }
     if(!Array.isArray(value)) return [];
     return value.filter(v=>v && typeof v.id==='string' && typeof v.name==='string' && Number.isInteger(v.revision)).slice(0,50).map(v=>({...v,state:normalizeView(v.state)}));
   }
