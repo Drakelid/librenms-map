@@ -29,7 +29,7 @@ class SavedViewsIntegrationTest extends TestCase
     private function payload(?string $id = null): array
     {
         return ['name' => 'Rossa operations', 'state' => [
-            'rootId' => $id, 'site' => '', 'search' => '', 'backbone' => false,
+            'rootId' => $id, 'site' => '', 'search' => '', 'backbone' => false, 'showOther' => false,
             'positions' => $id === null ? (object) [] : (object) [$id => ['x' => 10, 'y' => 20]],
             'pinned' => $id === null ? [] : [$id], 'zoom' => 1, 'pan' => ['x' => 0, 'y' => 0],
         ]];
@@ -95,6 +95,14 @@ class SavedViewsIntegrationTest extends TestCase
     public function testInputLimitsAndMetadataAreEnforced(): void
     {
         $this->actingAs($this->user(admin: true));
+        // A tab opened before this field was introduced can still save a view.
+        $legacy = $this->payload();
+        unset($legacy['state']['showOther']);
+        $this->postJson('/libremap/views', $legacy)->assertCreated()
+            ->assertJsonPath('view.state.showOther', false);
+        $payload = $this->payload();
+        $payload['state']['showOther'] = 'true';
+        $this->postJson('/libremap/views', $payload)->assertUnprocessable();
         $payload = $this->payload();
         $payload['state']['positions'] = ['hostname.example' => ['x' => 0, 'y' => 0]];
         $this->postJson('/libremap/views', $payload)->assertUnprocessable();

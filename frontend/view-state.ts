@@ -1,7 +1,7 @@
 import type { Position, Topology, ViewState } from './types';
 import { FILTER_MAX, limitFilter, STORED_POSITIONS_MAX, textLength } from './view-limits';
 
-export const emptyView = (): ViewState => ({ rootId:null, site:'', search:'', backbone:false, positions:{}, pinned:[], zoom:1, pan:{x:0,y:0} });
+export const emptyView = (): ViewState => ({ rootId:null, site:'', search:'', backbone:false, showOther:false, positions:{}, pinned:[], zoom:1, pan:{x:0,y:0} });
 const object = (value:unknown): value is Record<string, unknown> => !!value && typeof value==='object' && !Array.isArray(value);
 const coordinate = (n:unknown): n is number => typeof n==='number' && Number.isFinite(n) && Math.abs(n)<=1_000_000;
 const point = (p:unknown): p is Position => object(p) && coordinate(p.x) && coordinate(p.y);
@@ -16,6 +16,7 @@ export function normalizeView(value:unknown, graph?:Topology):ViewState {
   if(typeof value.site==='string' && textLength(value.site)<=FILTER_MAX && (!graph || graph.nodes.some(n=>n.site===value.site))) state.site=value.site;
   if(typeof value.search==='string') state.search=limitFilter(value.search);
   state.backbone=value.backbone===true;
+  state.showOther=value.showOther===true;
   // A loaded map bounds entries by its own devices (the server's limit follows
   // libremap.max_devices); unscoped storage keeps only a corruption guard.
   const limit=graph ? graph.nodes.length : STORED_POSITIONS_MAX;
@@ -48,9 +49,12 @@ export function branchNodes(graph:Topology, rootId:string|null):Set<string> {
   return visited;
 }
 
-export function visibleNodes(graph:Topology, state:Pick<ViewState,'rootId'|'site'|'search'|'backbone'>):Set<string> {
+export function visibleNodes(graph:Topology, state:Pick<ViewState,'rootId'|'site'|'search'|'backbone'|'showOther'>):Set<string> {
   const branch=branchNodes(graph,state.rootId);
-  const scope=new Set(graph.nodes.filter(n=>branch.has(n.id) && (!state.site || n.site===state.site) && (!state.backbone || n.role==='AGG')).map(n=>n.id));
+  const scope=new Set(graph.nodes.filter(n=>{
+    const roleVisible=state.backbone ? n.role==='AGG' : state.showOther || n.role==='AGG' || n.role==='ER';
+    return branch.has(n.id) && (!state.site || n.site===state.site) && roleVisible;
+  }).map(n=>n.id));
   const matching=new Set(graph.nodes.filter(n=>scope.has(n.id) && n.hostname.toLowerCase().includes(state.search.toLowerCase())).map(n=>n.id));
   const visible=new Set(matching);
   if(state.search) for(const l of graph.links){

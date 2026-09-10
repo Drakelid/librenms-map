@@ -20,7 +20,7 @@ function snapshot(): Snapshot {
 async function load(page: Page, data: Snapshot) {
   await page.route('**/link-snapshot', route => route.fulfill({ json: data }));
   await page.route('**/link-review', route => route.fulfill({ contentType: 'text/html', body:
-    '<div id="libremap" data-endpoint="/link-snapshot" data-debug="true" data-host-theme="true"></div><script type="module" src="/frontend/main.ts"></script>',
+    '<div id="libremap" data-endpoint="/link-snapshot" data-debug="true" data-host-theme="true" data-home-url="/nms"></div><script type="module" src="/frontend/main.ts"></script>',
   }));
   await page.goto('/link-review');
   await expect(page.locator('.lm-notice')).toContainText('Topology loaded');
@@ -28,6 +28,41 @@ async function load(page: Page, data: Snapshot) {
 
 type DebugLink = { port: string; midpoint: { x: number; y: number }; label: string };
 const edges = (page: Page) => page.evaluate(() => (window as unknown as { libremapDebug: () => { links: DebugLink[] } }).libremapDebug().links);
+
+test('hovering a link lazily shows both authenticated one-day interface graphs', async ({ page }) => {
+  const graphRequests:string[]=[];
+  await page.route('**/nms/graph?*',route=>{
+    graphRequests.push(route.request().url());
+    return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150"></svg>'});
+  });
+  await load(page,snapshot());
+  expect(graphRequests).toEqual([]);
+  const edge=(await edges(page)).find(item=>item.port==='local-a')!;
+  const bounds=(await page.locator('.lm-canvas').boundingBox())!;
+  await page.mouse.move(bounds.x+edge.midpoint.x,bounds.y+edge.midpoint.y);
+  const preview=page.getByRole('tooltip');
+  await expect(preview).toBeVisible();
+  await expect(preview).toContainText('site1agg1');
+  await expect(preview).toContainText('local-a');
+  await expect(preview).toContainText('site1agg2');
+  await expect(preview).toContainText('remote-a');
+  await expect(preview.locator('img')).toHaveCount(2);
+  await expect.poll(()=>graphRequests.length).toBe(2);
+  const urls=graphRequests.map(value=>new URL(value));
+  expect(urls.map(url=>url.pathname)).toEqual(['/nms/graph','/nms/graph']);
+  expect(urls.map(url=>url.searchParams.get('id')).sort()).toEqual(['1','11']);
+  for(const url of urls){
+    expect(url.searchParams.get('type')).toBe('port_bits');
+    expect(url.searchParams.get('from')).toBe('-1d');
+    expect(url.searchParams.get('legend')).toBe('no');
+    expect(url.searchParams.get('width')).toBe('300');
+    expect(url.searchParams.get('height')).toBe('150');
+    expect(url.searchParams.has('refreshnum')).toBe(true);
+  }
+  await page.screenshot({path:'test-results/libremap-link-preview.png',fullPage:true,animations:'disabled'});
+  await page.mouse.move(bounds.x+4,bounds.y+4);
+  await expect(preview).toBeHidden();
+});
 
 test('parallel lateral links have separate selectable paths through refresh and theme changes', async ({ page }) => {
   await load(page, snapshot());

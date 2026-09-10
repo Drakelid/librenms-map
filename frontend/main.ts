@@ -1,5 +1,6 @@
 import cytoscape, { type Core, type StylesheetStyle } from 'cytoscape';
 import { layoutGraph, resetLayoutWorker } from './layout';
+import { mountLinkPreview } from './link-preview';
 import { demoSnapshot } from './demo';
 import { lateralOffsets, metric, topology } from './topology';
 import { limitFilter } from './view-limits';
@@ -8,6 +9,7 @@ import { demoViewStore, httpViewStore } from './view-store';
 import { mountViews } from './views-panel';
 import type { Position, Snapshot, Topology, ViewState } from './types';
 import './style.css';
+import './link-preview.css';
 import './views.css';
 
 const root = document.querySelector<HTMLElement>('#libremap');
@@ -19,11 +21,11 @@ function mount(root: HTMLElement) {
     <div class="lm-shell">
       <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>NETWORK TOPOLOGY</span></div></div><div class="lm-header-right"><span class="lm-source">${demo ? 'DEMO DATA' : 'LIBRENMS'}</span><button data-action="theme" title="Toggle color theme">◐ <span>Theme</span></button><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
       <section class="lm-heading"><div><div class="lm-eyebrow">INFRASTRUCTURE / TOPOLOGY</div></div><div class="lm-summary" aria-label="Network summary"></div></section>
-      <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device…"></label><label class="lm-select">Site <select aria-label="Site"><option value="">All sites</option></select></label><button data-action="overview">AGG backbone</button><span class="lm-spacer"></span><button data-action="refresh">↻ Refresh</button><button data-action="layout">Re-layout</button><button data-action="fullscreen" title="Fullscreen">⛶</button></div>
+      <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device…"></label><label class="lm-select">Site <select aria-label="Site"><option value="">All sites</option></select></label><button data-action="overview">AGG backbone</button><button data-action="other-devices" aria-pressed="false">Show other devices</button><span class="lm-spacer"></span><button data-action="refresh">↻ Refresh</button><button data-action="layout">Re-layout</button><button data-action="fullscreen" title="Fullscreen">⛶</button></div>
       <div class="lm-viewbar"><label class="lm-select">AGG root <select aria-label="AGG root"><option value="">All AGG groups</option></select></label><span class="lm-pin-count">0 pinned</span><button data-action="unpin-all">Unpin all</button><div class="lm-views"></div></div>
       <div class="lm-notice" role="status" aria-live="polite">Loading topology…</div>
       <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong>Physical topology</strong><span>AGG → ER · discovered links</span></div><div class="lm-canvas" aria-label="Interactive network topology"></div><div class="lm-empty" hidden></div><div class="lm-map-controls"><button data-action="zoom-in" aria-label="Zoom in">+</button><button data-action="zoom-out" aria-label="Zoom out">−</button><button data-action="fit">Fit</button></div><div class="lm-legend"><span><i style="background:#6485b6"></i>&lt;50%</span><span><i style="background:#299e9b"></i>50–75%</span><span><i style="background:#cb9a28"></i>75–90%</span><span><i style="background:#e78636"></i>≥90%</span><span><i style="background:#e05b65"></i>Down</span><span><i style="background:#8a96a9"></i>Unknown / stale</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
-      <footer><span class="lm-updated">Waiting for data</span><span>Drag to arrange · Scroll to zoom · Click to inspect</span></footer>
+      <footer><span class="lm-updated">Waiting for data</span><span>Drag to arrange · Scroll to zoom · Hover links for traffic · Click to inspect</span></footer>
     </div>`;
   if (demo) root.querySelector('.lm-back')?.remove();
   // Inside LibreNMS the user's site style decides the theme; no separate toggle.
@@ -57,8 +59,10 @@ function mount(root: HTMLElement) {
   if(hostTheme)new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['class']});
   else systemDark.addEventListener('change',applyTheme);
   let snapshot: Snapshot | undefined;
+  const linkPreview=demo ? undefined : mountLinkPreview(root,cy,()=>snapshot?.generatedAt);
   let graph: Topology = { nodes:[], links:[] };
   let backbone = false;
+  let showOther = false;
   let busy = false;
   let selected: { type:'node'|'link'; id:string } | undefined;
   let layoutRequest = 0;
@@ -85,7 +89,7 @@ function mount(root: HTMLElement) {
   let pins=new Set(initialWorkspace.pinned);
   let initialized=false;
   function capture():ViewState {
-    return normalizeView({rootId:focus.value || null,site:site.value,search:search.value,backbone,positions:Object.fromEntries(cy.nodes().map(n=>[n.id(),n.position()])),pinned:[...pins],zoom:cy.zoom(),pan:cy.pan()},graph);
+    return normalizeView({rootId:focus.value || null,site:site.value,search:search.value,backbone,showOther,positions:Object.fromEntries(cy.nodes().map(n=>[n.id(),n.position()])),pinned:[...pins],zoom:cy.zoom(),pan:cy.pan()},graph);
   }
   const persist = () => {
     // Never overwrite a stored workspace while no topology is loaded: an empty
@@ -103,7 +107,7 @@ function mount(root: HTMLElement) {
   function syncControls(){
     const off=layoutPending || !snapshot;
     search.disabled=off;site.disabled=off;focus.disabled=off;
-    for(const action of ['layout','zoom-in','zoom-out','fit','overview'])$<HTMLButtonElement>(`[data-action="${action}"]`).disabled=off;
+    for(const action of ['layout','zoom-in','zoom-out','fit','overview','other-devices'])$<HTMLButtonElement>(`[data-action="${action}"]`).disabled=off;
     root.querySelectorAll<HTMLButtonElement>('.lm-pin-device,.lm-focus-device').forEach(b=>{b.disabled=off;});
     $<HTMLButtonElement>('[data-action="unpin-all"]').disabled=off || pins.size===0;
   }
@@ -122,16 +126,17 @@ function mount(root: HTMLElement) {
   function restoreView(value:ViewState){
     if(!snapshot)return;
     const state=normalizeView(value,graph);
-    focus.value=state.rootId ?? '';site.value=state.site;search.value=state.search;backbone=state.backbone;pins=new Set(state.pinned);
-    selected=undefined;cy.elements().unselect().removeClass('lm-dim');updatePins();renderDetails();updateBackbone();
+    focus.value=state.rootId ?? '';site.value=state.site;search.value=state.search;backbone=state.backbone;showOther=state.showOther;pins=new Set(state.pinned);
+    selected=undefined;cy.elements().unselect().removeClass('lm-dim');updatePins();renderDetails();updateBackbone();updateOtherDevices();
     layout(state.positions,state);
   }
   function updateBackbone(){const button=$<HTMLButtonElement>('[data-action="overview"]');button.classList.toggle('lm-active',backbone);button.setAttribute('aria-pressed',String(backbone));}
+  function updateOtherDevices(){const button=$<HTMLButtonElement>('[data-action="other-devices"]');button.classList.toggle('lm-active',showOther);button.setAttribute('aria-pressed',String(showOther));button.textContent=showOther?'Hide other devices':'Show other devices';}
   const detailsDefault = () => {
     const panel = $('.lm-details'); panel.replaceChildren();
     const eyebrow = document.createElement('div'); eyebrow.className='lm-eyebrow'; eyebrow.textContent='NETWORK EXPLORER'; panel.append(eyebrow);
     const heading = document.createElement('h2'); heading.textContent='Follow the connection'; panel.append(heading);
-    const desc = document.createElement('p'); desc.textContent='Select a device or link to inspect its status and traffic. Device names define tiers; discovered neighbors define connections.'; panel.append(desc);
+    const desc = document.createElement('p'); desc.textContent='Hover a link to preview both interface traffic graphs. Select a device or link to inspect its status and traffic.'; panel.append(desc);
     const list = document.createElement('div'); list.className='lm-device-list';
     for (const node of graph.nodes.filter(n => n.role==='AGG')) {
       const button = document.createElement('button'); button.textContent=`◈  ${node.hostname}`; button.addEventListener('click',()=>selectNode(node.id)); list.append(button);
@@ -165,7 +170,7 @@ function mount(root: HTMLElement) {
     cy.elements().addClass('lm-dim'); element.closedNeighborhood().removeClass('lm-dim'); renderDetails();
   }
   function filters(fit=true) {
-    const visible = visibleNodes(graph,{rootId:focus.value || null,site:site.value,search:search.value,backbone});
+    const visible = visibleNodes(graph,{rootId:focus.value || null,site:site.value,search:search.value,backbone,showOther});
     cy.batch(()=> { cy.nodes().forEach(n=>{n.style('display',visible.has(n.id())?'element':'none');}); cy.edges().forEach(e=>{e.style('display',visible.has(e.source().id()) && visible.has(e.target().id())?'element':'none');}); });
     $('.lm-empty').hidden=visible.size>0; $('.lm-empty').textContent=graph.nodes.length ? 'No devices match these filters.' : 'No authorized devices are available.';
     if (fit && visible.size) cy.fit(cy.elements(':visible'),70);
@@ -191,6 +196,7 @@ function mount(root: HTMLElement) {
     pendingViewport=undefined;setLayoutPending(false);persist();message(demo ? 'Demo topology · illustrative devices and traffic' : 'Topology loaded · positions saved in this browser');
   }
   function apply(next:Snapshot) {
+    linkPreview?.hide();
     const restoreInFlight=layoutPending ? pendingRestore : undefined;
     const viewportInFlight=layoutPending ? pendingViewport : undefined;
     const previousSignature=JSON.stringify([graph.nodes.map(n=>[n.id,n.role,n.site,n.tier]),graph.links.map(l=>l.id)]);
@@ -207,7 +213,7 @@ function mount(root: HTMLElement) {
     pins=new Set([...pins].filter(id=>graph.nodes.some(n=>n.id===id)));
     if(!initialized){
       // Also covers recovery after a failed fetch, which resets to this state.
-      const state=normalizeView(initialWorkspace,graph);focus.value=state.rootId ?? '';site.value=state.site;search.value=state.search;backbone=state.backbone;pins=new Set(state.pinned);updateBackbone();
+      const state=normalizeView(initialWorkspace,graph);focus.value=state.rootId ?? '';site.value=state.site;search.value=state.search;backbone=state.backbone;showOther=state.showOther;pins=new Set(state.pinned);updateBackbone();updateOtherDevices();
     }
     cy.batch(()=>{
       const nodeIds=new Set(graph.nodes.map(n=>n.id)); const edgeIds=new Set(graph.links.map(l=>`edge:${l.id}`));
@@ -236,12 +242,13 @@ function mount(root: HTMLElement) {
         if(endpoint.origin!==location.origin) throw new Error('Topology endpoint must use the same origin');
         const response=await fetch(endpoint,{credentials:'same-origin',headers:{Accept:'application/json'},signal:AbortSignal.timeout(20000)});
         if(response.status===429) throw new Error('Too many topology requests. The map will retry on the next refresh.');
-        if(!response.ok) throw new Error(`LibreNMS returned HTTP ${response.status}`);
+        if(!response.ok) throw new Error(await topologyFailure(response));
         const data=await response.json();
         if(!Array.isArray(data.devices)||!Array.isArray(data.links)||!data.config) throw new Error('Unexpected topology response');
         apply(data);
       }
     } catch(error) {
+      linkPreview?.hide();
       // Permissions may have changed. Do not leave previously authorized graph data on screen.
       cy.elements().remove(); graph={nodes:[],links:[]}; selected=undefined; snapshot=undefined; layoutRequest++; clearTimeout(layoutTimer); detailsDefault();
       setLayoutPending(false);clearTimeout(viewportTimer);clearTimeout(searchTimer);
@@ -280,6 +287,7 @@ site.addEventListener('change',()=>{filters();persist();});focus.addEventListene
       case 'zoom-in':cy.zoom({level:cy.zoom()*1.2,renderedPosition:{x:cy.width()/2,y:cy.height()/2}});break;
       case 'zoom-out':cy.zoom({level:cy.zoom()/1.2,renderedPosition:{x:cy.width()/2,y:cy.height()/2}});break;
       case 'overview':backbone=!backbone;updateBackbone();filters();persist();break;
+      case 'other-devices':showOther=!showOther;updateOtherDevices();filters();persist();break;
       case 'theme':manualDark=!root.classList.contains('lm-dark');applyTheme();break;
       case 'fullscreen':void (document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen()).catch(()=>message('Fullscreen is unavailable in this browser.'));break;
     }
@@ -306,6 +314,15 @@ site.addEventListener('change',()=>{filters();persist();});focus.addEventListene
     edges:cy.edges().length,
     links:cy.edges().map(e=>({port:e.data('sourcePort') as string,midpoint:e.renderedMidpoint(),label:e.data('label') as string})),
   }),configurable:true});
+}
+
+async function topologyFailure(response:Response):Promise<string> {
+  if(response.status===422) {
+    const body:unknown=await response.json().catch(()=>undefined);
+    const reason=body && typeof body==='object' && 'message' in body && typeof body.message==='string' ? body.message.trim() : '';
+    if(reason && reason.length<=300)return reason;
+  }
+  return `LibreNMS returned HTTP ${response.status}`;
 }
 
 function rate(value:number|null) {

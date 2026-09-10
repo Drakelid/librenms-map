@@ -39,11 +39,12 @@ Open <http://127.0.0.1:5173>. The demo is explicitly labeled and uses illustrati
 
 - Paired AGG roots and ER hop tiers, with rings, dual-homing and parallel physical links retained.
 - Numbered-site hostname classification: `rossa1agg1`, `rossa1agg2`, `rossa1er1`; case-insensitive, FQDN normalization, configurable prefixes and device-ID overrides.
-- Search with immediate-neighbor context, site filter, AGG backbone toggle, device/link details, light/dark themes, zoom and fullscreen. Inside LibreNMS the map follows the user's site style, including live switches in "device" mode, and uses the LibreNMS page background; the standalone demo follows the OS color scheme and keeps a Theme toggle.
+- AGG and ER devices are visible by default; other roles start hidden and can be revealed with **Show other devices**. Search with immediate-neighbor context, site filter, AGG backbone toggle, device/link details, light/dark themes, zoom and fullscreen. Inside LibreNMS the map follows the user's site style, including live switches in "device" mode, and uses the LibreNMS page background; the standalone demo follows the OS color scheme and keeps a Theme toggle.
 - Directional maximum utilization and explicit down/stale/unknown states. The topology is fetched every 60 seconds; link states are re-evaluated every 10 seconds from the current snapshot. Neither refresh relayouts the graph.
+- Hovering a physical link on the live LibreNMS page lazily loads the source and destination interfaces' one-day traffic graphs from LibreNMS's authenticated `port_bits` graph endpoint. Moving away closes the preview; no graph images are requested during ordinary map loading or pointer movement that does not dwell on a link.
 - AGG root focus includes same-site peers and discovered ER branches, stopping traversal at neighboring AGG sites. Boundary AGGs remain visible for context.
 - Pin/unpin device positions. Pinned devices cannot be dragged and remain fixed during Re-layout; automatic nodes are placed clear of them. Use Unpin all to release them.
-- Browser workspace persistence and private named views stored in LibreNMS. Views capture root/site/search filters, backbone mode, positions, pins, zoom and pan. The explicit demo stores named views in this browser only.
+- Browser workspace persistence and private named views stored in LibreNMS. Views capture root/site/search filters, backbone and other-device visibility, positions, pins, zoom and pan. The explicit demo stores named views in this browser only.
 - Create, update, copy and delete named views. Revision checks prevent stale tabs from overwriting newer saves. Reload views restores the newest saved state before another update.
 - A Composer package integrated with LibreNMS sessions, a **Topology Map** navigation-bar button, the plugin menu and permission scopes. Both devices and both ports must be authorized before a link is serialized. Plugin routes are rate limited to 120 requests per minute per user, on a counter separate from other LibreNMS routes.
 
@@ -119,7 +120,7 @@ This update requires the new owner-lock migration before creating saved views. F
 
 ## Saved views and pins
 
-Select an **AGG root** to focus its site group. Site/search/backbone filters intersect that scope; search context does not bypass those filters. Click a device and choose **Pin position** to preserve its current coordinates. **Re-layout** moves unpinned devices only.
+Select an **AGG root** to focus its site group. Site/search/backbone filters intersect that scope; search context does not bypass those filters. Devices not classified as AGG or ER are hidden initially. **Show other devices** reveals them without escaping the selected AGG branch or active site/search filters. Click a device and choose **Pin position** to preserve its current coordinates. **Re-layout** moves unpinned devices only.
 
 Use **Save view** to create a named workspace or update the selected view. **Save as new** makes a separate copy. Views are private to their owner, including when another user is an administrator, and are deleted with the owner's LibreNMS account. A user can store up to 50 views, each with at most 2,000 positions, or `max_devices` positions when that is higher. Saved views contain device IDs and display preferences, not copied device records or traffic history. Reads redact device references that the owner can no longer access; writes reject unavailable device IDs.
 
@@ -148,6 +149,7 @@ return [
 The default role rule requires a site ending in a digit before `agg` or `er`, preventing `server01` from being classified as ER. When the hostname does not match, as for devices added by IP address, the device's sysName is tried next. Use overrides for other conventions. Config entries of the wrong type are ignored rather than failing the map. Names classify placement only; links come from active, resolved LibreNMS neighbor records. Unresolved or unauthorized remote endpoints are omitted in this initial slice. LAG grouping, discovery-history retention and manual links are planned.
 
 Exceeding `max_devices` or `max_links` returns an error rather than a partial graph.
+The role-visibility toggle is a display filter and does not weaken these server-side safety limits. A host with 2,048 authorized devices must set `max_devices` above that count (for example, `3000`) in `/opt/librenms/config/libremap.php`, then run `php artisan optimize:clear` as the LibreNMS application user.
 
 ## Measurement and display
 

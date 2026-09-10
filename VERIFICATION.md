@@ -2,11 +2,11 @@
 
 ## Confirmed locally
 
-- `npm test`: 13 passing domain tests covering topology/metrics, root-group boundaries, search scope, corrupt/unauthorized saved-state filtering, pin collision avoidance, dense placement across 400 colliding nodes, distinct lateral arcs with reversed observations, Unicode filter limits, the sysName classification fallback with malformed config, and saved views above 2,000 positions.
+- `npm test`: 14 passing domain tests covering topology/metrics, root-group boundaries, search and role-visibility scope, corrupt/unauthorized saved-state filtering, pin collision avoidance, dense placement across 400 colliding nodes, distinct lateral arcs with reversed observations, Unicode filter limits, the sysName classification fallback with malformed config, and saved views above 2,000 positions.
 - `npm run build`: TypeScript strict checking and production asset build pass. ELK runs in a separately emitted web worker with a relative asset URL.
 - `node tests/php-syntax.cjs`: 17 PHP files, including both migrations and expanded host tests, parse in PHP 8.2 mode. This uses a JavaScript PHP parser; PHP itself is unavailable locally.
-- `npm run test:browser`: 18 Chromium tests pass: original topology/controls/failure/compiled-bundle checks, drag persistence, authorization loss, root focus/pin/named-view persistence, malformed demo-view storage recovery, mocked live CRUD with CSRF and revision conflict recovery, migration-pending error isolation, workspace survival across a failed refresh, independently selectable parallel lateral links, stale selected details with retained keyboard focus, server-sized Unicode names/filters, staleness under a skewed browser clock, the server's reason for a rejected save, the map following LibreNMS's `dark` class and page background live, and the standalone map following the OS color scheme. The LibreNMS case uses a fixture that reproduces LibreNMS's body backgrounds (`#fff`, and `#272b30` under `.dark`); it has not been checked inside a running LibreNMS browser session.
-- Light/dark screenshots and `test-results/libremap-views.png` captured. The operator-controls screenshot was inspected visually with a focused root, pinned AGG and selected named view.
+- `npm run test:browser`: 21 Chromium tests pass: original topology/controls/failure/compiled-bundle checks, lazy dual-interface graph previews on link hover, default hiding and scoped reveal of other devices, actionable topology-limit errors, drag persistence, authorization loss, root focus/pin/named-view persistence, malformed demo-view storage recovery, mocked live CRUD with CSRF and revision conflict recovery, migration-pending error isolation, workspace survival across a failed refresh, independently selectable parallel lateral links, stale selected details with retained keyboard focus, server-sized Unicode names/filters, staleness under a skewed browser clock, the server's reason for a rejected save, the map following LibreNMS's `dark` class and page background live, and the standalone map following the OS color scheme. The LibreNMS case uses a fixture that reproduces LibreNMS's body backgrounds (`#fff`, and `#272b30` under `.dark`); it has not been checked inside a running LibreNMS browser session.
+- Light/dark screenshots, `test-results/libremap-views.png` and `test-results/libremap-link-preview.png` captured. The link preview was inspected visually with two labeled endpoint graph panels; the operator-controls screenshot was inspected with a focused root, pinned AGG and selected named view.
 - Dependency installation audit reported zero vulnerabilities at installation time.
 
 The local Node runtime was found at `C:/Users/ex_410156/AppData/Local/node24/PFiles64/nodejs`; browser checks used existing Chromium via `CHROMIUM_PATH`. Playwright requested a browser build newer than any installed, so an existing Chromium was selected explicitly rather than downloading one. No global runtime installation or live system modification was performed.
@@ -48,6 +48,15 @@ The new unit and browser tests were written together with the fixes and were not
 ## Audit fix in 0.3.1
 
 - Malformed JSON in the demo's saved-view browser storage is discarded and replaced with an empty list. Listing and saving views remain usable without asking the operator to clear site data manually. A Chromium regression covers load, reset and a successful save after recovery. Production LibreNMS-backed views are unchanged.
+
+## Role visibility update
+
+- Devices classified as AGG or ER remain visible by default; all other roles start hidden. **Show other devices** reveals them without escaping the selected AGG branch or active site/search filters. The preference persists in the browser workspace and private named views. Legacy view payloads and stored rows that predate the field default safely to hidden.
+- Topology HTTP 422 responses now surface the server's bounded error message. A network over the configured device or link limit therefore receives the existing actionable configuration instruction instead of the generic HTTP status alone.
+
+## Link traffic previews
+
+- A 180 ms dwell on a live topology edge opens a bounded hover card with the source and destination interface names and their one-day `port_bits` graphs. The graph URLs use the configured LibreNMS base path, remain same-origin and include the current snapshot timestamp as a refresh key. A browser regression verifies lazy loading, both authorized port IDs, graph parameters, base-path handling and dismissal when the pointer leaves.
 
 ## Not yet verified
 

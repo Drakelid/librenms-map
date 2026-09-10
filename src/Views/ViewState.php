@@ -20,12 +20,15 @@ class ViewState
         };
         $data = Validator::make($input, [
             'name' => ['required', 'string', 'max:100'],
-            'state' => ['required', 'array:rootId,site,search,backbone,positions,pinned,zoom,pan'],
+            'state' => ['required', 'array:rootId,site,search,backbone,showOther,positions,pinned,zoom,pan'],
             'state.rootId' => ['present', 'nullable', 'string', 'regex:/^[1-9][0-9]{0,9}$/'],
             'state.site' => ['present', 'nullable', 'string', 'max:200'],
             'state.search' => ['present', 'nullable', 'string', 'max:200'],
             'state.backbone' => ['required', function ($attribute, $value, $fail): void {
                 if (! is_bool($value)) { $fail('Backbone must be a boolean.'); }
+            }],
+            'state.showOther' => ['sometimes', function ($attribute, $value, $fail): void {
+                if (! is_bool($value)) { $fail('Show other devices must be a boolean.'); }
             }],
             'state.positions' => ['present', 'array', 'max:'.self::positionLimit()],
             'state.positions.*' => ['required', 'array:x,y'],
@@ -54,6 +57,7 @@ class ViewState
         // Laravel's ConvertEmptyStringsToNull middleware applies to JSON too.
         $data['state']['site'] ??= '';
         $data['state']['search'] ??= '';
+        $data['state']['showOther'] ??= false;
         $ids = $this->ids($data['state']);
         if (array_diff($ids, $this->accessible($ids, $user))) {
             throw ValidationException::withMessages(['state' => 'The view contains unavailable devices.']);
@@ -102,7 +106,7 @@ class ViewState
     private function defaults(array $state): array
     {
         $defaults = [
-            'rootId' => null, 'site' => '', 'search' => '', 'backbone' => false,
+            'rootId' => null, 'site' => '', 'search' => '', 'backbone' => false, 'showOther' => false,
             'positions' => [], 'pinned' => [], 'zoom' => 1, 'pan' => ['x' => 0, 'y' => 0],
         ];
         // Return only the bounded schema; a row edited directly in the database

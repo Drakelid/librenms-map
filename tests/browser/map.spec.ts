@@ -30,6 +30,29 @@ test('demo renders AGG roots, details, search, backbone and stable refresh', asy
   expect(errors).toEqual([]);
 });
 
+test('other devices start hidden and can be revealed inside the focused AGG group',async({page})=>{
+  const snapshot=demoSnapshot();
+  snapshot.devices=snapshot.devices.map(device=>device.id==='4'?{...device,hostname:'access-switch'}:device);
+  await page.route('**/role-filter-test',route=>route.fulfill({contentType:'text/html',body:'<div id="libremap" data-endpoint="/role-filter-snapshot" data-storage-key="role-filter" data-debug="true"></div><script type="module" src="/frontend/main.ts"></script>'}));
+  await page.route('**/role-filter-snapshot',route=>route.fulfill({json:snapshot}));
+  const visible=(id:string)=>page.evaluate(deviceId=>(window as unknown as {libremapDebug:()=>{nodes:{id:string;visible:boolean}[]}}).libremapDebug().nodes.find(node=>node.id===deviceId)?.visible,id);
+  await page.goto('/role-filter-test');
+  await expect(page.getByRole('status')).toContainText('Topology loaded');
+  expect(await visible('4')).toBe(false);
+  await page.getByRole('combobox',{name:'AGG root'}).selectOption('0');
+  await page.getByRole('button',{name:'Show other devices'}).click();
+  await expect(page.getByRole('button',{name:'Hide other devices'})).toHaveAttribute('aria-pressed','true');
+  expect(await visible('4')).toBe(true);
+  expect(await visible('15')).toBe(false); // The reveal remains inside the focused branch.
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('libremap:v2:role-filter') ?? '{}').showOther)).toBe(true);
+  await page.reload();
+  await expect(page.getByRole('status')).toContainText('Topology loaded');
+  await expect(page.getByRole('button',{name:'Hide other devices'})).toHaveAttribute('aria-pressed','true');
+  expect(await visible('4')).toBe(true);
+  await page.getByRole('button',{name:'Hide other devices'}).click();
+  expect(await visible('4')).toBe(false);
+});
+
 test('inside LibreNMS the map follows the site style and page background',async({page})=>{
   // Mirrors LibreNMS: styles.css paints body white, tw_dark.css paints `.dark body` #272b30.
   await page.route('**/host-theme',route=>route.fulfill({contentType:'text/html',body:'<style>body{margin:0;background:#fff}.dark body{background-color:#272b30}</style><div id="libremap" data-endpoint="/host-snapshot" data-host-theme="true"></div><script type="module" src="/frontend/main.ts"></script>'}));
@@ -67,6 +90,13 @@ test('failed live endpoint displays an error without demo fallback',async({page}
   await expect(page.getByRole('status')).toContainText('HTTP 403');
   await expect(page.getByText('Topology unavailable. Use Refresh to retry.')).toBeVisible();
   await expect(page.getByText('DEMO DATA',{exact:true})).toHaveCount(0);
+});
+
+test('a rejected topology displays the server reason',async({page})=>{
+  await page.route('**/limit-test',route=>route.fulfill({contentType:'text/html',body:'<div id="libremap" data-endpoint="/topology-limit"></div><script type="module" src="/frontend/main.ts"></script>'}));
+  await page.route('**/topology-limit',route=>route.fulfill({status:422,json:{message:'LibreMap device limit exceeded. Increase libremap.max_devices before loading this network.'}}));
+  await page.goto('/limit-test');
+  await expect(page.getByRole('status')).toHaveText('LibreMap device limit exceeded. Increase libremap.max_devices before loading this network.');
 });
 
 test('production bundle loads its worker beneath a published asset path',async({page})=>{

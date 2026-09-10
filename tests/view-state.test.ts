@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { arrangePositions, branchNodes, emptyView, normalizeView, visibleNodes } from '../frontend/view-state';
 import { topology } from '../frontend/topology';
-import type { MapNode } from '../frontend/types';
+import type { MapNode, Topology } from '../frontend/types';
 import { demoSnapshot } from '../frontend/demo';
 const graph=topology(demoSnapshot());
 
@@ -15,10 +15,26 @@ test('focused root includes its peer and redundant ER links but stops at neighbo
   assert.equal(branchNodes(graph,'999').size,graph.nodes.length);
 });
 test('search cannot expand beyond explicit site or backbone filters',()=>{
-  const ids=visibleNodes(graph,{rootId:null,site:'rossa1',search:'agg1',backbone:true});
+  const ids=visibleNodes(graph,{rootId:null,site:'rossa1',search:'agg1',backbone:true,showOther:false});
   assert.ok(ids.has('0'));
   assert.ok(!ids.has('4')); // Direct ER neighbor must remain outside backbone.
   assert.ok(!ids.has('2')); // Different site must remain outside the site filter.
+});
+test('other devices are hidden by default and revealed only inside the active scope',()=>{
+  const scoped={nodes:[
+    {id:'1',hostname:'site1agg1',status:'up',role:'AGG',site:'site1',tier:0,reachable:true},
+    {id:'2',hostname:'site1er1',status:'up',role:'ER',site:'site1',tier:1,reachable:true},
+    {id:'3',hostname:'site1-switch',status:'up',role:'OTHER',site:'site1',tier:2,reachable:true},
+    {id:'4',hostname:'site2-switch',status:'up',role:'OTHER',site:'site2',tier:1,reachable:true},
+  ],links:[
+    {id:'1-2',source:'1',target:'2',sourcePort:'a',targetPort:'b',sourcePortId:'1',targetPortId:'2',speedBps:null,inBps:null,outBps:null,sampledAt:null,status:'up'},
+    {id:'2-3',source:'2',target:'3',sourcePort:'a',targetPort:'b',sourcePortId:'3',targetPortId:'4',speedBps:null,inBps:null,outBps:null,sampledAt:null,status:'up'},
+    {id:'1-4',source:'1',target:'4',sourcePort:'a',targetPort:'b',sourcePortId:'5',targetPortId:'6',speedBps:null,inBps:null,outBps:null,sampledAt:null,status:'up'},
+  ]} satisfies Topology;
+  const hidden=visibleNodes(scoped,{rootId:'1',site:'site1',search:'',backbone:false,showOther:false});
+  assert.deepEqual([...hidden],['1','2']);
+  const revealed=visibleNodes(scoped,{rootId:'1',site:'site1',search:'',backbone:false,showOther:true});
+  assert.deepEqual([...revealed],['1','2','3']);
 });
 test('saved state redacts removed devices and rejects corrupt coordinates and roots',()=>{
   const result=normalizeView({rootId:'999',positions:{'0':{x:42,y:90},'999':{x:4,y:5},'1':{x:Infinity,y:3}},pinned:['0','1','999'],zoom:100,pan:{x:NaN,y:4},site:'private-site',search:'x'.repeat(200)},graph);

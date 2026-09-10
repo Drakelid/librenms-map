@@ -1,0 +1,68 @@
+#libremap .lm-link-preview {
+  position: absolute;
+  z-index: 8;
+  width: min(628px, calc(100% - 16px));
+  max-height: calc(100% - 16px);
+  overflow: hidden;
+  padding: 12px;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 12px 35px rgba(20, 35, 55, .22);
+  pointer-events: none;
+}
+#libremap .lm-link-preview[hidden] { display: none; }
+#libremap .lm-link-preview-title {
+  margin: 0 0 9px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+#libremap .lm-link-preview-graphs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+#libremap .lm-link-preview figure {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+#libremap .lm-link-preview figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  background: var(--panel);
+  font-size: 11px;
+}
+#libremap .lm-link-preview figcaption strong,
+#libremap .lm-link-preview figcaption span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#libremap .lm-link-preview figcaption span { color: var(--muted); }
+#libremap .lm-link-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2 / 1;
+  background: #fff;
+}
+#libremap .lm-link-preview-unavailable {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 2 / 1;
+  color: var(--muted);
+  font-size: 11px;
+}
+@media(max-width: 720px) {
+  #libremap .lm-link-preview { overflow: auto; }
+}

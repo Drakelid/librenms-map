@@ -63,6 +63,7 @@ test('root focus, pins and named demo views survive layout and reload',async({pa
   await page.getByRole('button',{name:'◈ hk-rossa1agg1'}).click();
   await page.getByRole('button',{name:'Pin position',exact:true}).click();
   await expect(page.getByRole('button',{name:'Unpin device'})).toBeVisible();
+  await page.getByRole('button',{name:'Show other devices',exact:true}).click();
   const pinned=(await graph(page)).nodes.find(n=>n.id==='0')!.position;
   await page.getByRole('button',{name:'Re-layout',exact:true}).click();
   await expect.poll(async()=>(await graph(page)).nodes.find(n=>n.id==='0')!.position).toEqual(pinned);
@@ -73,13 +74,16 @@ test('root focus, pins and named demo views survive layout and reload',async({pa
   const id=await page.getByRole('combobox',{name:'Saved view',exact:true}).inputValue();
   await page.getByRole('combobox',{name:'AGG root'}).selectOption('2');
   await page.getByRole('button',{name:'Unpin all',exact:true}).click();
+  await page.getByRole('button',{name:'Hide other devices',exact:true}).click();
   await page.getByRole('combobox',{name:'Saved view',exact:true}).selectOption('');
   await page.getByRole('combobox',{name:'Saved view',exact:true}).selectOption(id);
   await expect(page.getByRole('combobox',{name:'AGG root'})).toHaveValue('0');
   await expect(page.locator('.lm-pin-count')).toHaveText('1 pinned');
+  await expect(page.getByRole('button',{name:'Hide other devices',exact:true})).toHaveAttribute('aria-pressed','true');
   await page.reload();await expect(page.getByRole('status')).toContainText('Demo topology');
   await expect(page.getByRole('combobox',{name:'AGG root'})).toHaveValue('0');
   await expect(page.locator('.lm-pin-count')).toHaveText('1 pinned');
+  await expect(page.getByRole('button',{name:'Hide other devices',exact:true})).toHaveAttribute('aria-pressed','true');
   await page.getByRole('combobox',{name:'Saved view',exact:true}).selectOption(id);
   await page.getByRole('button',{name:'Save view',exact:true}).click();
   await page.getByRole('textbox',{name:'View name'}).fill('Rossa operations');
