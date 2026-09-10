@@ -12,6 +12,7 @@
 /tests/topology.test.ts   export-ignore
 /tests/view-state.test.ts export-ignore
 /tests/php-syntax.cjs     export-ignore
+/.github                  export-ignore
 /index.html               export-ignore
 /package.json             export-ignore
 /package-lock.json        export-ignore

@@ -96,10 +96,21 @@ jobs:
           php artisan migrate:rollback --path=../plugin/database/migrations --force
           php artisan migrate --path=../plugin/database/migrations --force
       - name: Run host regressions and simultaneous database writers
-        run: vendor/bin/phpunit --fail-on-skipped --exclude-group=cached-routes ../plugin/tests/Host
+        run: |
+          set -o pipefail
+          vendor/bin/phpunit --fail-on-skipped --exclude-group=cached-routes --log-junit ../junit-host.xml ../plugin/tests/Host 2>&1 | tee ../phpunit-host.log
       - name: Build actual Laravel route cache and test requests against it
         run: |
           php -r 'require "vendor/autoload.php"; $app = require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); App\Models\Plugin::where("plugin_name", "libremap")->firstOrFail()->forceFill(["plugin_active" => 1])->save();'
           php artisan route:cache
-          vendor/bin/phpunit ../plugin/tests/Host/CachedRoutesIntegrationTest.php
+          set -o pipefail
+          vendor/bin/phpunit --log-junit ../junit-cached.xml ../plugin/tests/Host/CachedRoutesIntegrationTest.php 2>&1 | tee ../phpunit-cached.log
           php artisan route:clear
+      # Job logs need authentication to download, but annotations on a public
+      # repository do not: report each failing, erroring or skipped test as one.
+      - name: Report PHPUnit results as annotations
+        if: failure()
+        working-directory: .
+        run: |
+          php plugin/.github/scripts/phpunit-annotations.php junit-host.xml phpunit-host.log
+          php plugin/.github/scripts/phpunit-annotations.php junit-cached.xml phpunit-cached.log
