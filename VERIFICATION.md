@@ -19,6 +19,8 @@ The local Node runtime was found at `C:/Users/ex_410156/AppData/Local/node24/PFi
 - Operator-workflow inspection found that search context bypassed site/backbone filters. Scope tests now ensure neighbor expansion stays inside explicit filters.
 - A code review found that a failed topology fetch destroyed the stored browser workspace. The error path left the search box and layout controls enabled while the graph was empty, so one keystroke persisted an empty state over the operator's saved positions and pins, and the error path also emptied the in-memory baseline that recovery re-persists. `persist()` now refuses to write without a snapshot, those controls disable while no topology is loaded, and the error path reloads the stored workspace instead of clearing it. The new browser test was confirmed to fail against the previous behaviour (`0 pinned` where `1 pinned` was expected) before the fix was restored.
 - Two new browser regressions were run before and after their fixes. Parallel same-tier links originally had identical midpoints; they now have separately selectable paths, retained through refresh and theme changes. Advancing the clock originally changed an edge to STALE while its selected details stayed at 10%; both now update together without replacing the focused close button.
+- The first host CI run failed every saved-view HTTP test with a 302 before reaching the plugin: LibreNMS's `UserFactory` leaves `enabled` unset on the returned model, and the `VerifyUserEnabled` web middleware logs such users out. Test users are now created with `enabled => 1`, and the next run passed on all four host combinations.
+- One browser test failed once on Linux CI and passed on the same commit's tag run, on both Dependabot branches, on the next two runs and in 60 local repetitions. It has not been identified; Playwright's github reporter now annotates any failure on CI.
 
 ## Host CI added in this update
 
@@ -26,13 +28,13 @@ The local Node runtime was found at `C:/Users/ex_410156/AppData/Local/node24/PFi
 
 The workflow performs migration, repeated migration, rollback and reapply before the suite. Cached-route tests run separately after enabling the plugin and building a real Laravel route cache. [Frontend workflow](.github/workflows/frontend.yml) also verifies committed assets match the build.
 
-These workflows are configured and source-reviewed; no GitHub Actions or host run was executed from this workspace. Local PHP syntax parsing does not validate database behavior or framework bootstrapping.
+Both workflows pass on GitHub Actions as of commit `4cb8174`: every host combination ran the 23 host test methods with `--fail-on-skipped`, so the concurrency test executed rather than skipping, followed by the cached-route suite against a real route cache. Failing, erroring and skipped host tests are published as public check-run annotations, because job logs need authentication to read. Local PHP syntax parsing does not validate database behavior or framework bootstrapping.
 
 ## Audit fixes in 0.2.0
 
-An audit of 0.1.0 led to these changes. The local suites above pass with them; host-side behavior is covered only by host tests that have not run.
+An audit of 0.1.0 led to these changes. The local suites above pass with them, and so does the host suite in CI (see Host CI above).
 
-- Host CI could not start: `job.services` is not available in job-level `env`. The mapped database port is now exported from a step and the app key is generated per run. Actions are pinned to commit SHAs, kept current by Dependabot. Not yet run on GitHub.
+- Host CI could not start: `job.services` is not available in job-level `env`. The mapped database port is now exported from a step and the app key is generated per run. Actions are pinned to commit SHAs, kept current by Dependabot. The workflow now runs end to end.
 - Asset URLs carry the published bundle's modification time. The install script and README remove `public/vendor/libremap` before republishing, so old hashed workers do not accumulate. Source maps are built hidden, so shipped bundles no longer reference unshipped files.
 - Saved views accept `max(2000, max_devices)` positions; the client no longer truncates at 2,000 when a larger map is loaded.
 - A rejected save shows the server's 422 reason, such as the 50-view limit. Conflict messages match the method, views list newest first, and the demo generates IDs outside secure contexts.
@@ -45,13 +47,9 @@ The new unit and browser tests were written together with the fixes and were not
 
 ## Not yet verified
 
-- Composer installation, provider/menu registration, Blade integration and model queries inside a running LibreNMS instance.
-- Real database permission behavior, migrations, transactional persistence, revision handling and the expanded host tests. Browser authorization and saved-view API tests use controlled HTTP responses.
-- The named `libremap` rate limiter and the 429 messages added for it. No request has been rate-limited by a real host.
-- The per-owner view cap now uses a persistent `libremap_view_owners` row, a current locking read of view IDs, and up to three transaction attempts for concurrency errors. Real concurrent execution under REPEATABLE READ and READ COMMITTED is covered by the new host test but has not run locally.
-- Status normalization from current LibreNMS backed enums and older string attributes is implemented; the real-model status regression requires the host suite.
-- Batching resolves device authorization once per listing; the query-count and per-view redaction regression requires the host suite.
-- Tolerance of an unreadable `state` column, covered by a supplied host test that has not been run.
+- A Packagist install with `scripts/install.sh` on a real LibreNMS host, the rendered Blade page (including its asset version and stylesheet stack) and the menu entry. Host CI installs the package from a path repository and exercises its routes, models and migrations, but never renders the map page.
+- A request actually being rate-limited. Host CI only confirms the named `libremap` limiter is registered.
+- The layout-worker reset after a timed-out layout, which has no automated test.
 - Behavior against actual neighbor coverage, interface data, and naming conventions beyond supplied examples.
 - Large-network performance, upgrade/uninstall on a host, keyboard navigation of every graph element, and full accessibility review.
 

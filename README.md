@@ -24,7 +24,7 @@ See [PLAN.md](PLAN.md) for later phases and [VERIFICATION.md](VERIFICATION.md) f
 | Laravel | 12.x, as shipped with the LibreNMS host |
 | LibreNMS | A release providing the plugin system's `PluginManagerInterface` and `MenuEntryHook` |
 
-The host CI targets LibreNMS 26.7.0 and 26.8.0 on PHP 8.4, with MySQL 8.0 and MariaDB 11.7. Port status handling accepts both enum casts and older string attributes. These are configured compatibility targets; the new host workflow has not been executed from this workspace.
+The host CI targets LibreNMS 26.7.0 and 26.8.0 on PHP 8.4, with MySQL 8.0 and MariaDB 11.7. Port status handling accepts both enum casts and older string attributes. The host workflow passes on all four combinations.
 
 ## Run the demo
 
@@ -168,7 +168,7 @@ Tests in `tests/Host/` are intended to run with the LibreNMS PHPUnit bootstrap a
 DBTEST=1 vendor/bin/phpunit --exclude-group=cached-routes /opt/libremap/tests/Host
 ```
 
-PHPUnit loads these files by path, so no additional autoload wiring is required on the host. Do not point the host test environment at a production database. These tests have not been executed locally.
+PHPUnit loads these files by path, so no additional autoload wiring is required on the host. Do not point the host test environment at a production database. They run in the host CI workflow; they have not been executed locally.
 
 The concurrency test requires Linux PHP with `pcntl` and `posix`, and MySQL/MariaDB. It uses committed transactions on separate connections under both REPEATABLE READ and READ COMMITTED, including deliberately held owner locks. The CI workflow requires this coverage to run rather than be skipped.
 
