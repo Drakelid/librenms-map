@@ -2,6 +2,9 @@
 # keep the minified bundles out of diffs.
 /dist/**                  -text -diff linguist-generated=true
 
+# Shell scripts run on Linux hosts; CRLF line endings would break bash.
+*.sh                      text eol=lf
+
 # Trim the Composer dist archive (git archive) to what a LibreNMS host needs.
 # Node tooling and browser tests are for working on the source repo only.
 /frontend                 export-ignore

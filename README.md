@@ -61,6 +61,19 @@ Keep the entire `dist/` directory, including `dist/assets/`, alongside the PHP p
 
 These are staging instructions, not evidence of an installation.
 
+### From Packagist
+
+[`scripts/install.sh`](scripts/install.sh) installs the newest stable release from [Packagist](https://packagist.org/packages/libremap/librenms-plugin) with `lnms plugin:add`, publishes assets and default config, runs this package's migrations, enables the plugin and clears caches. Run it on the LibreNMS host as the application user:
+
+```sh
+curl -fsSL -o /tmp/libremap-install.sh https://raw.githubusercontent.com/Drakelid/librenms-map/main/scripts/install.sh
+sudo -H -u librenms bash /tmp/libremap-install.sh
+```
+
+Rerun it to upgrade. Use `--dir` for a LibreNMS checkout outside `/opt/librenms`, or `--version` to install a specific release. An existing `config/libremap.php` is kept. If a source install left a `repositories.libremap` path entry, the script removes it, because Composer would otherwise keep resolving the package from that path. The script requires LibreNMS with `lnms plugin:add`.
+
+### From source
+
 **1. Build, then copy.** Run `npm run build` locally and copy this project, including the built `dist/`, to `/opt/libremap` on the LibreNMS host.
 
 **2. Register the package.** Run these commands as the LibreNMS application user from `/opt/librenms`:
@@ -177,6 +190,8 @@ composer remove libremap/librenms-plugin
 composer config --unset repositories.libremap
 php artisan optimize:clear
 ```
+
+For an install made with `scripts/install.sh`, run `./lnms plugin:remove libremap/librenms-plugin` instead of `composer remove`; it also drops the package from `composer.plugins.json`, and no repository entry needs unsetting. Then clear caches with `php artisan optimize:clear`.
 
 Published files are left in place and can be removed separately after reviewing their paths: assets at `public/vendor/libremap/` and config at `config/libremap.php`.
 
