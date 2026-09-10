@@ -18,7 +18,8 @@ class CachedRoutesIntegrationTest extends TestCase
     public function testCachedRoutesServeTopologyAndViews(): void
     {
         $this->assertTrue($this->app->routesAreCached(), 'Run artisan route:cache before this suite.');
-        $this->actingAs(User::factory()->create());
+        // The factory leaves `enabled` unset, which LibreNMS treats as a disabled account.
+        $this->actingAs(User::factory()->create(['enabled' => 1]));
         // No manual require of routes: the provider and real route cache must work.
         $this->getJson('/libremap/topology')->assertOk()->assertJsonStructure(['devices', 'links', 'config']);
         $this->getJson('/libremap/views')->assertOk()->assertExactJson(['views' => []]);
@@ -32,7 +33,7 @@ class CachedRoutesIntegrationTest extends TestCase
         $manager = Mockery::mock(PluginManagerInterface::class);
         $manager->shouldReceive('pluginEnabled')->with('libremap')->andReturn(false);
         $this->app->instance(PluginManagerInterface::class, $manager);
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->create(['enabled' => 1]));
         $this->getJson('/libremap/topology')->assertNotFound();
         $this->getJson('/libremap/views')->assertNotFound();
         $this->postJson('/libremap/views', [])->assertNotFound();

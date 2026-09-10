@@ -35,9 +35,21 @@ class SavedViewsIntegrationTest extends TestCase
         ]];
     }
 
+    /**
+     * LibreNMS's UserFactory leaves `enabled` unset on the returned model (the
+     * column default applies only in the database), and its web middleware
+     * treats that as a disabled account and redirects every request.
+     */
+    private function user(bool $admin = false): User
+    {
+        $factory = User::factory();
+
+        return ($admin ? $factory->admin() : $factory)->create(['enabled' => 1]);
+    }
+
     public function testCreateUpdateConflictAndDeleteAcrossRequests(): void
     {
-        $user = User::factory()->admin()->create();
+        $user = $this->user(admin: true);
         $device = Device::factory()->create();
         $payload = $this->payload((string) $device->device_id);
         $created = $this->actingAs($user)->postJson('/libremap/views', $payload)
@@ -55,8 +67,8 @@ class SavedViewsIntegrationTest extends TestCase
 
     public function testOtherOwnerCannotListUpdateOrDeletePrivateView(): void
     {
-        $owner = User::factory()->create();
-        $other = User::factory()->admin()->create();
+        $owner = $this->user();
+        $other = $this->user(admin: true);
         $view = $this->actingAs($owner)->postJson('/libremap/views', $this->payload())
             ->assertCreated()->json('view');
         $this->actingAs($other)->getJson('/libremap/views')->assertExactJson(['views' => []]);
@@ -66,7 +78,7 @@ class SavedViewsIntegrationTest extends TestCase
 
     public function testUnauthorizedDeviceReferencesAreRejectedAndExistingReferencesAreRedacted(): void
     {
-        $user = User::factory()->create();
+        $user = $this->user();
         $device = Device::factory()->create();
         $payload = $this->payload((string) $device->device_id);
         $this->actingAs($user)->postJson('/libremap/views', $payload)->assertUnprocessable();
@@ -82,7 +94,7 @@ class SavedViewsIntegrationTest extends TestCase
 
     public function testInputLimitsAndMetadataAreEnforced(): void
     {
-        $this->actingAs(User::factory()->admin()->create());
+        $this->actingAs($this->user(admin: true));
         $payload = $this->payload();
         $payload['state']['positions'] = ['hostname.example' => ['x' => 0, 'y' => 0]];
         $this->postJson('/libremap/views', $payload)->assertUnprocessable();
@@ -107,7 +119,7 @@ class SavedViewsIntegrationTest extends TestCase
 
     public function testUnicodeLengthBoundariesAreAcceptedAndRejected(): void
     {
-        $this->actingAs(User::factory()->admin()->create());
+        $this->actingAs($this->user(admin: true));
         $payload = $this->payload();
         $payload['name'] = str_repeat("\u{1F30D}", 100);
         $payload['state']['site'] = str_repeat("\u{00F8}", 200);
@@ -129,7 +141,7 @@ class SavedViewsIntegrationTest extends TestCase
 
     public function testListingBatchesAuthorizationAndRedactsEachViewSeparately(): void
     {
-        $user = User::factory()->create();
+        $user = $this->user();
         $visible = Device::factory()->create();
         $hidden = Device::factory()->create();
         DB::table('devices_perms')->insert(['user_id' => $user->getKey(), 'device_id' => $visible->device_id]);
@@ -166,13 +178,13 @@ class SavedViewsIntegrationTest extends TestCase
 
     public function testOwnerLimitDoesNotApplyToOtherUsers(): void
     {
-        $owner = User::factory()->create();
+        $owner = $this->user();
         $this->actingAs($owner);
         for ($i = 0; $i < 50; $i++) {
             $this->postJson('/libremap/views', $this->payload())->assertCreated();
         }
         $this->postJson('/libremap/views', $this->payload())->assertUnprocessable();
-        $this->actingAs(User::factory()->create())->postJson('/libremap/views', $this->payload())->assertCreated();
+        $this->actingAs($this->user())->postJson('/libremap/views', $this->payload())->assertCreated();
     }
 
     public function testDisabledPluginRejectsSavedViewRequests(): void
@@ -180,7 +192,7 @@ class SavedViewsIntegrationTest extends TestCase
         $manager = Mockery::mock(PluginManagerInterface::class);
         $manager->shouldReceive('pluginEnabled')->with('libremap')->andReturn(false);
         $this->app->instance(PluginManagerInterface::class, $manager);
-        $this->actingAs(User::factory()->create())->getJson('/libremap/views')->assertNotFound();
+        $this->actingAs($this->user())->getJson('/libremap/views')->assertNotFound();
         $this->postJson('/libremap/views', $this->payload())->assertNotFound();
     }
 
@@ -191,7 +203,7 @@ class SavedViewsIntegrationTest extends TestCase
 
     public function testUnreadableRowDegradesToAnEmptyViewInsteadOfFailingTheListing(): void
     {
-        $this->actingAs(User::factory()->admin()->create());
+        $this->actingAs($this->user(admin: true));
         $broken = $this->postJson('/libremap/views', $this->payload())->assertCreated()->json('view');
         $intact = $this->postJson('/libremap/views', $this->payload())->assertCreated()->json('view');
         DB::table('libremap_views')->where('id', $broken['id'])->update(['state' => json_encode('not a view object')]);
@@ -206,7 +218,7 @@ class SavedViewsIntegrationTest extends TestCase
 
     public function testDeletingAUserRemovesTheirPrivateViews(): void
     {
-        $owner = User::factory()->create();
+        $owner = $this->user();
         $this->actingAs($owner)->postJson('/libremap/views', $this->payload())->assertCreated();
 
         $owner->delete();
