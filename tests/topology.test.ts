@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classify, metric, normalizeLinks, topology } from '../frontend/topology';
+import { classify, lateralOffsets, metric, normalizeLinks, topology } from '../frontend/topology';
 import type { Config, Link, Snapshot } from '../frontend/types';
 const config: Config = { prefixes: ['hk-'], staleAfter: 900, overrides: {} };
 const link = (source: string, target: string, sourcePortId = '1', targetPortId = '2'): Link => ({ id: `${source}-${target}-${sourcePortId}`, source, target, sourcePortId, targetPortId, sourcePort: 'eth1', targetPort: 'eth2', speedBps: 1e9, inBps: 2e8, outBps: 5e8, sampledAt: 1000, status: 'up' });
@@ -14,6 +14,17 @@ test('reciprocal observations deduplicate but parallel physical links survive', 
   const links = normalizeLinks([link('a','b'), link('b','a','2','1'), link('a','b','3','4')], new Set(['a','b']));
   assert.equal(links.length, 2);
   assert.equal(normalizeLinks([link('a','private')], new Set(['a'])).length, 0);
+});
+
+test('lateral arcs remain separate and stable with reversed observations and input ordering', () => {
+  const graph=topology({config,generatedAt:1000,devices:[
+    {id:'1',hostname:'site1agg1',status:'up'}, {id:'2',hostname:'site1agg2',status:'up'},
+  ],links:[link('1','2'),link('2','1','4','3'),link('1','2','5','6')]});
+  const offsets=lateralOffsets(graph);
+  const physical=graph.links.map(l=>offsets.get(l.id)!*(l.source<=l.target?1:-1));
+  assert.equal(new Set(physical).size,3);
+  assert.ok(physical.every(offset=>offset<0));
+  assert.deepEqual(lateralOffsets({...graph,links:[...graph.links].reverse()}),offsets);
 });
 test('paired AGGs stay roots, dual-homed ER appears once, cycles terminate, orphans remain', () => {
   const snapshot: Snapshot = { config, generatedAt:1000, devices: ['rossa1agg1','rossa1agg2','rossa1er1','rossa1er2','rossa1er3','orphan'].map((hostname,i) => ({ id:String(i), hostname, status:'up' })), links:[link('0','1'),link('0','2'),link('1','2'),link('2','3'),link('3','4'),link('4','2')] };

@@ -1,0 +1,97 @@
+name: LibreNMS host integration
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        librenms: ['26.7.0', '26.8.0']
+        database: ['mysql:8.0', 'mariadb:11.7']
+    services:
+      database:
+        image: ${{ matrix.database }}
+        env:
+          MYSQL_ROOT_PASSWORD: root-test-only
+          MYSQL_DATABASE: librenms_phpunit_78hunjuybybh
+          MYSQL_USER: librenms
+          MYSQL_PASSWORD: librenms-test-only
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot -proot-test-only || mariadb-admin ping -h localhost -uroot -proot-test-only"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    defaults:
+      run:
+        working-directory: host
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:vHI+YHgkyCDad31iPEErGSNEOWO21wNzV+zyENKQv04=
+      APP_URL: http://localhost
+      DB_CONNECTION: testing
+      DBTEST: '1'
+      DB_TEST_DRIVER: mysql
+      DB_TEST_HOST: 127.0.0.1
+      DB_TEST_PORT: ${{ job.services.database.ports[3306] }}
+      DB_TEST_DATABASE: librenms_phpunit_78hunjuybybh
+      DB_TEST_USERNAME: librenms
+      DB_TEST_PASSWORD: librenms-test-only
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: plugin
+      - uses: actions/checkout@v4
+        with:
+          repository: librenms/librenms
+          ref: ${{ matrix.librenms }}
+          path: host
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: curl, gd, mbstring, pdo_mysql, snmp, sockets, xml, zip, pcntl, posix
+          tools: composer
+          coverage: none
+      - name: Install the client used by Laravel's MySQL schema loader
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-mysql-client
+      - name: Install the pinned host and migrate its disposable database
+        run: |
+          touch .env
+          composer install --prefer-dist --no-interaction --no-progress --no-scripts
+          php artisan package:discover
+          cp tests/testing_config.yaml database/seeders/config/
+          php artisan migrate --force
+          php artisan db:seed --class='Database\Seeders\ConfigSeeder' --force
+      - name: Install this checkout as a Composer path package
+        run: |
+          composer config repositories.libremap '{"type":"path","url":"../plugin","options":{"symlink":true,"versions":{"libremap/librenms-plugin":"dev-main"}}}'
+          composer require libremap/librenms-plugin:dev-main --no-interaction --no-progress --no-scripts
+          php artisan package:discover
+          php artisan optimize:clear
+      - name: Exercise plugin migration, repeated migrate, rollback, and reapply
+        run: |
+          php artisan migrate --path=../plugin/database/migrations --force
+          php artisan migrate --path=../plugin/database/migrations --force
+          php artisan migrate:rollback --path=../plugin/database/migrations --force
+          php artisan migrate --path=../plugin/database/migrations --force
+      - name: Run host regressions and simultaneous database writers
+        run: vendor/bin/phpunit --fail-on-skipped --exclude-group=cached-routes ../plugin/tests/Host
+      - name: Build actual Laravel route cache and test requests against it
+        run: |
+          php -r 'require "vendor/autoload.php"; $app = require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); App\Models\Plugin::where("plugin_name", "libremap")->firstOrFail()->forceFill(["plugin_active" => 1])->save();'
+          php artisan route:cache
+          vendor/bin/phpunit ../plugin/tests/Host/CachedRoutesIntegrationTest.php
+          php artisan route:clear

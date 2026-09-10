@@ -102,6 +102,65 @@ class SavedViewsIntegrationTest extends TestCase
         $this->postJson('/libremap/views', $payload)->assertUnprocessable();
     }
 
+    public function testUnicodeLengthBoundariesAreAcceptedAndRejected(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+        $payload = $this->payload();
+        $payload['name'] = str_repeat("\u{1F30D}", 100);
+        $payload['state']['site'] = str_repeat("\u{00F8}", 200);
+        $payload['state']['search'] = str_repeat("\u{1F30D}", 200);
+        $this->postJson('/libremap/views', $payload)->assertCreated()
+            ->assertJsonPath('view.name', $payload['name'])
+            ->assertJsonPath('view.state.site', $payload['state']['site'])
+            ->assertJsonPath('view.state.search', $payload['state']['search']);
+        foreach (['name', 'site', 'search'] as $field) {
+            $invalid = $payload;
+            if ($field === 'name') {
+                $invalid['name'] .= "\u{1F30D}";
+            } else {
+                $invalid['state'][$field] .= "\u{1F30D}";
+            }
+            $this->postJson('/libremap/views', $invalid)->assertUnprocessable();
+        }
+    }
+
+    public function testListingBatchesAuthorizationAndRedactsEachViewSeparately(): void
+    {
+        $user = User::factory()->create();
+        $visible = Device::factory()->create();
+        $hidden = Device::factory()->create();
+        DB::table('devices_perms')->insert(['user_id' => $user->getKey(), 'device_id' => $visible->device_id]);
+        $this->actingAs($user);
+        for ($i = 0; $i < 4; $i++) {
+            $view = $this->postJson('/libremap/views', $this->payload((string) $visible->device_id))
+                ->assertCreated()->json('view');
+            $state = $this->payload((string) $visible->device_id)['state'];
+            $state['positions'] = [(string) $visible->device_id => ['x' => 10, 'y' => 20], (string) $hidden->device_id => ['x' => 30, 'y' => 40]];
+            $state['pinned'][] = (string) $hidden->device_id;
+            if ($i % 2 === 0) {
+                $state['rootId'] = (string) $hidden->device_id;
+            }
+            DB::table('libremap_views')->where('id', $view['id'])->update(['state' => json_encode($state)]);
+        }
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        try {
+            $response = $this->getJson('/libremap/views')->assertOk();
+            $queries = DB::getQueryLog();
+        } finally {
+            DB::disableQueryLog();
+        }
+        $authorizationQueries = array_filter($queries, fn ($query) => preg_match('/from [`"]?devices[`"]?\s/i', $query['query']));
+        $this->assertCount(1, $authorizationQueries, 'Device access must be resolved once per list.');
+        $views = $response->json('views');
+        $this->assertCount(4, $views);
+        $this->assertCount(2, array_filter($views, fn ($view) => $view['state']['rootId'] === null));
+        foreach ($views as $view) {
+            $this->assertSame([(string) $visible->device_id], $view['state']['pinned']);
+            $this->assertSame([(string) $visible->device_id], array_map('strval', array_keys($view['state']['positions'])));
+        }
+    }
+
     public function testOwnerLimitDoesNotApplyToOtherUsers(): void
     {
         $owner = User::factory()->create();
@@ -132,7 +191,7 @@ class SavedViewsIntegrationTest extends TestCase
         $this->actingAs(User::factory()->admin()->create());
         $broken = $this->postJson('/libremap/views', $this->payload())->assertCreated()->json('view');
         $intact = $this->postJson('/libremap/views', $this->payload())->assertCreated()->json('view');
-        DB::table('libremap_views')->where('id', $broken['id'])->update(['state' => 'not json']);
+        DB::table('libremap_views')->where('id', $broken['id'])->update(['state' => json_encode('not a view object')]);
 
         $views = collect($this->getJson('/libremap/views')->assertOk()->json('views'))->keyBy('id');
 

@@ -1,8 +1,9 @@
 import type { SavedView, ViewState } from './types';
 import { ViewError, type ViewStore } from './view-store';
+import { textLength, VIEW_NAME_MAX } from './view-limits';
 
 export function mountViews(panel:HTMLElement,options:{store?:ViewStore;demo:boolean;capture:()=>ViewState;restore:(state:ViewState)=>void}) {
-  panel.innerHTML=`<label class="lm-select">Saved view <select aria-label="Saved view"><option value="">Current workspace</option></select></label><button data-view-action="save" disabled>Save view</button><button data-view-action="delete" disabled>Delete view</button><button data-view-action="reload">Reload views</button><span class="lm-view-status" aria-live="polite"></span><dialog class="lm-view-dialog" aria-labelledby="lm-view-title"><form><h2 id="lm-view-title">Save current view</h2><p>Remember filters, positions, pins and zoom.</p><label>View name<input name="name" aria-label="View name" required maxlength="80" autocomplete="off"></label><div class="lm-dialog-actions"><button type="button" data-view-action="cancel">Cancel</button><button type="submit" value="new">Save as new</button><button type="submit" value="update">Save changes</button></div></form></dialog><dialog class="lm-delete-dialog" aria-labelledby="lm-delete-title"><h2 id="lm-delete-title">Delete saved view?</h2><p></p><div class="lm-dialog-actions"><button data-view-action="cancel-delete">Cancel</button><button data-view-action="confirm-delete">Delete saved view</button></div></dialog>`;
+  panel.innerHTML=`<label class="lm-select">Saved view <select aria-label="Saved view"><option value="">Current workspace</option></select></label><button data-view-action="save" disabled>Save view</button><button data-view-action="delete" disabled>Delete view</button><button data-view-action="reload">Reload views</button><span class="lm-view-status" aria-live="polite"></span><dialog class="lm-view-dialog" aria-labelledby="lm-view-title"><form><h2 id="lm-view-title">Save current view</h2><p>Remember filters, positions, pins and zoom.</p><label>View name<input name="name" aria-label="View name" required autocomplete="off"></label><div class="lm-dialog-actions"><button type="button" data-view-action="cancel">Cancel</button><button type="submit" value="new">Save as new</button><button type="submit" value="update">Save changes</button></div></form></dialog><dialog class="lm-delete-dialog" aria-labelledby="lm-delete-title"><h2 id="lm-delete-title">Delete saved view?</h2><p></p><div class="lm-dialog-actions"><button data-view-action="cancel-delete">Cancel</button><button data-view-action="confirm-delete">Delete saved view</button></div></dialog>`;
   const select=panel.querySelector<HTMLSelectElement>('select')!;
   const status=panel.querySelector<HTMLElement>('.lm-view-status')!;
   const dialog=panel.querySelector<HTMLDialogElement>('.lm-view-dialog')!;
@@ -36,6 +37,7 @@ export function mountViews(panel:HTMLElement,options:{store?:ViewStore;demo:bool
     if(action==='reload')void reload();
     if(action==='save'){
       name.value=active?.name ?? '';
+      name.setCustomValidity('');
       panel.querySelector<HTMLButtonElement>('[value="update"]')!.hidden=!active;
       dialog.showModal();name.focus();
     }
@@ -46,14 +48,15 @@ export function mountViews(panel:HTMLElement,options:{store?:ViewStore;demo:bool
   });
   dialog.querySelector('form')!.onsubmit=async event=>{
     event.preventDefault();if(!options.store || busy || layoutPending || !available)return;
-    const trimmed=name.value.trim();if(!trimmed){name.setCustomValidity('Enter a view name.');name.reportValidity();return;}name.setCustomValidity('');
+    const trimmed=name.value.trim();if(!trimmed || textLength(trimmed)>VIEW_NAME_MAX){name.setCustomValidity(!trimmed?'Enter a view name.':`Use at most ${VIEW_NAME_MAX} characters.`);name.reportValidity();return;}name.setCustomValidity('');
     const existing=(event.submitter as HTMLButtonElement)?.value==='update'?active:undefined;
     busy=true;controls();const requestEpoch=epoch;
     try{const view=await options.store.save(trimmed,options.capture(),existing);if(requestEpoch!==epoch)return;active=view;views=[...views.filter(v=>v.id!==view.id),view];render();dialog.close();message(`Saved “${view.name}”.`);}
     catch(error){if(requestEpoch===epoch){dialog.close();failure(error);}}
     finally{busy=false;controls();}
   };
-  name.oninput=()=>name.setCustomValidity('');
+  // HTML maxlength counts UTF-16 units, unlike Laravel's character limit.
+  name.oninput=()=>name.setCustomValidity(textLength(name.value.trim())>VIEW_NAME_MAX?`Use at most ${VIEW_NAME_MAX} characters.`:'');
   async function remove(){
     if(!options.store || !active || busy)return;
     busy=true;controls();const requestEpoch=epoch;const removing=active;

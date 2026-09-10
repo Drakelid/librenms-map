@@ -5,6 +5,42 @@ import type { SavedView } from '../../frontend/types';
 
 const graph = (page:Page) => page.evaluate(()=>(window as unknown as {libremapDebug:()=>{nodes:{id:string;visible:boolean;position:{x:number;y:number}}[]}}).libremapDebug());
 
+test('server-sized names and filters round-trip without truncation, including Unicode',async({page})=>{
+  const site='s'.repeat(200);
+  const search='😀'.repeat(200);
+  const name='😀'.repeat(100);
+  const snapshot=demoSnapshot();
+  snapshot.config.overrides={'0':{role:'AGG',site}};
+  const view:SavedView={id:'long-view',name,revision:1,updatedAt:new Date().toISOString(),state:{...emptyView(),site,search}};
+  let saved:unknown;
+  await page.route('**/limits-page',route=>route.fulfill({contentType:'text/html',body:'<div id="libremap" data-endpoint="/limits-topology" data-views-endpoint="/limits-views"></div><script type="module" src="/frontend/main.ts"></script>'}));
+  await page.route('**/limits-topology',route=>route.fulfill({json:snapshot}));
+  await page.route(/\/limits-views(?:\/[^/]+)?$/,async route=>{
+    if(route.request().method()==='GET')return route.fulfill({json:{views:[view]}});
+    saved=route.request().postDataJSON();
+    return route.fulfill({json:{view:{...view,revision:2}}});
+  });
+  await page.goto('/limits-page');
+  await expect(page.locator('.lm-notice')).toContainText('Topology loaded');
+  await page.getByRole('combobox',{name:'Saved view',exact:true}).selectOption(view.id);
+  await expect(page.getByRole('combobox',{name:'Site',exact:true})).toHaveValue(site);
+  await expect(page.getByRole('searchbox')).toHaveValue(search);
+  await page.getByRole('button',{name:'Save view',exact:true}).click();
+  const input=page.getByRole('textbox',{name:'View name'});
+  await expect(input).toHaveValue(name);
+  await input.fill(name+'x');
+  expect(await input.evaluate((el:HTMLInputElement)=>el.checkValidity())).toBe(false);
+  await page.getByRole('button',{name:'Cancel',exact:true}).click();
+  await page.getByRole('button',{name:'Save view',exact:true}).click();
+  await expect(input).toHaveValue(name);
+  expect(await input.evaluate((el:HTMLInputElement)=>el.checkValidity())).toBe(true);
+  await page.getByRole('button',{name:'Save changes',exact:true}).click();
+  await expect(page.locator('.lm-view-status')).toContainText('Saved');
+  expect(saved).toMatchObject({name,state:{site,search},revision:1});
+  await page.getByRole('searchbox').fill(search+'extra');
+  await expect(page.getByRole('searchbox')).toHaveValue(search);
+});
+
 test('root focus, pins and named demo views survive layout and reload',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');await expect(page.getByRole('status')).toContainText('Demo topology');

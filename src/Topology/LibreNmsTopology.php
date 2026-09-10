@@ -101,7 +101,7 @@ class LibreNmsTopology
     private function linkStatus(Port $source, Port $target): string
     {
         foreach ([$source, $target] as $port) {
-            if ($port->ifOperStatus === 'down' || $port->ifAdminStatus === 'down') {
+            if ($this->portStatus($port->ifOperStatus) === 'down' || $this->portStatus($port->ifAdminStatus) === 'down') {
                 return 'down';
             }
         }
@@ -109,6 +109,15 @@ class LibreNmsTopology
             return 'unknown';
         }
 
-        return $source->ifOperStatus === 'up' && $target->ifOperStatus === 'up' ? 'up' : 'unknown';
+        return $this->portStatus($source->ifOperStatus) === 'up' && $this->portStatus($target->ifOperStatus) === 'up' ? 'up' : 'unknown';
+    }
+
+    private function portStatus(mixed $status): ?string
+    {
+        // Current LibreNMS casts these attributes to backed enums; older hosts
+        // return strings. Keep the topology contract independent of that cast.
+        $value = $status instanceof \BackedEnum ? $status->value : $status;
+
+        return is_string($value) ? $value : null;
     }
 }

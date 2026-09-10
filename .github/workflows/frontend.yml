@@ -1,0 +1,28 @@
+name: Frontend checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Check shipped assets match the source
+        run: git diff --exit-code -- dist
+      - run: node tests/php-syntax.cjs
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser

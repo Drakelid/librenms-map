@@ -24,7 +24,7 @@ See [PLAN.md](PLAN.md) for later phases and [VERIFICATION.md](VERIFICATION.md) f
 | Laravel | 12.x, as shipped with the LibreNMS host |
 | LibreNMS | A release providing the plugin system's `PluginManagerInterface` and `MenuEntryHook` |
 
-The package targets the current LibreNMS source inspected during implementation. Compatibility with an installed instance remains a staging check; no host installation has been executed from this workspace.
+The host CI targets LibreNMS 26.7.0 and 26.8.0 on PHP 8.4, with MySQL 8.0 and MariaDB 11.7. Port status handling accepts both enum casts and older string attributes. These are configured compatibility targets; the new host workflow has not been executed from this workspace.
 
 ## Run the demo
 
@@ -55,7 +55,7 @@ npm run build
 
 Keep the entire `dist/` directory, including `dist/assets/`, alongside the PHP package. The ELK layout worker is a separate local asset. No CDN, API token, or additional polling service is needed.
 
-`dist/` is not committed to version control, so build it before copying the package to a host.
+`dist/` is committed so Composer installations include the assets. Rebuild it whenever frontend source changes; CI checks that the shipped bundle matches the source.
 
 ## Install on a LibreNMS staging host
 
@@ -89,7 +89,7 @@ php artisan optimize:clear
 
 ### Database migration
 
-The migration adds `libremap_views`; it does not change LibreNMS topology tables. The explicit `--path` runs only this package's migrations on an existing LibreNMS database. These options are supported by [Laravel's migration command](https://github.com/laravel/framework/blob/12.x/src/Illuminate/Database/Console/Migrations/MigrateCommand.php). Apply it through your usual staging/deployment process. If the table is absent, saved views report an error while the topology map remains available.
+The migrations add `libremap_views` and `libremap_view_owners`; they do not change LibreNMS topology tables. The owner table supplies one stable lock row per owner so simultaneous creates cannot bypass the 50-view cap, including the first create. Rows remain after deleting the last view. The explicit `--path` runs only this package's migrations on an existing LibreNMS database. These options are supported by [Laravel's migration command](https://github.com/laravel/framework/blob/12.x/src/Illuminate/Database/Console/Migrations/MigrateCommand.php). Apply it through your usual staging/deployment process. If a required table is absent, the affected saved-view operation reports an error while the topology map remains available.
 
 No migration has been run on your LibreNMS server from this workspace.
 
@@ -97,11 +97,15 @@ No migration has been run on your LibreNMS server from this workspace.
 
 Rebuild the assets, republish them with `php artisan vendor:publish --tag=libremap-assets --force`, apply any new plugin migration, and clear application caches.
 
+This update requires the new owner-lock migration before creating saved views. From the LibreNMS checkout, run `php artisan migrate --path=/opt/libremap/database/migrations --realpath`. Existing saved views are preserved; owner rows are created on demand.
+
 ## Saved views and pins
 
 Select an **AGG root** to focus its site group. Site/search/backbone filters intersect that scope; search context does not bypass those filters. Click a device and choose **Pin position** to preserve its current coordinates. **Re-layout** moves unpinned devices only.
 
 Use **Save view** to create a named workspace or update the selected view. **Save as new** makes a separate copy. Views are private to their owner, including when another user is an administrator. A user can store up to 50 views, each with at most 2,000 positions. Saved views contain device IDs and display preferences, not copied device records or traffic history. Reads redact device references that the owner can no longer access; writes reject unavailable device IDs.
+
+Names support 100 Unicode characters; site and search filters support 200. Listing views resolves device access once for the union of referenced IDs, then redacts each view independently.
 
 When another tab has changed a view, the save/delete operation returns a conflict. **Reload views** loads the current revision and applies its saved state. Browser workspace autosave remains separate from explicit named saves, and is never overwritten while no topology is loaded. Existing position-only browser data is read on first load of this version.
 
@@ -147,10 +151,22 @@ Browser tests include the built production bundle, so build first. An existing C
 Tests in `tests/Host/` are intended to run with the LibreNMS PHPUnit bootstrap and a disposable test database, after installing the package and running its migration in that test environment. From the LibreNMS checkout:
 
 ```sh
-vendor/bin/phpunit /opt/libremap/tests/Host
+DBTEST=1 vendor/bin/phpunit --exclude-group=cached-routes /opt/libremap/tests/Host
 ```
 
 PHPUnit loads these files by path, so no additional autoload wiring is required on the host. Do not point the host test environment at a production database. These tests have not been executed locally.
+
+The concurrency test requires Linux PHP with `pcntl` and `posix`, and MySQL/MariaDB. It uses committed transactions on separate connections under both REPEATABLE READ and READ COMMITTED, including deliberately held owner locks. The CI workflow requires this coverage to run rather than be skipped.
+
+Run cached-route coverage separately in the same disposable environment, with libremap enabled and `DB_CONNECTION=testing` plus the `DB_TEST_*` connection settings exported:
+
+```sh
+php artisan route:cache
+DBTEST=1 vendor/bin/phpunit /opt/libremap/tests/Host/CachedRoutesIntegrationTest.php
+php artisan route:clear
+```
+
+[Host CI](.github/workflows/host.yml) installs the package on the explicit host/database matrix, exercises migration/rollback/reapply, and runs the real-model, permission, persistence, concurrency and cached-route tests. [Frontend CI](.github/workflows/frontend.yml) runs domain tests, type checking, the build, PHP syntax parsing and Chromium regressions.
 
 ## Uninstall
 
@@ -164,4 +180,4 @@ php artisan optimize:clear
 
 Published files are left in place and can be removed separately after reviewing their paths: assets at `public/vendor/libremap/` and config at `config/libremap.php`.
 
-The `libremap_views` table is retained by package removal, preserving saved workspaces. Removing that table or rolling back its migration deletes those views and should be a deliberate database maintenance action.
+Both `libremap_views` and `libremap_view_owners` are retained by package removal. Removing `libremap_views` or rolling back its migration deletes saved workspaces and should be a deliberate database maintenance action.

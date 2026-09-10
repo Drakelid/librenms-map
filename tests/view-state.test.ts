@@ -25,9 +25,19 @@ test('saved state redacts removed devices and rejects corrupt coordinates and ro
   assert.deepEqual(result.positions,{'0':{x:42,y:90}});
   assert.deepEqual(result.pinned,['0']);
   assert.equal(result.rootId,null); assert.equal(result.site,'');assert.equal(result.zoom,2.5);
-  assert.deepEqual(result.pan,{x:0,y:0});assert.equal(result.search.length,128);
+  assert.deepEqual(result.pan,{x:0,y:0});assert.equal(result.search.length,200);
   assert.equal(normalizeView({rootId:'4'},graph).rootId,null); // ER cannot become a root.
   assert.deepEqual(normalizeView(null),emptyView());
+});
+
+test('server-accepted filter lengths survive normalization, including Unicode',()=>{
+  for(const text of ['x'.repeat(200), '😀'.repeat(200)]) {
+    const result=normalizeView({site:text,search:text});
+    assert.equal(result.site,text);
+    assert.equal(result.search,text);
+    assert.equal(normalizeView({search:text+'extra'}).search,text);
+  }
+  assert.equal(normalizeView({site:'x'.repeat(201)}).site,'');
 });
 test('automatic re-layout respects a pinned device and avoids its occupied position',()=>{
   const automatic=Object.fromEntries(graph.nodes.map((n,i)=>[n.id,{x:i*260,y:0}]));

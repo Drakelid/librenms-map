@@ -1,4 +1,5 @@
 import type { Position, Topology, ViewState } from './types';
+import { FILTER_MAX, limitFilter, textLength } from './view-limits';
 
 export const emptyView = (): ViewState => ({ rootId:null, site:'', search:'', backbone:false, positions:{}, pinned:[], zoom:1, pan:{x:0,y:0} });
 const object = (value:unknown): value is Record<string, unknown> => !!value && typeof value==='object' && !Array.isArray(value);
@@ -12,8 +13,8 @@ export function normalizeView(value:unknown, graph?:Topology):ViewState {
   const allowed=graph ? new Set(graph.nodes.map(n=>n.id)) : undefined;
   const validId=(id:string) => /^\d+$/.test(id) && (!allowed || allowed.has(id));
   if(typeof value.rootId==='string' && validId(value.rootId) && (!graph || graph.nodes.some(n=>n.id===value.rootId && n.role==='AGG'))) state.rootId=value.rootId;
-  if(typeof value.site==='string' && value.site.length<=128 && (!graph || graph.nodes.some(n=>n.site===value.site))) state.site=value.site;
-  if(typeof value.search==='string') state.search=value.search.slice(0,128);
+  if(typeof value.site==='string' && textLength(value.site)<=FILTER_MAX && (!graph || graph.nodes.some(n=>n.site===value.site))) state.site=value.site;
+  if(typeof value.search==='string') state.search=limitFilter(value.search);
   state.backbone=value.backbone===true;
   if(object(value.positions)) for(const [id,p] of Object.entries(value.positions).slice(0,2000)) if(validId(id) && point(p)) state.positions[id]={x:p.x,y:p.y};
   if(Array.isArray(value.pinned)) state.pinned=[...new Set(value.pinned.filter((id):id is string=>typeof id==='string' && validId(id) && Object.hasOwn(state.positions,id)))].slice(0,2000);

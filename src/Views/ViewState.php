@@ -64,8 +64,24 @@ class ViewState
 
     public function forUser(array $state, User $user): array
     {
-        $state = $this->defaults($state);
-        $allowed = array_fill_keys($this->accessible($this->ids($state), $user), true);
+        return $this->forUserMany([$state], $user)[0];
+    }
+
+    /** Resolve the union once so listing many views costs one authorization query. */
+    public function forUserMany(array $states, User $user): array
+    {
+        $states = array_map(fn ($state) => $this->defaults($state), $states);
+        $ids = [];
+        foreach ($states as $state) {
+            $ids = array_merge($ids, $this->ids($state));
+        }
+        $allowed = array_fill_keys($this->accessible(array_values(array_unique($ids)), $user), true);
+
+        return array_map(fn ($state) => $this->redact($state, $allowed), $states);
+    }
+
+    private function redact(array $state, array $allowed): array
+    {
         $state['rootId'] = is_string($state['rootId']) && isset($allowed[$state['rootId']]) ? $state['rootId'] : null;
         $state['positions'] = (object) array_intersect_key($state['positions'], $allowed);
         $state['pinned'] = array_values(array_filter($state['pinned'], fn ($id) => is_string($id) && isset($allowed[$id])));
@@ -111,7 +127,11 @@ class ViewState
 
     private function accessible(array $ids, User $user): array
     {
-        return $ids === [] ? [] : Device::hasAccess($user)->whereIn('device_id', $ids)
+        // A list can reference more IDs than MySQL's prepared-statement binding
+        // limit. Only bounded numeric device IDs may enter the integer IN list.
+        $ids = array_values(array_filter($ids, fn ($id) => preg_match('/^[1-9][0-9]{0,9}$/', (string) $id)));
+
+        return $ids === [] ? [] : Device::hasAccess($user)->whereIntegerInRaw('device_id', $ids)
             ->pluck('device_id')->map(fn ($id) => (string) $id)->all();
     }
 }

@@ -51,6 +51,28 @@ export function topology(snapshot: Snapshot): Topology {
   return { nodes, links };
 }
 
+/** Give same-tier physical links separate arcs, independent of observation order. */
+export function lateralOffsets(graph: Topology): Map<string, number> {
+  const tiers = new Map(graph.nodes.map(node => [node.id, node.tier]));
+  const groups = new Map<string, Link[]>();
+  for (const link of graph.links) {
+    if (tiers.get(link.source) !== tiers.get(link.target)) continue;
+    const key = JSON.stringify([link.source, link.target].sort());
+    const group = groups.get(key) ?? [];
+    group.push(link);
+    groups.set(key, group);
+  }
+  const offsets = new Map<string, number>();
+  for (const group of groups.values()) {
+    group.sort((a, b) => a.id.localeCompare(b.id)).forEach((link, index) => {
+      // Reverse the sign for reverse observations so each offset describes the
+      // same physical side of the pair, regardless of the measuring endpoint.
+      offsets.set(link.id, (-80 - index * 60) * (link.source <= link.target ? 1 : -1));
+    });
+  }
+  return offsets;
+}
+
 export function metric(link: Link, now: number, staleAfter: number) {
   if (link.status === 'down') return { label: 'DOWN', color: '#e05b65', state: 'down', utilization: null };
   if (link.status === 'disabled') return { label: 'DISABLED', color: '#8a96a9', state: 'unknown', utilization: null };
