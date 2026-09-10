@@ -18360,8 +18360,11 @@ function lg(e) {
 }
 //#endregion
 //#region frontend/layout.ts
-var ug = new cg.default({ workerFactory: () => new lg() });
-async function dg(e) {
+var ug = () => new cg.default({ workerFactory: () => new lg() }), dg = ug();
+function fg() {
+	dg.terminateWorker(), dg = ug();
+}
+async function pg(e) {
 	let t = new Map(e.nodes.map((e) => [e.id, e])), n = e.links.filter((e) => t.get(e.source).tier !== t.get(e.target).tier).map((e, n) => {
 		let r = t.get(e.source).tier < t.get(e.target).tier;
 		return {
@@ -18369,7 +18372,7 @@ async function dg(e) {
 			sources: [r ? e.source : e.target],
 			targets: [r ? e.target : e.source]
 		};
-	}), r = await ug.layout({
+	}), r = await dg.layout({
 		id: "root",
 		layoutOptions: {
 			"elk.algorithm": "layered",
@@ -18397,7 +18400,7 @@ async function dg(e) {
 }
 //#endregion
 //#region frontend/demo.ts
-function fg() {
+function mg() {
 	let e = Math.floor(Date.now() / 1e3);
 	return {
 		generatedAt: e,
@@ -18537,19 +18540,23 @@ function fg() {
 }
 //#endregion
 //#region frontend/topology.ts
-function pg(e, t) {
-	let n = e.hostname.toLowerCase().split(".")[0];
-	for (let e of [...t.prefixes].sort((e, t) => t.length - e.length)) if (n.startsWith(e.toLowerCase())) {
+var hg = /^(?<site>.+?\d)(?<role>agg|er)(?<number>\d+)$/;
+function gg(e, t) {
+	let n = e.toLowerCase().split(".")[0];
+	for (let e of t) if (n.startsWith(e)) {
 		n = n.slice(e.length);
 		break;
 	}
-	let r = /^(?<site>.+?\d)(?<role>agg|er)(?<number>\d+)$/.exec(n), i = t.overrides[e.id];
+	return hg.exec(n)?.groups;
+}
+function _g(e, t) {
+	let n = t.prefixes.filter((e) => typeof e == "string" && e !== "").map((e) => e.toLowerCase()).sort((e, t) => t.length - e.length), r = gg(e.hostname, n) ?? (typeof e.sysName == "string" ? gg(e.sysName, n) : void 0), i = t.overrides[e.id], a = typeof i?.role == "string" ? i.role : r?.role ?? "other", o = typeof i?.site == "string" ? i.site : r?.site ?? "Unclassified";
 	return {
-		role: (i?.role ?? r?.groups?.role ?? "other").toUpperCase(),
-		site: i?.site ?? r?.groups?.site ?? "Unclassified"
+		role: a.toUpperCase(),
+		site: o
 	};
 }
-function mg(e, t) {
+function vg(e, t) {
 	let n = /* @__PURE__ */ new Map();
 	for (let r of e) {
 		if (!t.has(r.source) || !t.has(r.target)) continue;
@@ -18561,13 +18568,13 @@ function mg(e, t) {
 	}
 	return [...n.values()].sort((e, t) => e.id.localeCompare(t.id));
 }
-function hg(e) {
+function yg(e) {
 	let t = e.devices.map((t) => ({
 		...t,
-		...pg(t, e.config),
+		..._g(t, e.config),
 		tier: -1,
 		reachable: !1
-	})), n = new Map(t.map((e) => [e.id, e])), r = mg(e.links, new Set(n.keys())), i = new Map(t.map((e) => [e.id, /* @__PURE__ */ new Set()]));
+	})), n = new Map(t.map((e) => [e.id, e])), r = vg(e.links, new Set(n.keys())), i = new Map(t.map((e) => [e.id, /* @__PURE__ */ new Set()]));
 	for (let e of r) i.get(e.source).add(e.target), i.get(e.target).add(e.source);
 	let a = t.filter((e) => e.role === "AGG");
 	for (let e of a) e.tier = 0, e.reachable = !0;
@@ -18582,7 +18589,7 @@ function hg(e) {
 		links: r
 	};
 }
-function gg(e) {
+function bg(e) {
 	let t = new Map(e.nodes.map((e) => [e.id, e.tier])), n = /* @__PURE__ */ new Map();
 	for (let r of e.links) {
 		if (t.get(r.source) !== t.get(r.target)) continue;
@@ -18595,7 +18602,7 @@ function gg(e) {
 	});
 	return r;
 }
-function _g(e, t, n) {
+function xg(e, t, n) {
 	if (e.status === "down") return {
 		label: "DOWN",
 		color: "#e05b65",
@@ -18632,7 +18639,7 @@ function _g(e, t, n) {
 		utilization: r
 	};
 }
-var vg = (e) => Array.from(e).length, yg = (e) => Array.from(e).slice(0, 200).join(""), bg = () => ({
+var Sg = 1e5, Cg = (e) => Array.from(e).length, wg = (e) => Array.from(e).slice(0, 200).join(""), Tg = () => ({
 	rootId: null,
 	site: "",
 	search: "",
@@ -18644,21 +18651,26 @@ var vg = (e) => Array.from(e).length, yg = (e) => Array.from(e).slice(0, 200).jo
 		x: 0,
 		y: 0
 	}
-}), xg = (e) => !!e && typeof e == "object" && !Array.isArray(e), Sg = (e) => typeof e == "number" && Number.isFinite(e) && Math.abs(e) <= 1e6, Cg = (e) => xg(e) && Sg(e.x) && Sg(e.y);
-function wg(e, t) {
-	let n = bg();
-	if (!xg(e)) return n;
+}), Eg = (e) => !!e && typeof e == "object" && !Array.isArray(e), Dg = (e) => typeof e == "number" && Number.isFinite(e) && Math.abs(e) <= 1e6, Og = (e) => Eg(e) && Dg(e.x) && Dg(e.y);
+function kg(e, t) {
+	let n = Tg();
+	if (!Eg(e)) return n;
 	let r = t ? new Set(t.nodes.map((e) => e.id)) : void 0, i = (e) => /^\d+$/.test(e) && (!r || r.has(e));
-	if (typeof e.rootId == "string" && i(e.rootId) && (!t || t.nodes.some((t) => t.id === e.rootId && t.role === "AGG")) && (n.rootId = e.rootId), typeof e.site == "string" && vg(e.site) <= 200 && (!t || t.nodes.some((t) => t.site === e.site)) && (n.site = e.site), typeof e.search == "string" && (n.search = yg(e.search)), n.backbone = e.backbone === !0, xg(e.positions)) for (let [t, r] of Object.entries(e.positions).slice(0, 2e3)) i(t) && Cg(r) && (n.positions[t] = {
-		x: r.x,
-		y: r.y
-	});
-	return Array.isArray(e.pinned) && (n.pinned = [...new Set(e.pinned.filter((e) => typeof e == "string" && i(e) && Object.hasOwn(n.positions, e)))].slice(0, 2e3)), typeof e.zoom == "number" && Number.isFinite(e.zoom) && (n.zoom = Math.min(2.5, Math.max(.15, e.zoom))), Cg(e.pan) && (n.pan = {
+	typeof e.rootId == "string" && i(e.rootId) && (!t || t.nodes.some((t) => t.id === e.rootId && t.role === "AGG")) && (n.rootId = e.rootId), typeof e.site == "string" && Cg(e.site) <= 200 && (!t || t.nodes.some((t) => t.site === e.site)) && (n.site = e.site), typeof e.search == "string" && (n.search = wg(e.search)), n.backbone = e.backbone === !0;
+	let a = t ? t.nodes.length : Sg, o = 0;
+	if (Eg(e.positions)) for (let [t, r] of Object.entries(e.positions)) {
+		if (o >= a) break;
+		i(t) && Og(r) && (n.positions[t] = {
+			x: r.x,
+			y: r.y
+		}, o++);
+	}
+	return Array.isArray(e.pinned) && (n.pinned = [...new Set(e.pinned.filter((e) => typeof e == "string" && i(e) && Object.hasOwn(n.positions, e)))].slice(0, a)), typeof e.zoom == "number" && Number.isFinite(e.zoom) && (n.zoom = Math.min(2.5, Math.max(.15, e.zoom))), Og(e.pan) && (n.pan = {
 		x: e.pan.x,
 		y: e.pan.y
 	}), n;
 }
-function Tg(e, t) {
+function Ag(e, t) {
 	let n = e.nodes.find((e) => e.id === t && e.role === "AGG");
 	if (!n) return new Set(e.nodes.map((e) => e.id));
 	let r = new Map(e.nodes.map((e) => [e.id, e])), i = new Map(e.nodes.map((e) => [e.id, []]));
@@ -18672,22 +18684,22 @@ function Tg(e, t) {
 	}
 	return o;
 }
-function Eg(e, t) {
-	let n = Tg(e, t.rootId), r = new Set(e.nodes.filter((e) => n.has(e.id) && (!t.site || e.site === t.site) && (!t.backbone || e.role === "AGG")).map((e) => e.id)), i = new Set(e.nodes.filter((e) => r.has(e.id) && e.hostname.toLowerCase().includes(t.search.toLowerCase())).map((e) => e.id)), a = new Set(i);
+function jg(e, t) {
+	let n = Ag(e, t.rootId), r = new Set(e.nodes.filter((e) => n.has(e.id) && (!t.site || e.site === t.site) && (!t.backbone || e.role === "AGG")).map((e) => e.id)), i = new Set(e.nodes.filter((e) => r.has(e.id) && e.hostname.toLowerCase().includes(t.search.toLowerCase())).map((e) => e.id)), a = new Set(i);
 	if (t.search) for (let t of e.links) i.has(t.source) && r.has(t.target) && a.add(t.target), i.has(t.target) && r.has(t.source) && a.add(t.source);
 	return a;
 }
-var Dg = 246, Og = 105;
-function kg(e, t, n, r) {
+var Mg = 246, Ng = 105;
+function Pg(e, t, n, r) {
 	let i = {}, a = /* @__PURE__ */ new Map(), o = (e, t) => `${e}:${t}`, s = (e) => {
-		let t = o(Math.floor(e.x / Dg), Math.floor(e.y / Og)), n = a.get(t);
+		let t = o(Math.floor(e.x / Mg), Math.floor(e.y / Ng)), n = a.get(t);
 		n ? n.push(e) : a.set(t, [e]);
 	}, c = (e) => {
-		let t = Math.floor(e.x / Dg), n = Math.floor(e.y / Og);
-		for (let r = -1; r <= 1; r++) for (let i = -1; i <= 1; i++) for (let s of a.get(o(t + r, n + i)) ?? []) if (Math.abs(s.x - e.x) < Dg && Math.abs(s.y - e.y) < Og) return !0;
+		let t = Math.floor(e.x / Mg), n = Math.floor(e.y / Ng);
+		for (let r = -1; r <= 1; r++) for (let i = -1; i <= 1; i++) for (let s of a.get(o(t + r, n + i)) ?? []) if (Math.abs(s.x - e.x) < Mg && Math.abs(s.y - e.y) < Ng) return !0;
 		return !1;
 	};
-	for (let t of e.nodes) Cg(n[t.id]) && (i[t.id] = { ...n[t.id] }, s(i[t.id]));
+	for (let t of e.nodes) Og(n[t.id]) && (i[t.id] = { ...n[t.id] }, s(i[t.id]));
 	for (let n of e.nodes) if (!i[n.id]) {
 		let r = { ...t[n.id] ?? {
 			x: 0,
@@ -18696,43 +18708,40 @@ function kg(e, t, n, r) {
 		for (let t = 1; c(r) && t <= e.nodes.length * 2 + 1; t++) r.x = a + Math.ceil(t / 2) * 260 * (t % 2 ? 1 : -1);
 		i[n.id] = r, s(r);
 	}
-	for (let e of r) i[e] && Cg(n[e]) && (i[e] = { ...n[e] });
+	for (let e of r) i[e] && Og(n[e]) && (i[e] = { ...n[e] });
 	return i;
 }
 //#endregion
 //#region frontend/view-store.ts
-var Ag = class extends Error {
+var Fg = class extends Error {
 	status;
 	constructor(e, t = 0) {
 		super(e), this.status = t;
 	}
+}, Ig = {
+	PUT: "This view changed in another tab. Reload views before saving again.",
+	DELETE: "This view changed in another tab. Reload views before deleting it."
 };
-function jg(e, t) {
+function Lg(e, t) {
 	let n = new URL(e, location.href);
 	if (n.origin !== location.origin) throw Error("Saved views must use the same origin.");
-	async function r(e, r, i) {
-		let a = await fetch(r ? `${n.href.replace(/\/$/, "")}/${encodeURIComponent(r)}` : n.href, {
+	async function r(e, r, i, a = {}) {
+		let o = new URL(r ? `${n.href.replace(/\/$/, "")}/${encodeURIComponent(r)}` : n.href);
+		for (let [e, t] of Object.entries(a)) o.searchParams.set(e, t);
+		let s = {
+			Accept: "application/json",
+			"X-CSRF-TOKEN": t
+		};
+		i !== void 0 && (s["Content-Type"] = "application/json");
+		let c = await fetch(o, {
 			method: e,
 			credentials: "same-origin",
-			headers: {
-				Accept: "application/json",
-				"Content-Type": "application/json",
-				"X-CSRF-TOKEN": t
-			},
+			headers: s,
 			body: i === void 0 ? void 0 : JSON.stringify(i),
 			signal: AbortSignal.timeout(2e4)
 		});
-		if (!a.ok) throw new Ag({
-			401: "Your session has expired. Sign in and reload.",
-			403: "You no longer have access to saved views.",
-			404: "This view is no longer available. Reload views.",
-			409: "This view changed in another tab. Reload views before saving again.",
-			419: "Your session has expired. Reload the page before saving.",
-			422: "The view could not be saved. Check its name, device access and size.",
-			429: "Too many requests. Wait a moment before saving again.",
-			503: "Saved views are unavailable. The plugin database migration may be pending."
-		}[a.status] ?? `Saved views request failed (HTTP ${a.status}).`, a.status);
-		return a.status === 204 ? void 0 : a.json();
+		if (!c.ok) throw new Fg(await Rg(c, e), c.status);
+		return c.status === 204 ? void 0 : c.json();
 	}
 	return {
 		list: async () => {
@@ -18746,16 +18755,39 @@ function jg(e, t) {
 			...n ? { revision: n.revision } : {}
 		})).view,
 		remove: async (e) => {
-			await r("DELETE", e.id, { revision: e.revision });
+			await r("DELETE", e.id, void 0, { revision: String(e.revision) });
 		}
 	};
 }
-function Mg(e) {
+async function Rg(e, t) {
+	if (e.status === 422) {
+		let t = await e.json().catch(() => void 0), n = t && typeof t == "object" && "message" in t && typeof t.message == "string" ? t.message.trim() : "";
+		if (n && n.length <= 300) return n;
+	}
+	return {
+		401: "Your session has expired. Sign in and reload.",
+		403: "You no longer have access to saved views.",
+		404: "This view is no longer available. Reload views.",
+		409: Ig[t] ?? Ig.PUT,
+		419: "Your session has expired. Reload the page before saving.",
+		422: "The view could not be saved. Check its name, device access and size.",
+		429: "Too many requests. Wait a moment before saving again.",
+		503: "Saved views are unavailable. The plugin database migration may be pending."
+	}[e.status] ?? `Saved views request failed (HTTP ${e.status}).`;
+}
+function zg() {
+	if (typeof crypto.randomUUID == "function") return crypto.randomUUID();
+	let e = crypto.getRandomValues(/* @__PURE__ */ new Uint8Array(16));
+	e[6] = e[6] & 15 | 64, e[8] = e[8] & 63 | 128;
+	let t = [...e].map((e) => e.toString(16).padStart(2, "0")).join("");
+	return `${t.slice(0, 8)}-${t.slice(8, 12)}-${t.slice(12, 16)}-${t.slice(16, 20)}-${t.slice(20)}`;
+}
+function Bg(e) {
 	function t() {
 		let t = JSON.parse(localStorage.getItem(e) ?? "[]");
 		return Array.isArray(t) ? t.filter((e) => e && typeof e.id == "string" && typeof e.name == "string" && Number.isInteger(e.revision)).slice(0, 50).map((e) => ({
 			...e,
-			state: wg(e.state)
+			state: kg(e.state)
 		})) : [];
 	}
 	function n(t) {
@@ -18765,27 +18797,27 @@ function Mg(e) {
 		list: async () => t(),
 		save: async (e, r, i) => {
 			let a = t(), o = a.findIndex((e) => e.id === i?.id);
-			if (i && (o < 0 || a[o].revision !== i.revision)) throw new Ag("This view changed in another tab. Reload views before saving again.", 409);
-			if (!i && a.length >= 50) throw new Ag("You can save up to 50 views. Delete a view before creating another.", 422);
+			if (i && (o < 0 || a[o].revision !== i.revision)) throw new Fg(Ig.PUT, 409);
+			if (!i && a.length >= 50) throw new Fg("You can save up to 50 views. Delete a view before creating another.", 422);
 			let s = {
-				id: i?.id ?? crypto.randomUUID(),
+				id: i?.id ?? zg(),
 				name: e,
-				state: wg(r),
+				state: kg(r),
 				revision: (i?.revision ?? 0) + 1,
 				updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 			};
-			return o < 0 ? a.push(s) : a[o] = s, n(a), s;
+			return n([s, ...a.filter((e) => e.id !== s.id)]), s;
 		},
 		remove: async (e) => {
 			let r = t(), i = r.find((t) => t.id === e.id);
-			if (!i || i.revision !== e.revision) throw new Ag("This view changed in another tab. Reload views before deleting it.", 409);
+			if (!i || i.revision !== e.revision) throw new Fg(Ig.DELETE, 409);
 			n(r.filter((t) => t.id !== e.id));
 		}
 	};
 }
 //#endregion
 //#region frontend/views-panel.ts
-function Ng(e, t) {
+function Vg(e, t) {
 	e.innerHTML = "<label class=\"lm-select\">Saved view <select aria-label=\"Saved view\"><option value=\"\">Current workspace</option></select></label><button data-view-action=\"save\" disabled>Save view</button><button data-view-action=\"delete\" disabled>Delete view</button><button data-view-action=\"reload\">Reload views</button><span class=\"lm-view-status\" aria-live=\"polite\"></span><dialog class=\"lm-view-dialog\" aria-labelledby=\"lm-view-title\"><form><h2 id=\"lm-view-title\">Save current view</h2><p>Remember filters, positions, pins and zoom.</p><label>View name<input name=\"name\" aria-label=\"View name\" required autocomplete=\"off\"></label><div class=\"lm-dialog-actions\"><button type=\"button\" data-view-action=\"cancel\">Cancel</button><button type=\"submit\" value=\"new\">Save as new</button><button type=\"submit\" value=\"update\">Save changes</button></div></form></dialog><dialog class=\"lm-delete-dialog\" aria-labelledby=\"lm-delete-title\"><h2 id=\"lm-delete-title\">Delete saved view?</h2><p></p><div class=\"lm-dialog-actions\"><button data-view-action=\"cancel-delete\">Cancel</button><button data-view-action=\"confirm-delete\">Delete saved view</button></div></dialog>";
 	let n = e.querySelector("select"), r = e.querySelector(".lm-view-status"), i = e.querySelector(".lm-view-dialog"), a = e.querySelector(".lm-delete-dialog"), o = e.querySelector("input"), s = [], c, l = !1, u = !1, d = !1, f = 0;
 	function p(e, t = !1) {
@@ -18802,7 +18834,7 @@ function Ng(e, t) {
 		n.replaceChildren(new Option("Current workspace", ""), ...s.map((e) => new Option(e.name, e.id))), n.value = c?.id ?? "", m();
 	}
 	function g(e) {
-		e instanceof Ag && [
+		e instanceof Fg && [
 			401,
 			403,
 			404,
@@ -18831,7 +18863,7 @@ function Ng(e, t) {
 	}), i.querySelector("form").onsubmit = async (e) => {
 		if (e.preventDefault(), !t.store || l || d || !u) return;
 		let n = o.value.trim();
-		if (!n || vg(n) > 100) {
+		if (!n || Cg(n) > 100) {
 			o.setCustomValidity(n ? "Use at most 100 characters." : "Enter a view name."), o.reportValidity();
 			return;
 		}
@@ -18842,13 +18874,13 @@ function Ng(e, t) {
 		try {
 			let e = await t.store.save(n, t.capture(), r);
 			if (a !== f) return;
-			c = e, s = [...s.filter((t) => t.id !== e.id), e], h(), i.close(), p(`Saved “${e.name}”.`);
+			c = e, s = [e, ...s.filter((t) => t.id !== e.id)], h(), i.close(), p(`Saved “${e.name}”.`);
 		} catch (e) {
 			a === f && (i.close(), g(e));
 		} finally {
 			l = !1, m();
 		}
-	}, o.oninput = () => o.setCustomValidity(vg(o.value.trim()) > 100 ? "Use at most 100 characters." : "");
+	}, o.oninput = () => o.setCustomValidity(Cg(o.value.trim()) > 100 ? "Use at most 100 characters." : "");
 	async function v() {
 		if (!t.store || !c || l) return;
 		l = !0, m();
@@ -18874,9 +18906,9 @@ function Ng(e, t) {
 }
 //#endregion
 //#region frontend/main.ts
-var Pg = document.querySelector("#libremap");
-Pg && Fg(Pg);
-function Fg(e) {
+var Hg = document.querySelector("#libremap");
+Hg && Ug(Hg);
+function Ug(e) {
 	let t = e.dataset.demo === "true";
 	e.innerHTML = `
     <div class="lm-shell">
@@ -18893,54 +18925,54 @@ function Fg(e) {
 		minZoom: .15,
 		maxZoom: 2.5,
 		selectionType: "single",
-		style: Lg(!1)
+		style: Gg(!1)
 	}), c, l = {
 		nodes: [],
 		links: []
-	}, u = !1, d = !1, f, p = 0, m, h = {}, g, _ = !1, v, y = `libremap:v1:${e.dataset.storageKey ?? "local"}`, b = `libremap:v2:${e.dataset.storageKey ?? "local"}`;
-	function x() {
+	}, u = !1, d = !1, f, p = 0, m, h = {}, g, _ = !1, v, y, b = 0, x = () => Date.now() / 1e3 + b, S = `libremap:v1:${e.dataset.storageKey ?? "local"}`, C = `libremap:v2:${e.dataset.storageKey ?? "local"}`;
+	function w() {
 		try {
-			let e = localStorage.getItem(b);
-			return wg(e ? JSON.parse(e) : { positions: JSON.parse(localStorage.getItem(y) ?? "{}") });
+			let e = localStorage.getItem(C);
+			return kg(e ? JSON.parse(e) : { positions: JSON.parse(localStorage.getItem(S) ?? "{}") });
 		} catch {
-			return bg();
+			return Tg();
 		}
 	}
-	let S = x(), C = S.positions, w = new Set(S.pinned), T = !1;
-	function E() {
-		return wg({
+	let T = w(), E = T.positions, D = new Set(T.pinned), O = !1;
+	function k() {
+		return kg({
 			rootId: o.value || null,
 			site: a.value,
 			search: i.value,
 			backbone: u,
 			positions: Object.fromEntries(s.nodes().map((e) => [e.id(), e.position()])),
-			pinned: [...w],
+			pinned: [...D],
 			zoom: s.zoom(),
 			pan: s.pan()
 		}, l);
 	}
-	let D = () => {
+	let A = () => {
 		if (c) {
-			C = Object.fromEntries(s.nodes().map((e) => [e.id(), e.position()]));
+			E = Object.fromEntries(s.nodes().map((e) => [e.id(), e.position()]));
 			try {
-				localStorage.setItem(b, JSON.stringify(E()));
+				localStorage.setItem(C, JSON.stringify(k()));
 			} catch {
 				r.textContent = "Workspace could not be saved in this browser.";
 			}
 		}
-	}, O = (e, t = !1) => {
+	}, j = (e, t = !1) => {
 		r.textContent = e, r.classList.toggle("lm-error", t);
-	}, k;
+	}, M;
 	try {
-		k = t ? Mg(`${b}:views`) : e.dataset.viewsEndpoint ? jg(e.dataset.viewsEndpoint, e.dataset.csrf ?? "") : void 0;
+		M = t ? Bg(`${C}:views`) : e.dataset.viewsEndpoint ? Lg(e.dataset.viewsEndpoint, e.dataset.csrf ?? "") : void 0;
 	} catch {}
-	let A = Ng(n(".lm-views"), {
-		store: k,
+	let N = Vg(n(".lm-views"), {
+		store: M,
 		demo: t,
-		capture: E,
-		restore: P
+		capture: k,
+		restore: L
 	});
-	function j() {
+	function P() {
 		let t = _ || !c;
 		i.disabled = t, a.disabled = t, o.disabled = t;
 		for (let e of [
@@ -18952,30 +18984,30 @@ function Fg(e) {
 		]) n(`[data-action="${e}"]`).disabled = t;
 		e.querySelectorAll(".lm-pin-device,.lm-focus-device").forEach((e) => {
 			e.disabled = t;
-		}), n("[data-action=\"unpin-all\"]").disabled = t || w.size === 0;
+		}), n("[data-action=\"unpin-all\"]").disabled = t || D.size === 0;
 	}
-	function M(e) {
-		_ = e, A.setLayoutPending(e), s.autoungrabify(e), s.userPanningEnabled(!e), s.userZoomingEnabled(!e), j();
+	function F(e) {
+		_ = e, N.setLayoutPending(e), s.autoungrabify(e), s.userPanningEnabled(!e), s.userZoomingEnabled(!e), P();
 	}
-	function N() {
+	function I() {
 		s.nodes().forEach((e) => {
-			let t = w.has(e.id());
+			let t = D.has(e.id());
 			e.data({
 				pinned: +!!t,
 				label: `${e.data("hostname")}\n${e.data("role")}  ·  ${String(e.data("status")).toUpperCase()}${t ? "  ·  PIN" : ""}`
 			}), t ? e.lock() : e.unlock();
-		}), n(".lm-pin-count").textContent = `${w.size} pinned`, j();
+		}), n(".lm-pin-count").textContent = `${D.size} pinned`, P();
 	}
-	function P(e) {
+	function L(e) {
 		if (!c) return;
-		let t = wg(e, l);
-		o.value = t.rootId ?? "", a.value = t.site, i.value = t.search, u = t.backbone, w = new Set(t.pinned), f = void 0, s.elements().unselect().removeClass("lm-dim"), N(), L(), F(), B(t.positions, t);
+		let t = kg(e, l);
+		o.value = t.rootId ?? "", a.value = t.site, i.value = t.search, u = t.backbone, D = new Set(t.pinned), f = void 0, s.elements().unselect().removeClass("lm-dim"), I(), B(), R(), U(t.positions, t);
 	}
-	function F() {
+	function R() {
 		let e = n("[data-action=\"overview\"]");
 		e.classList.toggle("lm-active", u), e.setAttribute("aria-pressed", String(u));
 	}
-	let I = () => {
+	let z = () => {
 		let e = n(".lm-details");
 		e.replaceChildren();
 		let t = document.createElement("div");
@@ -18988,21 +19020,21 @@ function Fg(e) {
 		a.className = "lm-device-list";
 		for (let e of l.nodes.filter((e) => e.role === "AGG")) {
 			let t = document.createElement("button");
-			t.textContent = `◈  ${e.hostname}`, t.addEventListener("click", () => R(e.id)), a.append(t);
+			t.textContent = `◈  ${e.hostname}`, t.addEventListener("click", () => V(e.id)), a.append(t);
 		}
 		e.append(a);
 		let o = document.createElement("p");
 		o.className = "lm-hint", o.textContent = "Choose an AGG root to focus its group and ER branches. Pin devices to keep their positions during Re-layout. Save a named view to return to this workspace.", e.append(o);
 	};
-	function L() {
-		if (!f) return I();
+	function B() {
+		if (!f) return z();
 		let e = f.type === "node" ? l.nodes.find((e) => e.id === f.id) : void 0, t = f.type === "link" ? l.links.find((e) => e.id === f.id) : void 0;
-		if (!e && !t) return f = void 0, I();
+		if (!e && !t) return f = void 0, z();
 		let r = n(".lm-details");
 		r.replaceChildren();
 		let i = document.createElement("button");
 		i.className = "lm-close", i.textContent = "×", i.setAttribute("aria-label", "Close details"), i.onclick = () => {
-			f = void 0, s.elements().removeClass("lm-dim"), s.elements().unselect(), I();
+			f = void 0, s.elements().removeClass("lm-dim"), s.elements().unselect(), z();
 		}, r.append(i);
 		let a = document.createElement("div");
 		a.className = "lm-eyebrow", a.textContent = e ? `${e.role} / DEVICE` : "PHYSICAL LINK", r.append(a);
@@ -19015,12 +19047,12 @@ function Fg(e) {
 			["Placement", e.reachable ? e.tier === 0 ? "Root tier" : `Hop ${e.tier} from AGG` : "No discovered AGG path"],
 			["Connections", String(l.links.filter((t) => t.source === e.id || t.target === e.id).length)]
 		] : [
-			["Status", _g(t, Date.now() / 1e3, c.config.staleAfter).label],
+			["Status", xg(t, x(), c.config.staleAfter).label],
 			["Source interface", t.sourcePort],
 			["Remote interface", t.targetPort],
-			["Capacity", Ig(t.speedBps)],
-			["Inbound at source", Ig(t.inBps)],
-			["Outbound at source", Ig(t.outBps)],
+			["Capacity", Wg(t.speedBps)],
+			["Inbound at source", Wg(t.inBps)],
+			["Outbound at source", Wg(t.outBps)],
 			["Sample time", t.sampledAt ? (/* @__PURE__ */ new Date(t.sampledAt * 1e3)).toLocaleString() : "Unavailable"]
 		], p = document.createElement("dl");
 		for (let [e, n] of d) {
@@ -19031,12 +19063,12 @@ function Fg(e) {
 		}
 		if (r.append(p), e) {
 			let t = document.createElement("button");
-			if (t.className = "lm-pin-device", t.disabled = _, t.textContent = w.has(e.id) ? "Unpin device" : "Pin position", t.setAttribute("aria-pressed", String(w.has(e.id))), t.onclick = () => {
-				w.has(e.id) ? w.delete(e.id) : w.add(e.id), N(), D(), L();
+			if (t.className = "lm-pin-device", t.disabled = _, t.textContent = D.has(e.id) ? "Unpin device" : "Pin position", t.setAttribute("aria-pressed", String(D.has(e.id))), t.onclick = () => {
+				D.has(e.id) ? D.delete(e.id) : D.add(e.id), I(), A(), B();
 			}, r.append(t), e.role === "AGG") {
 				let t = document.createElement("button");
 				t.className = "lm-focus-device", t.disabled = _, t.textContent = "Focus AGG group", t.onclick = () => {
-					o.value = e.id, z(), D();
+					o.value = e.id, H(), A();
 				}, r.append(t);
 			}
 		}
@@ -19048,15 +19080,15 @@ function Fg(e) {
 			}
 		}
 	}
-	function R(e) {
+	function V(e) {
 		let t = s.getElementById(e);
 		t.length && (f = {
 			type: "node",
 			id: e
-		}, s.elements().unselect(), t.select(), s.elements().addClass("lm-dim"), t.closedNeighborhood().removeClass("lm-dim"), L());
+		}, s.elements().unselect(), t.select(), s.elements().addClass("lm-dim"), t.closedNeighborhood().removeClass("lm-dim"), B());
 	}
-	function z(e = !0) {
-		let t = Eg(l, {
+	function H(e = !0) {
+		let t = jg(l, {
 			rootId: o.value || null,
 			site: a.value,
 			search: i.value,
@@ -19070,31 +19102,31 @@ function Fg(e) {
 			});
 		}), n(".lm-empty").hidden = t.size > 0, n(".lm-empty").textContent = l.nodes.length ? "No devices match these filters." : "No authorized devices are available.", e && t.size && s.fit(s.elements(":visible"), 70);
 	}
-	function B(e = {}, t) {
-		h = e, g = t, p++, M(!0), clearTimeout(m), m = setTimeout(() => {
-			p++, M(!1), O("Layout timed out. Existing positions are retained; retry Re-layout.", !0);
+	function U(e = {}, t) {
+		h = e, g = t, p++, F(!0), clearTimeout(m), m = setTimeout(() => {
+			p++, fg(), F(!1), j("Layout timed out. Existing positions are retained; retry Re-layout.", !0);
 		}, 2e4);
 		let n = p;
-		dg(l).then((e) => V(n, e)).catch(() => {
-			n === p && (clearTimeout(m), M(!1), O("Automatic layout failed. Check the published worker asset and retry Re-layout.", !0));
+		pg(l).then((e) => W(n, e)).catch(() => {
+			n === p && (clearTimeout(m), F(!1), j("Automatic layout failed. Check the published worker asset and retry Re-layout.", !0));
 		});
 	}
-	function V(e, n) {
+	function W(e, n) {
 		if (e !== p) return;
 		clearTimeout(m);
-		let r = kg(l, n, h, w);
+		let r = Pg(l, n, h, D);
 		s.batch(() => s.nodes().forEach((e) => {
 			e.unlock(), e.position(r[e.id()]);
-		})), N(), z(!g), g && s.viewport(g), g = void 0, M(!1), D(), O(t ? "Demo topology · illustrative devices and traffic" : "Topology loaded · positions saved in this browser");
+		})), I(), H(!g), g && s.viewport(g), g = void 0, F(!1), A(), j(t ? "Demo topology · illustrative devices and traffic" : "Topology loaded · positions saved in this browser");
 	}
-	function H(e) {
+	function G(e) {
 		let r = _ ? h : void 0, d = _ ? g : void 0, f = JSON.stringify([l.nodes.map((e) => [
 			e.id,
 			e.role,
 			e.site,
 			e.tier
 		]), l.links.map((e) => e.id)]);
-		c = e, l = hg(e);
+		c = e, l = yg(e), b = Number.isFinite(e.generatedAt) ? e.generatedAt - Date.now() / 1e3 : 0;
 		let p = JSON.stringify([l.nodes.map((e) => [
 			e.id,
 			e.role,
@@ -19103,9 +19135,9 @@ function Fg(e) {
 		]), l.links.map((e) => e.id)]), m = Object.fromEntries(s.nodes().map((e) => [e.id(), e.position()])), v = a.value;
 		a.replaceChildren(new Option("All sites", ""), ...Array.from(new Set(l.nodes.map((e) => e.site))).sort().map((e) => new Option(e, e))), [...a.options].some((e) => e.value === v) && (a.value = v);
 		let y = o.value;
-		if (o.replaceChildren(new Option("All AGG groups", ""), ...l.nodes.filter((e) => e.role === "AGG").map((e) => new Option(e.hostname, e.id))), [...o.options].some((e) => e.value === y) && (o.value = y), w = new Set([...w].filter((e) => l.nodes.some((t) => t.id === e))), !T) {
-			let e = wg(S, l);
-			o.value = e.rootId ?? "", a.value = e.site, i.value = e.search, u = e.backbone, w = new Set(e.pinned), F();
+		if (o.replaceChildren(new Option("All AGG groups", ""), ...l.nodes.filter((e) => e.role === "AGG").map((e) => new Option(e.hostname, e.id))), [...o.options].some((e) => e.value === y) && (o.value = y), D = new Set([...D].filter((e) => l.nodes.some((t) => t.id === e))), !O) {
+			let e = kg(T, l);
+			o.value = e.rootId ?? "", a.value = e.site, i.value = e.search, u = e.backbone, D = new Set(e.pinned), R();
 		}
 		s.batch(() => {
 			let t = new Set(l.nodes.map((e) => e.id)), n = new Set(l.links.map((e) => `edge:${e.id}`));
@@ -19119,9 +19151,9 @@ function Fg(e) {
 				}, n = s.getElementById(e.id);
 				n.length ? n.data(t) : s.add({ data: t });
 			}
-			let r = gg(l);
+			let r = bg(l);
 			for (let t of l.links) {
-				let n = _g(t, Date.now() / 1e3, e.config.staleAfter), i = {
+				let n = xg(t, x(), e.config.staleAfter), i = {
 					...t,
 					id: `edge:${t.id}`,
 					linkId: t.id,
@@ -19133,9 +19165,9 @@ function Fg(e) {
 				}, a = s.getElementById(i.id);
 				a.length ? a.data(i) : s.add({ data: i });
 			}
-		}), N();
-		let b = n(".lm-summary");
-		b.replaceChildren();
+		}), I();
+		let S = n(".lm-summary");
+		S.replaceChildren();
 		for (let [e, t] of [
 			[l.nodes.length, "Devices"],
 			[l.links.length, "Links"],
@@ -19145,21 +19177,21 @@ function Fg(e) {
 			let n = document.createElement("div"), r = document.createElement("strong");
 			r.textContent = String(e);
 			let i = document.createElement("span");
-			i.textContent = String(t), n.append(r, i), b.append(n);
+			i.textContent = String(t), n.append(r, i), S.append(n);
 		}
-		n(".lm-updated").textContent = `${t ? "Demo snapshot" : "Snapshot fetched"} · ${(/* @__PURE__ */ new Date(e.generatedAt * 1e3)).toLocaleTimeString()}`, z(!1), L(), A.setAvailable(!0), T || A.reload(), p !== f || _ ? B(r ?? {
-			...C,
+		n(".lm-updated").textContent = `${t ? "Demo snapshot" : "Snapshot fetched"} · ${(/* @__PURE__ */ new Date(e.generatedAt * 1e3)).toLocaleTimeString()}`, H(!1), B(), N.setAvailable(!0), O || N.reload(), p !== f || _ ? U(r ?? {
+			...E,
 			...m
-		}, d ?? (!T && Object.keys(C).length ? S : T ? {
+		}, d ?? (!O && Object.keys(E).length ? T : O ? {
 			zoom: s.zoom(),
 			pan: s.pan()
-		} : void 0)) : O(t ? "Demo topology · illustrative devices and traffic" : "Updated · layout unchanged"), T = !0;
+		} : void 0)) : j(t ? "Demo topology · illustrative devices and traffic" : "Updated · layout unchanged"), O = !0;
 	}
-	async function U() {
+	async function K() {
 		if (!d) {
 			d = !0;
 			try {
-				if (t) H(fg());
+				if (t) G(mg());
 				else {
 					if (!e.dataset.endpoint) throw Error("Missing topology endpoint");
 					let t = new URL(e.dataset.endpoint, location.href);
@@ -19173,52 +19205,56 @@ function Fg(e) {
 					if (!n.ok) throw Error(`LibreNMS returned HTTP ${n.status}`);
 					let r = await n.json();
 					if (!Array.isArray(r.devices) || !Array.isArray(r.links) || !r.config) throw Error("Unexpected topology response");
-					H(r);
+					G(r);
 				}
 			} catch (e) {
 				s.elements().remove(), l = {
 					nodes: [],
 					links: []
-				}, f = void 0, c = void 0, p++, clearTimeout(m), I(), M(!1), clearTimeout(v), w.clear(), S = x(), C = S.positions, T = !1, a.replaceChildren(new Option("All sites", "")), o.replaceChildren(new Option("All AGG groups", "")), A.setAvailable(!1), N(), n(".lm-summary").replaceChildren(), n(".lm-empty").hidden = !1, n(".lm-empty").textContent = "Topology unavailable. Use Refresh to retry.", O(e instanceof Error ? e.message : "Unable to load topology", !0);
+				}, f = void 0, c = void 0, p++, clearTimeout(m), z(), F(!1), clearTimeout(v), clearTimeout(y), D.clear(), T = w(), E = T.positions, O = !1, a.replaceChildren(new Option("All sites", "")), o.replaceChildren(new Option("All AGG groups", "")), N.setAvailable(!1), I(), n(".lm-summary").replaceChildren(), n(".lm-empty").hidden = !1, n(".lm-empty").textContent = "Topology unavailable. Use Refresh to retry.", j(e instanceof Error ? e.message : "Unable to load topology", !0);
 			} finally {
 				d = !1;
 			}
 		}
 	}
-	s.on("tap", "node", (e) => R(e.target.id())), s.on("tap", "edge", (e) => {
+	s.on("tap", "node", (e) => V(e.target.id())), s.on("tap", "edge", (e) => {
 		f = {
 			type: "link",
 			id: e.target.data("linkId")
-		}, s.elements().removeClass("lm-dim"), L();
+		}, s.elements().removeClass("lm-dim"), B();
 	}), s.on("tap", (e) => {
-		e.target === s && (f = void 0, s.elements().removeClass("lm-dim"), I());
-	}), s.on("dragfree", "node", D), s.on("zoom", () => s.edges().toggleClass("lm-no-label", s.zoom() < .45)), s.on("pan zoom", () => {
+		e.target === s && (f = void 0, s.elements().removeClass("lm-dim"), z());
+	}), s.on("dragfree", "node", A), s.on("zoom", () => s.edges().toggleClass("lm-no-label", s.zoom() < .45)), s.on("pan zoom", () => {
 		c && !_ && (clearTimeout(v), v = setTimeout(() => {
-			c && !_ && D();
+			c && !_ && A();
 		}, 200));
 	}), i.addEventListener("input", () => {
-		i.value = yg(i.value), z(), D();
+		i.value = wg(i.value), H(!1), clearTimeout(y), y = setTimeout(() => {
+			if (!c) return;
+			let e = s.elements(":visible");
+			e.length && s.fit(e, 70), A();
+		}, 300);
 	}), a.addEventListener("change", () => {
-		z(), D();
+		H(), A();
 	}), o.addEventListener("change", () => {
-		z(), D();
+		H(), A();
 	}), e.addEventListener("click", (t) => {
 		let n = t.target.closest("button[data-action]");
 		if (n) switch (n.dataset.action) {
 			case "refresh":
-				U();
+				K();
 				break;
 			case "fit":
 				s.fit(s.elements(":visible"), 70);
 				break;
 			case "layout":
-				B(Object.fromEntries(s.nodes().map((e) => ({
+				U(Object.fromEntries(s.nodes().map((e) => ({
 					id: e.id(),
 					position: e.position()
-				})).filter((e) => w.has(e.id)).map((e) => [e.id, e.position])));
+				})).filter((e) => D.has(e.id)).map((e) => [e.id, e.position])));
 				break;
 			case "unpin-all":
-				w.clear(), N(), D(), L();
+				D.clear(), I(), A(), B();
 				break;
 			case "zoom-in":
 				s.zoom({
@@ -19239,20 +19275,20 @@ function Fg(e) {
 				});
 				break;
 			case "overview":
-				u = !u, F(), z(), D();
+				u = !u, R(), H(), A();
 				break;
 			case "theme":
-				e.classList.toggle("lm-dark"), s.style(Lg(e.classList.contains("lm-dark")));
+				e.classList.toggle("lm-dark"), s.style(Gg(e.classList.contains("lm-dark")));
 				break;
-			case "fullscreen": (document.fullscreenElement ? document.exitFullscreen() : e.requestFullscreen()).catch(() => O("Fullscreen is unavailable in this browser."));
+			case "fullscreen": (document.fullscreenElement ? document.exitFullscreen() : e.requestFullscreen()).catch(() => j("Fullscreen is unavailable in this browser."));
 		}
-	}), new ResizeObserver(() => s.resize()).observe(n(".lm-canvas")), j(), I(), U(), setInterval(() => {
-		document.hidden || U();
+	}), new ResizeObserver(() => s.resize()).observe(n(".lm-canvas")), P(), z(), K(), setInterval(() => {
+		document.hidden || K();
 	}, 6e4), setInterval(() => {
 		if (!c) return;
-		let t = Date.now() / 1e3;
+		let t = x();
 		s.batch(() => l.links.forEach((n) => {
-			let r = _g(n, t, c.config.staleAfter);
+			let r = xg(n, t, c.config.staleAfter);
 			if (s.getElementById(`edge:${n.id}`).data({
 				label: r.label,
 				color: r.color,
@@ -19262,7 +19298,7 @@ function Fg(e) {
 				t && (t.textContent = r.label);
 			}
 		}));
-	}, 1e4), t && Object.defineProperty(window, "libremapDebug", {
+	}, 1e4), (t || e.dataset.debug === "true") && Object.defineProperty(window, "libremapDebug", {
 		value: () => ({
 			nodes: s.nodes().map((e) => ({
 				id: e.id(),
@@ -19271,15 +19307,20 @@ function Fg(e) {
 				renderedPosition: e.renderedPosition(),
 				visible: e.visible()
 			})),
-			edges: s.edges().length
+			edges: s.edges().length,
+			links: s.edges().map((e) => ({
+				port: e.data("sourcePort"),
+				midpoint: e.renderedMidpoint(),
+				label: e.data("label")
+			}))
 		}),
 		configurable: !0
 	});
 }
-function Ig(e) {
+function Wg(e) {
 	return e === null || !Number.isFinite(e) ? "N/A" : e >= 1e9 ? `${(e / 1e9).toFixed(2)} Gbps` : e >= 1e6 ? `${(e / 1e6).toFixed(1)} Mbps` : `${Math.round(e / 1e3)} Kbps`;
 }
-function Lg(e) {
+function Gg(e) {
 	return [
 		{
 			selector: "node",
@@ -19362,5 +19403,3 @@ function Lg(e) {
 	];
 }
 //#endregion
-
-//# sourceMappingURL=libremap.js.map

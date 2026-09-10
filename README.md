@@ -45,7 +45,7 @@ Open <http://127.0.0.1:5173>. The demo is explicitly labeled and uses illustrati
 - Pin/unpin device positions. Pinned devices cannot be dragged and remain fixed during Re-layout; automatic nodes are placed clear of them. Use Unpin all to release them.
 - Browser workspace persistence and private named views stored in LibreNMS. Views capture root/site/search filters, backbone mode, positions, pins, zoom and pan. The explicit demo stores named views in this browser only.
 - Create, update, copy and delete named views. Revision checks prevent stale tabs from overwriting newer saves. Reload views restores the newest saved state before another update.
-- A Composer package integrated with LibreNMS sessions, plugin menu and permission scopes. Both devices and both ports must be authorized before a link is serialized. Plugin routes are rate limited to 120 requests per minute per user.
+- A Composer package integrated with LibreNMS sessions, plugin menu and permission scopes. Both devices and both ports must be authorized before a link is serialized. Plugin routes are rate limited to 120 requests per minute per user, on a counter separate from other LibreNMS routes.
 
 ## Build assets
 
@@ -63,7 +63,7 @@ These are staging instructions, not evidence of an installation.
 
 ### From Packagist
 
-[`scripts/install.sh`](scripts/install.sh) installs the newest stable release from [Packagist](https://packagist.org/packages/libremap/librenms-plugin) with `lnms plugin:add`, publishes assets and default config, runs this package's migrations, enables the plugin and clears caches. Run it on the LibreNMS host as the application user:
+[`scripts/install.sh`](scripts/install.sh) installs the newest stable release from [Packagist](https://packagist.org/packages/libremap/librenms-plugin) with `lnms plugin:add`, replaces previously published assets, publishes default config, runs this package's migrations, enables the plugin and clears caches. Run it on the LibreNMS host as the application user:
 
 ```sh
 curl -fsSL -o /tmp/libremap-install.sh https://raw.githubusercontent.com/Drakelid/librenms-map/main/scripts/install.sh
@@ -81,12 +81,13 @@ Rerun it to upgrade. Use `--dir` for a LibreNMS checkout outside `/opt/librenms`
 ```sh
 composer config repositories.libremap path /opt/libremap
 composer require 'libremap/librenms-plugin:@dev'
+rm -rf public/vendor/libremap
 php artisan vendor:publish --tag=libremap-assets --force
 php artisan vendor:publish --tag=libremap-config
 php artisan migrate --path=/opt/libremap/database/migrations --realpath
 ```
 
-These alter the host Composer configuration and lockfile; retain those changes through your normal upgrade process.
+These alter the host Composer configuration and lockfile; retain those changes through your normal upgrade process. Removing `public/vendor/libremap` first drops the previous build's hashed worker file, which `vendor:publish` would otherwise leave behind.
 
 **3. Enable, then clear caches.** Enable **libremap** in LibreNMS plugin administration, then run:
 
@@ -108,7 +109,7 @@ No migration has been run on your LibreNMS server from this workspace.
 
 ### Updating an existing installation
 
-Rebuild the assets, republish them with `php artisan vendor:publish --tag=libremap-assets --force`, apply any new plugin migration, and clear application caches.
+For a Packagist install, rerun `scripts/install.sh`. For a source install, rebuild the assets, remove `public/vendor/libremap`, republish them with `php artisan vendor:publish --tag=libremap-assets --force`, apply any new plugin migration, and clear application caches. The map page adds the published bundle's modification time to its asset URLs, so browsers load the new build instead of a cached one.
 
 This update requires the new owner-lock migration before creating saved views. From the LibreNMS checkout, run `php artisan migrate --path=/opt/libremap/database/migrations --realpath`. Existing saved views are preserved; owner rows are created on demand.
 
@@ -116,7 +117,7 @@ This update requires the new owner-lock migration before creating saved views. F
 
 Select an **AGG root** to focus its site group. Site/search/backbone filters intersect that scope; search context does not bypass those filters. Click a device and choose **Pin position** to preserve its current coordinates. **Re-layout** moves unpinned devices only.
 
-Use **Save view** to create a named workspace or update the selected view. **Save as new** makes a separate copy. Views are private to their owner, including when another user is an administrator. A user can store up to 50 views, each with at most 2,000 positions. Saved views contain device IDs and display preferences, not copied device records or traffic history. Reads redact device references that the owner can no longer access; writes reject unavailable device IDs.
+Use **Save view** to create a named workspace or update the selected view. **Save as new** makes a separate copy. Views are private to their owner, including when another user is an administrator, and are deleted with the owner's LibreNMS account. A user can store up to 50 views, each with at most 2,000 positions, or `max_devices` positions when that is higher. Saved views contain device IDs and display preferences, not copied device records or traffic history. Reads redact device references that the owner can no longer access; writes reject unavailable device IDs.
 
 Names support 100 Unicode characters; site and search filters support 200. Listing views resolves device access once for the union of referenced IDs, then redacts each view independently.
 
@@ -124,13 +125,13 @@ When another tab has changed a view, the save/delete operation returns a conflic
 
 ## Configuration
 
-Published `config/libremap.php` supports prefixes, freshness cutoff, size limits, and explicit classification overrides:
+Published `config/libremap.php` supports prefixes, freshness cutoff, size limits, and explicit classification overrides. No hostname prefix is stripped by default; this example strips `hk-`:
 
 ```php
 return [
     'prefixes' => ['hk-'],
     'stale_after' => 900,
-    // Device ID => ['role' => 'AGG'|'ER'|'UNKNOWN', 'site' => 'rossa1'].
+    // Device ID => ['role' => 'AGG'|'ER'|'OTHER', 'site' => 'rossa1'].
     'overrides' => [
         42 => ['role' => 'AGG', 'site' => 'rossa1'],
     ],
@@ -140,13 +141,13 @@ return [
 ];
 ```
 
-The default role rule requires a site ending in a digit before `agg` or `er`, preventing `server01` from being classified as ER. Use overrides for other conventions. Names classify placement only; links come from active, resolved LibreNMS neighbor records. Unresolved or unauthorized remote endpoints are omitted in this initial slice. LAG grouping, discovery-history retention and manual links are planned.
+The default role rule requires a site ending in a digit before `agg` or `er`, preventing `server01` from being classified as ER. When the hostname does not match, as for devices added by IP address, the device's sysName is tried next. Use overrides for other conventions. Config entries of the wrong type are ignored rather than failing the map. Names classify placement only; links come from active, resolved LibreNMS neighbor records. Unresolved or unauthorized remote endpoints are omitted in this initial slice. LAG grouping, discovery-history retention and manual links are planned.
 
 Exceeding `max_devices` or `max_links` returns an error rather than a partial graph.
 
 ## Measurement and display
 
-Unknown speeds and missing rates display N/A. Stale data displays STALE. Bandwidth is measured at a deterministic endpoint and not added to the other endpoint's observation. Device root placement does not imply an active routing path.
+Unknown speeds and missing rates display N/A. LibreNMS stores octet rates in a 32-bit column, so a rate at that column's ceiling (about 17 Gbit/s) is treated as unknown rather than shown as a false utilization. Stale data displays STALE; staleness is judged on the server's clock, so a skewed browser clock does not change it. Bandwidth is measured at a deterministic endpoint and not added to the other endpoint's observation. Device root placement does not imply an active routing path.
 
 ## Verification commands
 

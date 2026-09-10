@@ -7,5 +7,6 @@ playwright-report/
 
 # dist/ is tracked on purpose: the built assets ship inside the Composer
 # package, so a LibreNMS host never needs Node. Source maps stay local --
-# they are 5.6 MB per build and regenerable with `npm run build`.
+# they are 5.6 MB per build and regenerable with `npm run build`. They are
+# built 'hidden', so the shipped bundles never reference them.
 dist/**/*.map

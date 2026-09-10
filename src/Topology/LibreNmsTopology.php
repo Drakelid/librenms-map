@@ -9,12 +9,16 @@ use App\Models\User;
 
 class LibreNmsTopology
 {
+    // LibreNMS stores port octet rates in a signed 32-bit column. A value at its
+    // ceiling (about 17 Gbit/s) was clamped by the database, not measured.
+    private const RATE_COLUMN_MAX = 2147483647;
+
     public function forUser(User $user): array
     {
         $maxDevices = max(1, (int) config('libremap.max_devices', 2000));
         $maxLinks = max(1, (int) config('libremap.max_links', 10000));
         $devices = Device::hasAccess($user)
-            ->select(['device_id', 'hostname', 'status', 'disabled'])
+            ->select(['device_id', 'hostname', 'sysName', 'status', 'disabled'])
             ->orderBy('device_id')->limit($maxDevices + 1)->get();
         abort_if($devices->count() > $maxDevices, 422, 'LibreMap device limit exceeded. Increase libremap.max_devices before loading this network.');
         $deviceIds = $devices->pluck('device_id')->all();
@@ -67,18 +71,45 @@ class LibreNmsTopology
             'devices' => $devices->map(fn (Device $device) => [
                 'id' => (string) $device->device_id,
                 'hostname' => (string) $device->hostname,
+                // Classification falls back to sysName for devices added by IP address.
+                'sysName' => is_string($device->sysName) && $device->sysName !== '' ? $device->sysName : null,
                 'status' => $device->disabled ? 'disabled' : ($device->status === null ? 'unknown' : ($device->status ? 'up' : 'down')),
                 'url' => url('device/device='.(int) $device->device_id.'/'),
             ])->values()->all(),
             'links' => $resultLinks,
             'generatedAt' => time(),
             'config' => [
-                'prefixes' => array_values(config('libremap.prefixes', ['hk-'])),
+                'prefixes' => $this->prefixes(),
                 'staleAfter' => max(1, (int) config('libremap.stale_after', 900)),
                 // Only return overrides for devices visible to this user.
-                'overrides' => (object) array_intersect_key(config('libremap.overrides', []), array_flip($deviceIds)),
+                'overrides' => (object) $this->overrides($deviceIds),
             ],
         ];
+    }
+
+    /** Config is admin-edited PHP; send the client only well-typed values. */
+    private function prefixes(): array
+    {
+        return array_values(array_filter(
+            (array) config('libremap.prefixes', []),
+            fn ($prefix) => is_string($prefix) && $prefix !== '',
+        ));
+    }
+
+    private function overrides(array $deviceIds): array
+    {
+        $result = [];
+        foreach (array_intersect_key((array) config('libremap.overrides', []), array_flip($deviceIds)) as $id => $override) {
+            if (! is_array($override)) {
+                continue;
+            }
+            $result[$id] = array_filter([
+                'role' => is_string($override['role'] ?? null) ? $override['role'] : null,
+                'site' => is_string($override['site'] ?? null) ? $override['site'] : null,
+            ], fn ($value) => $value !== null);
+        }
+
+        return $result;
     }
 
     private function number(mixed $value, bool $positive = false): ?float
@@ -95,7 +126,7 @@ class LibreNmsTopology
     {
         $rate = $this->number($octets);
 
-        return $rate === null ? null : $rate * 8;
+        return $rate === null || $rate >= self::RATE_COLUMN_MAX ? null : $rate * 8;
     }
 
     private function linkStatus(Port $source, Port $target): string

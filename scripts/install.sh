@@ -132,6 +132,9 @@ step "Installing $PACKAGE $VERSION"
 ./lnms plugin:add "$PACKAGE" "$VERSION"
 
 step "Publishing assets and default config"
+# Replace rather than overlay: each build's worker has a new hashed file name,
+# and vendor:publish never deletes the previous one.
+rm -rf -- "$PWD/public/vendor/libremap"
 php artisan vendor:publish --tag=libremap-assets --force
 # Without --force: an existing config/libremap.php is kept as-is.
 php artisan vendor:publish --tag=libremap-config

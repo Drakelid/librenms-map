@@ -59,3 +59,13 @@ test('dense placement keeps every automatic node clear of the others',()=>{
   for(let i=0;i<points.length;i++) for(let j=i+1;j<points.length;j++)
     assert.ok(Math.abs(points[i].x-points[j].x)>=246 || Math.abs(points[i].y-points[j].y)>=105,`nodes ${i} and ${j} overlap`);
 });
+
+test('saved positions are bounded by the loaded map, not a fixed 2,000',()=>{
+  // libremap.max_devices may exceed 2,000; the server's limit follows it.
+  const nodes:MapNode[]=Array.from({length:2500},(_,i)=>({id:String(i+1),hostname:`n${i}`,status:'up',role:'ER',site:'s1',tier:1,reachable:true}));
+  const positions=Object.fromEntries(nodes.map(n=>[n.id,{x:1,y:2}]));
+  const result=normalizeView({positions,pinned:nodes.map(n=>n.id)},{nodes,links:[]});
+  assert.equal(Object.keys(result.positions).length,2500);
+  assert.equal(result.pinned.length,2500);
+  assert.equal(Object.keys(normalizeView({positions}).positions).length,2500);
+});

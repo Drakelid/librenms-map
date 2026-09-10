@@ -35,13 +35,11 @@ jobs:
         working-directory: host
     env:
       APP_ENV: testing
-      APP_KEY: base64:vHI+YHgkyCDad31iPEErGSNEOWO21wNzV+zyENKQv04=
       APP_URL: http://localhost
       DB_CONNECTION: testing
       DBTEST: '1'
       DB_TEST_DRIVER: mysql
       DB_TEST_HOST: 127.0.0.1
-      DB_TEST_PORT: ${{ job.services.database.ports[3306] }}
       DB_TEST_DATABASE: librenms_phpunit_78hunjuybybh
       DB_TEST_USERNAME: librenms
       DB_TEST_PASSWORD: librenms-test-only
@@ -49,15 +47,25 @@ jobs:
       SESSION_DRIVER: array
       QUEUE_CONNECTION: sync
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           path: plugin
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: librenms/librenms
           ref: ${{ matrix.librenms }}
           path: host
-      - uses: shivammathur/setup-php@v2
+      # The job context (mapped service ports) is not available in job-level
+      # env, so export the port from a step. The app key is generated per run.
+      - name: Export the database port and a disposable app key
+        env:
+          MAPPED_DB_PORT: ${{ job.services.database.ports[3306] }}
+        run: |
+          echo "DB_TEST_PORT=$MAPPED_DB_PORT" >> "$GITHUB_ENV"
+          key="base64:$(openssl rand -base64 32)"
+          echo "::add-mask::$key"
+          echo "APP_KEY=$key" >> "$GITHUB_ENV"
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.4'
           extensions: curl, gd, mbstring, pdo_mysql, snmp, sockets, xml, zip, pcntl, posix

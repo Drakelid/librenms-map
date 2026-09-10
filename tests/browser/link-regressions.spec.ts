@@ -1,5 +1,4 @@
 import { test, expect, type Page } from '@playwright/test';
-import type { Core } from 'cytoscape';
 import type { Snapshot } from '../../frontend/types';
 
 function snapshot(): Snapshot {
@@ -21,16 +20,14 @@ function snapshot(): Snapshot {
 async function load(page: Page, data: Snapshot) {
   await page.route('**/link-snapshot', route => route.fulfill({ json: data }));
   await page.route('**/link-review', route => route.fulfill({ contentType: 'text/html', body:
-    '<div id="libremap" data-endpoint="/link-snapshot"></div><script type="module" src="/frontend/main.ts"></script>',
+    '<div id="libremap" data-endpoint="/link-snapshot" data-debug="true"></div><script type="module" src="/frontend/main.ts"></script>',
   }));
   await page.goto('/link-review');
   await expect(page.locator('.lm-notice')).toContainText('Topology loaded');
 }
 
-const edges = (page: Page) => page.evaluate(() => {
-  const cy = (document.querySelector('.lm-canvas') as HTMLElement & { _cyreg: { cy: Core } })._cyreg.cy;
-  return cy.edges().map(edge => ({ port: edge.data('sourcePort') as string, midpoint: edge.renderedMidpoint(), label: edge.data('label') as string }));
-});
+type DebugLink = { port: string; midpoint: { x: number; y: number }; label: string };
+const edges = (page: Page) => page.evaluate(() => (window as unknown as { libremapDebug: () => { links: DebugLink[] } }).libremapDebug().links);
 
 test('parallel lateral links have separate selectable paths through refresh and theme changes', async ({ page }) => {
   await load(page, snapshot());
@@ -62,4 +59,14 @@ test('staleness updates selected details without replacing the focused close but
   expect((await edges(page))[0].label).toBe('STALE');
   await expect(page.locator('.lm-details dd').first()).toHaveText('STALE');
   await expect(close).toBeFocused();
+});
+
+test('staleness follows the server clock, not a skewed browser clock', async ({ page }) => {
+  const data = snapshot();
+  // The server's clock runs an hour ahead of this browser's; fresh samples
+  // must not read as future-dated (STALE) against the browser's clock.
+  data.generatedAt += 3600;
+  for (const link of data.links) link.sampledAt = data.generatedAt - 10;
+  await load(page, data);
+  expect((await edges(page)).map(edge => edge.label)).toEqual(['10%', '10%']);
 });

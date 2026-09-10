@@ -1,5 +1,5 @@
 export type Status = 'up' | 'down' | 'unknown' | 'disabled';
-export interface Device { id: string; hostname: string; status: Status; url?: string }
+export interface Device { id: string; hostname: string; sysName?: string | null; status: Status; url?: string }
 export interface Link {
   id: string; source: string; target: string; sourcePort: string; targetPort: string;
   sourcePortId: string; targetPortId: string; speedBps: number | null;

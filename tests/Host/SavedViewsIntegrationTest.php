@@ -6,6 +6,8 @@ use App\Models\Device;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
+use LibreMap\Views\ViewState;
 use LibreNMS\Interfaces\Plugins\PluginManagerInterface;
 use LibreNMS\Tests\TestCase;
 use Mockery;
@@ -46,7 +48,8 @@ class SavedViewsIntegrationTest extends TestCase
             ->assertOk()->assertJsonPath('view.revision', 2);
         $this->putJson($url, array_merge($payload, ['revision' => 1]))->assertStatus(409);
         $this->deleteJson($url, ['revision' => 1])->assertStatus(409);
-        $this->deleteJson($url, ['revision' => 2])->assertNoContent();
+        // The client sends the revision in the query string; a body works too (above).
+        $this->deleteJson($url.'?revision=2')->assertNoContent();
         $this->getJson('/libremap/views')->assertExactJson(['views' => []]);
     }
 
@@ -199,5 +202,29 @@ class SavedViewsIntegrationTest extends TestCase
         $this->assertSame([], $views[$broken['id']]['state']['pinned']);
         $this->assertNull($views[$broken['id']]['state']['rootId']);
         $this->assertSame(1, $views[$intact['id']]['revision']);
+    }
+
+    public function testDeletingAUserRemovesTheirPrivateViews(): void
+    {
+        $owner = User::factory()->create();
+        $this->actingAs($owner)->postJson('/libremap/views', $this->payload())->assertCreated();
+
+        $owner->delete();
+
+        $this->assertSame(0, DB::table('libremap_views')->where('user_id', $owner->getKey())->count());
+        $this->assertSame(0, DB::table('libremap_view_owners')->where('user_id', $owner->getKey())->count());
+    }
+
+    public function testPositionLimitFollowsMaxDevices(): void
+    {
+        config(['libremap.max_devices' => 2500]);
+        $this->assertSame(2500, ViewState::positionLimit());
+        config(['libremap.max_devices' => 100]);
+        $this->assertSame(2000, ViewState::positionLimit());
+    }
+
+    public function testRoutesUseTheirOwnNamedRateLimiter(): void
+    {
+        $this->assertNotNull(RateLimiter::limiter('libremap'));
     }
 }

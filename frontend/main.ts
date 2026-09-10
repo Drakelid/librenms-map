@@ -1,5 +1,5 @@
 import cytoscape, { type Core, type StylesheetStyle } from 'cytoscape';
-import { layoutGraph } from './layout';
+import { layoutGraph, resetLayoutWorker } from './layout';
 import { demoSnapshot } from './demo';
 import { lateralOffsets, metric, topology } from './topology';
 import { limitFilter } from './view-limits';
@@ -44,6 +44,11 @@ function mount(root: HTMLElement) {
   let pendingViewport:Pick<ViewState,'zoom'|'pan'>|undefined;
   let layoutPending=false;
   let viewportTimer:ReturnType<typeof setTimeout>|undefined;
+  let searchTimer:ReturnType<typeof setTimeout>|undefined;
+  // Samples carry the server's poll_time, so judge staleness on the server's
+  // clock: a skewed browser clock must not mark every link STALE.
+  let clockOffset=0;
+  const serverNow=()=>Date.now()/1000+clockOffset;
   const storageKey = `libremap:v1:${root.dataset.storageKey ?? 'local'}`;
   const workspaceKey = `libremap:v2:${root.dataset.storageKey ?? 'local'}`;
   function readWorkspace():ViewState {
@@ -121,7 +126,7 @@ function mount(root: HTMLElement) {
     const eyebrow=document.createElement('div'); eyebrow.className='lm-eyebrow'; eyebrow.textContent=node ? `${node.role} / DEVICE` : 'PHYSICAL LINK'; panel.append(eyebrow);
     const title=document.createElement('h2'); title.textContent=node?.hostname ?? `${graph.nodes.find(n=>n.id===link!.source)?.hostname} ↔ ${graph.nodes.find(n=>n.id===link!.target)?.hostname}`; panel.append(title);
     const rows: [string,string][] = node ? [['Status',node.status],['Role',node.role],['Site',node.site],['Placement',node.reachable ? node.tier===0 ? 'Root tier' : `Hop ${node.tier} from AGG` : 'No discovered AGG path'],['Connections',String(graph.links.filter(l=>l.source===node.id || l.target===node.id).length)]] : [
-      ['Status',metric(link!,Date.now()/1000,snapshot!.config.staleAfter).label], ['Source interface',link!.sourcePort],['Remote interface',link!.targetPort],['Capacity',rate(link!.speedBps)],['Inbound at source',rate(link!.inBps)],['Outbound at source',rate(link!.outBps)],['Sample time',link!.sampledAt ? new Date(link!.sampledAt*1000).toLocaleString() : 'Unavailable'],
+      ['Status',metric(link!,serverNow(),snapshot!.config.staleAfter).label], ['Source interface',link!.sourcePort],['Remote interface',link!.targetPort],['Capacity',rate(link!.speedBps)],['Inbound at source',rate(link!.inBps)],['Outbound at source',rate(link!.outBps)],['Sample time',link!.sampledAt ? new Date(link!.sampledAt*1000).toLocaleString() : 'Unavailable'],
     ];
     const dl=document.createElement('dl'); for (const [label,value] of rows) { const dt=document.createElement('dt'); dt.textContent=label; const dd=document.createElement('dd'); dd.textContent=value; if(link && label==='Status')dd.dataset.linkStatus='true'; dl.append(dt,dd); } panel.append(dl);
     if(node){
@@ -146,7 +151,7 @@ function mount(root: HTMLElement) {
     pendingRestore=restore;pendingViewport=viewport;layoutRequest++;
     setLayoutPending(true);
     clearTimeout(layoutTimer);
-    layoutTimer=setTimeout(()=>{layoutRequest++;setLayoutPending(false);message('Layout timed out. Existing positions are retained; retry Re-layout.',true);},20000);
+    layoutTimer=setTimeout(()=>{layoutRequest++;resetLayoutWorker();setLayoutPending(false);message('Layout timed out. Existing positions are retained; retry Re-layout.',true);},20000);
     const requestId=layoutRequest;
     void layoutGraph(graph).then(positions=>applyLayout(requestId,positions)).catch(()=>{
       if(requestId!==layoutRequest) return;
@@ -167,6 +172,7 @@ function mount(root: HTMLElement) {
     const viewportInFlight=layoutPending ? pendingViewport : undefined;
     const previousSignature=JSON.stringify([graph.nodes.map(n=>[n.id,n.role,n.site,n.tier]),graph.links.map(l=>l.id)]);
     snapshot=next; graph=topology(next);
+    clockOffset=Number.isFinite(next.generatedAt) ? next.generatedAt-Date.now()/1000 : 0;
     const signature=JSON.stringify([graph.nodes.map(n=>[n.id,n.role,n.site,n.tier]),graph.links.map(l=>l.id)]);
     const currentPositions=Object.fromEntries(cy.nodes().map(n=>[n.id(),n.position()]));
     const oldSite=site.value;
@@ -185,7 +191,7 @@ function mount(root: HTMLElement) {
       cy.edges().filter(e=>!edgeIds.has(e.id())).remove(); cy.nodes().filter(n=>!nodeIds.has(n.id())).remove();
       for (const n of graph.nodes) { const data={...n,label:`${n.hostname}\n${n.role}  ·  ${n.status.toUpperCase()}`,color:n.status==='down'?'#e05b65':n.status==='up'?'#36b89a':'#8a96a9',width:n.role==='AGG'?220:206}; const old=cy.getElementById(n.id); if(old.length) old.data(data); else cy.add({data}); }
       const offsets=lateralOffsets(graph);
-      for (const l of graph.links) { const m=metric(l,Date.now()/1000,next.config.staleAfter); const data={...l,id:`edge:${l.id}`,linkId:l.id,label:m.label,color:m.color,state:m.state,lateral:offsets.has(l.id)?1:0,curveDistance:offsets.get(l.id) ?? 0}; const old=cy.getElementById(data.id); if(old.length) old.data(data); else cy.add({data}); }
+      for (const l of graph.links) { const m=metric(l,serverNow(),next.config.staleAfter); const data={...l,id:`edge:${l.id}`,linkId:l.id,label:m.label,color:m.color,state:m.state,lateral:offsets.has(l.id)?1:0,curveDistance:offsets.get(l.id) ?? 0}; const old=cy.getElementById(data.id); if(old.length) old.data(data); else cy.add({data}); }
     });
     updatePins();
     const summary=$('.lm-summary'); summary.replaceChildren();
@@ -215,7 +221,7 @@ function mount(root: HTMLElement) {
     } catch(error) {
       // Permissions may have changed. Do not leave previously authorized graph data on screen.
       cy.elements().remove(); graph={nodes:[],links:[]}; selected=undefined; snapshot=undefined; layoutRequest++; clearTimeout(layoutTimer); detailsDefault();
-      setLayoutPending(false);clearTimeout(viewportTimer);
+      setLayoutPending(false);clearTimeout(viewportTimer);clearTimeout(searchTimer);
       // Clear the on-screen pins, but reload the stored workspace rather than
       // emptying it: a transient failure must not cost the operator their saved
       // positions, and normalizeView re-filters them against whatever loads next.
@@ -234,7 +240,13 @@ function mount(root: HTMLElement) {
     if(!snapshot || layoutPending)return;
     clearTimeout(viewportTimer);viewportTimer=setTimeout(()=>{if(snapshot && !layoutPending)persist();},200);
   });
-  search.addEventListener('input',()=>{search.value=limitFilter(search.value);filters();persist();});site.addEventListener('change',()=>{filters();persist();});focus.addEventListener('change',()=>{filters();persist();});
+  // Filter on every keystroke, but fit and store once typing pauses so the
+  // viewport does not jump and storage is not rewritten per character.
+  search.addEventListener('input',()=>{
+    search.value=limitFilter(search.value);filters(false);
+    clearTimeout(searchTimer);searchTimer=setTimeout(()=>{if(!snapshot)return;const visible=cy.elements(':visible');if(visible.length)cy.fit(visible,70);persist();},300);
+  });
+site.addEventListener('change',()=>{filters();persist();});focus.addEventListener('change',()=>{filters();persist();});
   root.addEventListener('click',event=>{
     const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button[data-action]'); if(!button) return;
     switch(button.dataset.action) {
@@ -254,7 +266,7 @@ function mount(root: HTMLElement) {
   setInterval(()=>{if(!document.hidden) void refresh();},60000);
   setInterval(()=>{
     if(!snapshot)return;
-    const now=Date.now()/1000;
+    const now=serverNow();
     cy.batch(()=>graph.links.forEach(l=>{
       const m=metric(l,now,snapshot!.config.staleAfter);
       cy.getElementById(`edge:${l.id}`).data({label:m.label,color:m.color,state:m.state});
@@ -264,8 +276,13 @@ function mount(root: HTMLElement) {
       }
     }));
   },10000);
-  // Read-only diagnostic hook for browser acceptance checks.
-  if(demo) Object.defineProperty(window,'libremapDebug',{value:()=>({nodes:cy.nodes().map(n=>({id:n.id(),tier:n.data('tier'),position:n.position(),renderedPosition:n.renderedPosition(),visible:n.visible()})),edges:cy.edges().length}),configurable:true});
+  // Read-only diagnostic hook for browser acceptance checks: the demo, or test
+  // fixtures that opt in with data-debug. The plugin's own page never sets it.
+  if(demo || root.dataset.debug==='true') Object.defineProperty(window,'libremapDebug',{value:()=>({
+    nodes:cy.nodes().map(n=>({id:n.id(),tier:n.data('tier'),position:n.position(),renderedPosition:n.renderedPosition(),visible:n.visible()})),
+    edges:cy.edges().length,
+    links:cy.edges().map(e=>({port:e.data('sourcePort') as string,midpoint:e.renderedMidpoint(),label:e.data('label') as string})),
+  }),configurable:true});
 }
 
 function rate(value:number|null) {

@@ -95,7 +95,7 @@ test('live saved views use CSRF, handle revision conflicts, and restore the newe
       if(conflict){stored={...stored!,name:'Changed elsewhere',revision:2,state:{...emptyView(),rootId:'2'}};return route.fulfill({status:409,json:{message:'Conflict'}});}
       const body=request.postDataJSON();expect(body.revision).toBe(stored!.revision);stored={...stored!,...body,revision:stored!.revision+1};return route.fulfill({json:{view:stored}});
     }
-    if(method==='DELETE'){expect(request.postDataJSON().revision).toBe(stored!.revision);stored=undefined;return route.fulfill({status:204});}
+    if(method==='DELETE'){expect(new URL(request.url()).searchParams.get('revision')).toBe(String(stored!.revision));expect(request.postData()).toBeNull();stored=undefined;return route.fulfill({status:204});}
     throw new Error(`Unexpected method ${method}`);
   });
   await page.goto('/live-views');await expect(page.getByRole('status')).toContainText('Topology loaded');
@@ -148,4 +148,13 @@ test('saving waits for layout restoration and standalone viewport changes persis
   const zoom=await state();
   await page.reload();await expect(page.getByRole('status')).toContainText('Demo topology');
   expect(await state()).toBeCloseTo(zoom,6);
+});
+
+test('a rejected save shows the server reason, such as the view limit',async({page})=>{
+  await page.route('**/limit-page',route=>route.fulfill({contentType:'text/html',body:'<div id="libremap" data-endpoint="/limit-topology" data-views-endpoint="/limit-views"></div><script type="module" src="/frontend/main.ts"></script>'}));
+  await page.route('**/limit-topology',route=>route.fulfill({json:demoSnapshot()}));
+  await page.route('**/limit-views',route=>route.request().method()==='GET' ? route.fulfill({json:{views:[]}}) : route.fulfill({status:422,json:{message:'You can save up to 50 views.'}}));
+  await page.goto('/limit-page');await expect(page.getByRole('status')).toContainText('Topology loaded');
+  await page.getByRole('button',{name:'Save view',exact:true}).click();await page.getByRole('textbox',{name:'View name'}).fill('One too many');await page.getByRole('button',{name:'Save as new',exact:true}).click();
+  await expect(page.locator('.lm-view-status')).toHaveText('You can save up to 50 views.');
 });

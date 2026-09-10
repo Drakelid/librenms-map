@@ -51,7 +51,7 @@ export function mountViews(panel:HTMLElement,options:{store?:ViewStore;demo:bool
     const trimmed=name.value.trim();if(!trimmed || textLength(trimmed)>VIEW_NAME_MAX){name.setCustomValidity(!trimmed?'Enter a view name.':`Use at most ${VIEW_NAME_MAX} characters.`);name.reportValidity();return;}name.setCustomValidity('');
     const existing=(event.submitter as HTMLButtonElement)?.value==='update'?active:undefined;
     busy=true;controls();const requestEpoch=epoch;
-    try{const view=await options.store.save(trimmed,options.capture(),existing);if(requestEpoch!==epoch)return;active=view;views=[...views.filter(v=>v.id!==view.id),view];render();dialog.close();message(`Saved “${view.name}”.`);}
+    try{const view=await options.store.save(trimmed,options.capture(),existing);if(requestEpoch!==epoch)return;active=view;views=[view,...views.filter(v=>v.id!==view.id)]/* newest first, as the server lists them */;render();dialog.close();message(`Saved “${view.name}”.`);}
     catch(error){if(requestEpoch===epoch){dialog.close();failure(error);}}
     finally{busy=false;controls();}
   };

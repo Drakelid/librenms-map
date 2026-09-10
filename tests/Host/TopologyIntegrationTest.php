@@ -139,7 +139,26 @@ class TopologyIntegrationTest extends TestCase
         $this->assertSame(1000000000.0, $actual['speedBps']);
         $this->assertSame('up', $actual['status']);
         foreach ($result['devices'] as $device) {
-            $this->assertSame(['id', 'hostname', 'status', 'url'], array_keys($device));
+            $this->assertSame(['id', 'hostname', 'sysName', 'status', 'url'], array_keys($device));
         }
+
+        // A rate at the host column's 32-bit ceiling was clamped, not measured.
+        $local->forceFill(['ifInOctets_rate' => 2147483647])->save();
+        $clamped = collect(app(LibreNmsTopology::class)->forUser(User::factory()->admin()->create())['links'])
+            ->firstWhere('id', (string) $link->id);
+        $this->assertNull($clamped['inBps']);
+    }
+
+    public function testMalformedConfigIsSanitizedBeforeSerialization(): void
+    {
+        $device = Device::factory()->create();
+        config(['libremap.prefixes' => 'hk-', 'libremap.overrides' => [
+            $device->device_id => ['role' => 5, 'site' => 'rossa1'],
+        ]]);
+
+        $result = app(LibreNmsTopology::class)->forUser(User::factory()->admin()->create());
+
+        $this->assertSame(['hk-'], $result['config']['prefixes']);
+        $this->assertSame([$device->device_id => ['site' => 'rossa1']], (array) $result['config']['overrides']);
     }
 }

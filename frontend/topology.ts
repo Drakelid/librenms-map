@@ -1,14 +1,25 @@
 import type { Config, Device, Link, MapNode, Snapshot, Topology } from './types';
 
-export function classify(device: Device, config: Config): Pick<MapNode, 'role' | 'site'> {
-  let name = device.hostname.toLowerCase().split('.')[0];
-  for (const prefix of [...config.prefixes].sort((a, b) => b.length - a.length)) {
-    if (name.startsWith(prefix.toLowerCase())) { name = name.slice(prefix.length); break; }
+// The numbered site boundary avoids false positives such as "server01".
+const ROLE_NAME = /^(?<site>.+?\d)(?<role>agg|er)(?<number>\d+)$/;
+
+function nameParts(name: string, prefixes: string[]) {
+  let short = name.toLowerCase().split('.')[0];
+  for (const prefix of prefixes) {
+    if (short.startsWith(prefix)) { short = short.slice(prefix.length); break; }
   }
-  // The numbered site boundary avoids false positives such as "server01".
-  const match = /^(?<site>.+?\d)(?<role>agg|er)(?<number>\d+)$/.exec(name);
+  return ROLE_NAME.exec(short)?.groups;
+}
+
+export function classify(device: Device, config: Config): Pick<MapNode, 'role' | 'site'> {
+  // Config is admin-edited; ignore entries of the wrong type instead of failing the map.
+  const prefixes = config.prefixes.filter(p => typeof p === 'string' && p !== '').map(p => p.toLowerCase()).sort((a, b) => b.length - a.length);
+  // Devices added by IP address have no role in their hostname; sysName usually does.
+  const match = nameParts(device.hostname, prefixes) ?? (typeof device.sysName === 'string' ? nameParts(device.sysName, prefixes) : undefined);
   const override = config.overrides[device.id];
-  return { role: (override?.role ?? match?.groups?.role ?? 'other').toUpperCase(), site: override?.site ?? match?.groups?.site ?? 'Unclassified' };
+  const role = typeof override?.role === 'string' ? override.role : match?.role ?? 'other';
+  const site = typeof override?.site === 'string' ? override.site : match?.site ?? 'Unclassified';
+  return { role: role.toUpperCase(), site };
 }
 
 // Unknown remote ports are not guessed or merged with known physical ports.

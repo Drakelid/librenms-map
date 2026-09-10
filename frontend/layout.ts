@@ -1,7 +1,18 @@
 import ELK from 'elkjs/lib/elk-api.js';
 import ElkWorker from 'elkjs/lib/elk-worker.min.js?worker';
 import type { Topology, Position } from './types';
-const elk = new ELK({ workerFactory: () => new ElkWorker() });
+const createElk = () => new ELK({ workerFactory: () => new ElkWorker() });
+let elk = createElk();
+
+/**
+ * Abandon a layout that is still computing. The worker runs one job at a time,
+ * so every later layout would otherwise queue behind the stuck one.
+ */
+export function resetLayoutWorker() {
+  elk.terminateWorker();
+  elk = createElk();
+}
+
 export async function layoutGraph(graph:Topology):Promise<Record<string,Position>> {
     const nodes = new Map(graph.nodes.map(n => [n.id, n]));
     // Only layout edges are oriented. Displayed physical links are never modified.

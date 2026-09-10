@@ -2,6 +2,12 @@
 
 namespace LibreMap;
 
+use App\Models\User;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use LibreMap\Hooks\MenuEntry;
 use LibreNMS\Interfaces\Plugins\Hooks\MenuEntryHook;
@@ -25,6 +31,21 @@ class LibreMapServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/libremap.php' => config_path('libremap.php'),
         ], 'libremap-config');
+
+        // A named limiter keeps its own counter; a plain throttle:N,M key is only
+        // the user ID, shared with every other such route on the host. Register
+        // it even while disabled: cached routes still reference it.
+        RateLimiter::for('libremap', fn (Request $request) => Limit::perMinute(120)
+            ->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
+        // Saved views are private to their owner; remove them with the account.
+        User::deleted(function (User $user): void {
+            foreach (['libremap_views', 'libremap_view_owners'] as $table) {
+                if (Schema::hasTable($table)) {
+                    DB::table($table)->where('user_id', $user->getKey())->delete();
+                }
+            }
+        });
 
         if (! $pluginManager->pluginEnabled('libremap')) {
             return;

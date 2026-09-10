@@ -1,5 +1,5 @@
 import type { Position, Topology, ViewState } from './types';
-import { FILTER_MAX, limitFilter, textLength } from './view-limits';
+import { FILTER_MAX, limitFilter, STORED_POSITIONS_MAX, textLength } from './view-limits';
 
 export const emptyView = (): ViewState => ({ rootId:null, site:'', search:'', backbone:false, positions:{}, pinned:[], zoom:1, pan:{x:0,y:0} });
 const object = (value:unknown): value is Record<string, unknown> => !!value && typeof value==='object' && !Array.isArray(value);
@@ -16,8 +16,15 @@ export function normalizeView(value:unknown, graph?:Topology):ViewState {
   if(typeof value.site==='string' && textLength(value.site)<=FILTER_MAX && (!graph || graph.nodes.some(n=>n.site===value.site))) state.site=value.site;
   if(typeof value.search==='string') state.search=limitFilter(value.search);
   state.backbone=value.backbone===true;
-  if(object(value.positions)) for(const [id,p] of Object.entries(value.positions).slice(0,2000)) if(validId(id) && point(p)) state.positions[id]={x:p.x,y:p.y};
-  if(Array.isArray(value.pinned)) state.pinned=[...new Set(value.pinned.filter((id):id is string=>typeof id==='string' && validId(id) && Object.hasOwn(state.positions,id)))].slice(0,2000);
+  // A loaded map bounds entries by its own devices (the server's limit follows
+  // libremap.max_devices); unscoped storage keeps only a corruption guard.
+  const limit=graph ? graph.nodes.length : STORED_POSITIONS_MAX;
+  let kept=0;
+  if(object(value.positions)) for(const [id,p] of Object.entries(value.positions)) {
+    if(kept>=limit) break;
+    if(validId(id) && point(p)) {state.positions[id]={x:p.x,y:p.y};kept++;}
+  }
+  if(Array.isArray(value.pinned)) state.pinned=[...new Set(value.pinned.filter((id):id is string=>typeof id==='string' && validId(id) && Object.hasOwn(state.positions,id)))].slice(0,limit);
   if(typeof value.zoom==='number' && Number.isFinite(value.zoom)) state.zoom=Math.min(2.5,Math.max(0.15,value.zoom));
   if(point(value.pan)) state.pan={x:value.pan.x,y:value.pan.y};
   return state;

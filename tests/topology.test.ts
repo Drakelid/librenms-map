@@ -45,3 +45,10 @@ test('utilization uses directional maximum, preserves zero, and distinguishes st
   assert.equal(metric({ ...link('a','b'), status:'down' }, 2000, 900).label, 'DOWN');
   assert.equal(metric({ ...link('a','b'), outBps:1.2e9 }, 1100, 900).label, '120%');
 });
+test('an IP-address hostname falls back to sysName and malformed config entries are ignored', () => {
+  assert.deepEqual(classify({ id:'1', hostname:'10.20.30.40', sysName:'HK-ROSSA1ER2.example.net', status:'up' }, config), { role:'ER', site:'rossa1' });
+  assert.deepEqual(classify({ id:'1', hostname:'rossa1agg1', sysName:'heiane1er1', status:'up' }, config), { role:'AGG', site:'rossa1' });
+  assert.equal(classify({ id:'1', hostname:'10.20.30.40', sysName:null, status:'up' }, config).site, 'Unclassified');
+  const malformed: Config = { ...config, prefixes:['hk-', 7 as unknown as string], overrides:{ '1':{ role:5 as unknown as string, site:'manual' } } };
+  assert.deepEqual(classify({ id:'1', hostname:'hk-rossa1agg1', status:'up' }, malformed), { role:'AGG', site:'manual' });
+});

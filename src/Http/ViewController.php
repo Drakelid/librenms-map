@@ -12,6 +12,9 @@ use LibreMap\Views\ViewState;
 
 class ViewController extends Controller
 {
+    /** @var array<string, true> Tables already confirmed present during this request. */
+    private array $tables = [];
+
     public function index(Request $request, ViewState $states): JsonResponse
     {
         $rows = $this->owned($request)->orderByDesc('updated_at')->orderBy('id')->get();
@@ -23,8 +26,8 @@ class ViewController extends Controller
 
     public function store(Request $request, ViewState $states): JsonResponse
     {
-        $this->owned($request);
-        abort_unless(Schema::hasTable('libremap_view_owners'), 503, 'Saved views are unavailable. An administrator must run the LibreMap database migration.');
+        $this->requireTable('libremap_views');
+        $this->requireTable('libremap_view_owners');
         $data = $states->validate($request->all(), $request->user());
         $row = DB::transaction(function () use ($request, $data) {
             // A persistent plugin-owned row serializes even an owner's first
@@ -69,6 +72,8 @@ class ViewController extends Controller
     public function destroy(Request $request, string $id): JsonResponse
     {
         abort_unless($this->owned($request)->where('id', $id)->exists(), 404);
+        // The client sends the revision in the query string because some proxies
+        // drop DELETE bodies; a JSON body is still accepted.
         $revision = $request->validate(['revision' => ['required', 'integer', 'min:1', 'max:4294967295']])['revision'];
         $deleted = $this->owned($request)->where('id', $id)->where('revision', $revision)->delete();
         abort_unless($deleted, 409, 'This view changed in another session. Reload before deleting.');
@@ -78,9 +83,18 @@ class ViewController extends Controller
 
     private function owned(Request $request)
     {
-        abort_unless(Schema::hasTable('libremap_views'), 503, 'Saved views are unavailable. An administrator must run the LibreMap database migration.');
+        $this->requireTable('libremap_views');
 
         return DB::table('libremap_views')->where('user_id', $request->user()->getKey());
+    }
+
+    /** One schema lookup per table per request, instead of one per query. */
+    private function requireTable(string $table): void
+    {
+        if (! isset($this->tables[$table])) {
+            abort_unless(Schema::hasTable($table), 503, 'Saved views are unavailable. An administrator must run the LibreMap database migration.');
+            $this->tables[$table] = true;
+        }
     }
 
     private function decode(object $row): array

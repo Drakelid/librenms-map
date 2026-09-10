@@ -27,11 +27,11 @@ class ViewState
             'state.backbone' => ['required', function ($attribute, $value, $fail): void {
                 if (! is_bool($value)) { $fail('Backbone must be a boolean.'); }
             }],
-            'state.positions' => ['present', 'array', 'max:2000'],
+            'state.positions' => ['present', 'array', 'max:'.self::positionLimit()],
             'state.positions.*' => ['required', 'array:x,y'],
             'state.positions.*.x' => ['required', $number],
             'state.positions.*.y' => ['required', $number],
-            'state.pinned' => ['present', 'array', 'max:2000'],
+            'state.pinned' => ['present', 'array', 'max:'.self::positionLimit()],
             'state.pinned.*' => ['required', 'string', 'regex:/^[1-9][0-9]{0,9}$/', 'distinct'],
             'state.zoom' => ['required', 'numeric', 'min:0.15', 'max:2.5', $number],
             'state.pan' => ['required', 'array:x,y'],
@@ -60,6 +60,12 @@ class ViewState
         }
 
         return $data;
+    }
+
+    /** A view must hold a position for every device the map can load. */
+    public static function positionLimit(): int
+    {
+        return max(2000, (int) config('libremap.max_devices', 2000));
     }
 
     public function forUser(array $state, User $user): array
