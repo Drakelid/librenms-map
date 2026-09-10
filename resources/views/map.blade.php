@@ -10,7 +10,8 @@
          data-views-endpoint="{{ route('libremap.views') }}"
          data-csrf="{{ csrf_token() }}"
          data-home-url="{{ url('/') }}"
-         data-storage-key="libremap:{{ auth()->id() }}">
+         data-storage-key="libremap:{{ auth()->id() }}"
+         data-host-theme="true">
         <p role="status">Loading network topology…</p>
     </div>
     <script type="module" src="{{ asset('vendor/libremap/libremap.js') }}?v={{ $assetVersion }}"></script>

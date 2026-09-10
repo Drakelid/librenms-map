@@ -39,13 +39,13 @@ Open <http://127.0.0.1:5173>. The demo is explicitly labeled and uses illustrati
 
 - Paired AGG roots and ER hop tiers, with rings, dual-homing and parallel physical links retained.
 - Numbered-site hostname classification: `rossa1agg1`, `rossa1agg2`, `rossa1er1`; case-insensitive, FQDN normalization, configurable prefixes and device-ID overrides.
-- Search with immediate-neighbor context, site filter, AGG backbone toggle, device/link details, light/dark themes, zoom and fullscreen.
+- Search with immediate-neighbor context, site filter, AGG backbone toggle, device/link details, light/dark themes, zoom and fullscreen. Inside LibreNMS the map follows the user's site style, including live switches in "device" mode, and uses the LibreNMS page background; the standalone demo follows the OS color scheme and keeps a Theme toggle.
 - Directional maximum utilization and explicit down/stale/unknown states. The topology is fetched every 60 seconds; link states are re-evaluated every 10 seconds from the current snapshot. Neither refresh relayouts the graph.
 - AGG root focus includes same-site peers and discovered ER branches, stopping traversal at neighboring AGG sites. Boundary AGGs remain visible for context.
 - Pin/unpin device positions. Pinned devices cannot be dragged and remain fixed during Re-layout; automatic nodes are placed clear of them. Use Unpin all to release them.
 - Browser workspace persistence and private named views stored in LibreNMS. Views capture root/site/search filters, backbone mode, positions, pins, zoom and pan. The explicit demo stores named views in this browser only.
 - Create, update, copy and delete named views. Revision checks prevent stale tabs from overwriting newer saves. Reload views restores the newest saved state before another update.
-- A Composer package integrated with LibreNMS sessions, plugin menu and permission scopes. Both devices and both ports must be authorized before a link is serialized. Plugin routes are rate limited to 120 requests per minute per user, on a counter separate from other LibreNMS routes.
+- A Composer package integrated with LibreNMS sessions, a **Topology Map** navigation-bar button, the plugin menu and permission scopes. Both devices and both ports must be authorized before a link is serialized. Plugin routes are rate limited to 120 requests per minute per user, on a counter separate from other LibreNMS routes.
 
 ## Build assets
 
@@ -95,7 +95,11 @@ These alter the host Composer configuration and lockfile; retain those changes t
 php artisan optimize:clear
 ```
 
-**4. Open the map.** Go to **Plugins → LibreMap**, or `/libremap` under the instance's base URL.
+**4. Open the map.** Click **Topology Map** in the LibreNMS navigation bar (also listed under **Plugins**), or go to `/libremap` under the instance's base URL.
+
+### Navigation bar
+
+LibreNMS offers plugins no hook for top-level navigation items, but its navigation bar includes one optional `menu.custom` view. While libremap is enabled, the package supplies that view with the **Topology Map** button. A host's own `resources/views/menu/custom.blade.php` keeps working: LibreMap renders it right after the button. As with routes, clear caches after enabling or disabling the plugin.
 
 ### Route cache
 

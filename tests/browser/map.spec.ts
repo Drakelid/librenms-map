@@ -23,11 +23,41 @@ test('demo renders AGG roots, details, search, backbone and stable refresh', asy
   expect((await read()).nodes.filter(n=>n.visible)).toHaveLength(4);
   await page.getByRole('button',{name:'AGG backbone'}).click();
   await page.getByRole('button',{name:'Close details'}).click();
-  await page.screenshot({path:'test-results/libremap-light.png',fullPage:true});
+  await page.screenshot({path:'test-results/libremap-light.png',fullPage:true,animations:'disabled'});
   await page.getByRole('button',{name:'Theme'}).click();
   await expect(page.locator('#libremap')).toHaveClass(/lm-dark/);
-  await page.screenshot({path:'test-results/libremap-dark.png',fullPage:true});
+  await page.screenshot({path:'test-results/libremap-dark.png',fullPage:true,animations:'disabled'});
   expect(errors).toEqual([]);
+});
+
+test('inside LibreNMS the map follows the site style and page background',async({page})=>{
+  // Mirrors LibreNMS: styles.css paints body white, tw_dark.css paints `.dark body` #272b30.
+  await page.route('**/host-theme',route=>route.fulfill({contentType:'text/html',body:'<style>body{margin:0;background:#fff}.dark body{background-color:#272b30}</style><div id="libremap" data-endpoint="/host-snapshot" data-host-theme="true"></div><script type="module" src="/frontend/main.ts"></script>'}));
+  await page.route('**/host-snapshot',route=>route.fulfill({json:demoSnapshot()}));
+  await page.goto('/host-theme');
+  await expect(page.getByRole('status')).toContainText('Topology loaded');
+  const map=page.locator('#libremap'), canvas=page.locator('.lm-canvas-wrap');
+  await expect(map).not.toHaveClass(/lm-dark/);
+  await expect(canvas).toHaveCSS('background-color','rgb(255, 255, 255)');
+  await expect(page.getByRole('button',{name:'Theme'})).toHaveCount(0);
+  await page.screenshot({path:'test-results/libremap-host-light.png',fullPage:true,animations:'disabled'});
+  // applySiteStyle toggles `dark` on <html>, including live in "device" mode.
+  await page.evaluate(()=>document.documentElement.classList.add('dark'));
+  await expect(map).toHaveClass(/lm-dark/);
+  await expect(canvas).toHaveCSS('background-color','rgb(39, 43, 48)');
+  await page.screenshot({path:'test-results/libremap-host-dark.png',fullPage:true,animations:'disabled'});
+  await page.evaluate(()=>document.documentElement.classList.remove('dark'));
+  await expect(map).not.toHaveClass(/lm-dark/);
+  await expect(canvas).toHaveCSS('background-color','rgb(255, 255, 255)');
+});
+
+test('outside LibreNMS the map follows the OS color scheme',async({page})=>{
+  await page.emulateMedia({colorScheme:'dark'});
+  await page.goto('/');
+  await expect(page.getByRole('status')).toContainText('Demo topology');
+  await expect(page.locator('#libremap')).toHaveClass(/lm-dark/);
+  await page.emulateMedia({colorScheme:'light'});
+  await expect(page.locator('#libremap')).not.toHaveClass(/lm-dark/);
 });
 
 test('failed live endpoint displays an error without demo fallback',async({page})=>{
@@ -44,7 +74,7 @@ test('production bundle loads its worker beneath a published asset path',async({
   await page.route('**/production-test',route=>route.fulfill({contentType:'text/html',body:'<link rel="stylesheet" href="/dist/libremap.css"><div id="libremap" data-demo="true" data-storage-key="production-test"></div><script type="module" src="/dist/libremap.js"></script>'}));
   await page.goto('/production-test');
   await expect(page.getByRole('status')).toContainText('Demo topology',{timeout:15000});
-  await expect(page.getByRole('heading',{name:'Your network, connected.'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Follow the connection'})).toBeVisible();
   expect(errors).toEqual([]);
 });
 

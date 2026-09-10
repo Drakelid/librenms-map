@@ -18,7 +18,7 @@ function mount(root: HTMLElement) {
   root.innerHTML = `
     <div class="lm-shell">
       <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>NETWORK TOPOLOGY</span></div></div><div class="lm-header-right"><span class="lm-source">${demo ? 'DEMO DATA' : 'LIBRENMS'}</span><button data-action="theme" title="Toggle color theme">◐ <span>Theme</span></button><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
-      <section class="lm-heading"><div><div class="lm-eyebrow">INFRASTRUCTURE / TOPOLOGY</div><h1>Your network, connected.</h1><p>Aggregation at the root. Every connection in view.</p></div><div class="lm-summary" aria-label="Network summary"></div></section>
+      <section class="lm-heading"><div><div class="lm-eyebrow">INFRASTRUCTURE / TOPOLOGY</div></div><div class="lm-summary" aria-label="Network summary"></div></section>
       <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device…"></label><label class="lm-select">Site <select aria-label="Site"><option value="">All sites</option></select></label><button data-action="overview">AGG backbone</button><span class="lm-spacer"></span><button data-action="refresh">↻ Refresh</button><button data-action="layout">Re-layout</button><button data-action="fullscreen" title="Fullscreen">⛶</button></div>
       <div class="lm-viewbar"><label class="lm-select">AGG root <select aria-label="AGG root"><option value="">All AGG groups</option></select></label><span class="lm-pin-count">0 pinned</span><button data-action="unpin-all">Unpin all</button><div class="lm-views"></div></div>
       <div class="lm-notice" role="status" aria-live="polite">Loading topology…</div>
@@ -26,13 +26,36 @@ function mount(root: HTMLElement) {
       <footer><span class="lm-updated">Waiting for data</span><span>Drag to arrange · Scroll to zoom · Click to inspect</span></footer>
     </div>`;
   if (demo) root.querySelector('.lm-back')?.remove();
+  // Inside LibreNMS the user's site style decides the theme; no separate toggle.
+  const hostTheme = root.dataset.hostTheme === 'true';
+  if (hostTheme) root.querySelector('[data-action="theme"]')?.remove();
   else if(root.dataset.homeUrl) root.querySelector<HTMLAnchorElement>('.lm-back')!.href=root.dataset.homeUrl;
   const $ = <T extends HTMLElement>(selector:string) => root.querySelector<T>(selector)!;
   const notice = $('.lm-notice');
   const search = $<HTMLInputElement>('[aria-label="Find device"]');
   const site = $<HTMLSelectElement>('[aria-label="Site"]');
   const focus = $<HTMLSelectElement>('[aria-label="AGG root"]');
-  const cy: Core = cytoscape({ container:$('.lm-canvas'), minZoom:0.15, maxZoom:2.5, selectionType:'single', style:styles(false) });
+  const cy: Core = cytoscape({ container:$('.lm-canvas'), minZoom:0.15, maxZoom:2.5, selectionType:'single', style:styles(root) });
+  // LibreNMS toggles `dark` on <html> (live, in its "device" mode) and paints its
+  // page background on <body>; the map adopts both. Elsewhere, such as the demo,
+  // follow the OS preference unless the Theme button overrides it.
+  const systemDark=window.matchMedia('(prefers-color-scheme: dark)');
+  let manualDark:boolean|undefined;
+  let appliedTheme='';
+  function applyTheme(){
+    const dark=hostTheme ? document.documentElement.classList.contains('dark') : manualDark ?? systemDark.matches;
+    const background=hostTheme ? getComputedStyle(document.body).backgroundColor : '';
+    const theme=`${dark}|${background}`;
+    if(theme===appliedTheme)return;
+    appliedTheme=theme;
+    root.classList.toggle('lm-dark',dark);
+    // Only an opaque host color replaces the map's own background.
+    if(/^rgb\(/.test(background))root.style.setProperty('--bg',background);else root.style.removeProperty('--bg');
+    cy.style(styles(root));
+  }
+  applyTheme();
+  if(hostTheme)new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['class']});
+  else systemDark.addEventListener('change',applyTheme);
   let snapshot: Snapshot | undefined;
   let graph: Topology = { nodes:[], links:[] };
   let backbone = false;
@@ -257,7 +280,7 @@ site.addEventListener('change',()=>{filters();persist();});focus.addEventListene
       case 'zoom-in':cy.zoom({level:cy.zoom()*1.2,renderedPosition:{x:cy.width()/2,y:cy.height()/2}});break;
       case 'zoom-out':cy.zoom({level:cy.zoom()/1.2,renderedPosition:{x:cy.width()/2,y:cy.height()/2}});break;
       case 'overview':backbone=!backbone;updateBackbone();filters();persist();break;
-      case 'theme':root.classList.toggle('lm-dark');cy.style(styles(root.classList.contains('lm-dark')));break;
+      case 'theme':manualDark=!root.classList.contains('lm-dark');applyTheme();break;
       case 'fullscreen':void (document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen()).catch(()=>message('Fullscreen is unavailable in this browser.'));break;
     }
   });
@@ -289,11 +312,15 @@ function rate(value:number|null) {
   if(value===null||!Number.isFinite(value)) return 'N/A';
   return value>=1e9 ? `${(value/1e9).toFixed(2)} Gbps` : value>=1e6 ? `${(value/1e6).toFixed(1)} Mbps` : `${Math.round(value/1e3)} Kbps`;
 }
-function styles(dark:boolean):StylesheetStyle[] {
+/** Canvas colors come from the same CSS variables as the rest of the map. */
+function styles(root:HTMLElement):StylesheetStyle[] {
+  const css=getComputedStyle(root);
+  const color=(name:string,fallback:string)=>css.getPropertyValue(name).trim() || fallback;
+  const panel=color('--panel','#ffffff'), ink=color('--ink','#20324b'), line=color('--line','#e4eaf2');
   return [
-    {selector:'node',style:{shape:'round-rectangle',width:'data(width)',height:72,'background-color':dark?'#223247':'#ffffff','border-width':1.5,'border-color':'data(color)',label:'data(label)',color:dark?'#e5edf8':'#27374e','font-family':'Inter, Segoe UI, sans-serif','font-size':18,'font-weight':500,'text-wrap':'wrap','text-valign':'center','text-halign':'center','line-height':1.6}},
-    {selector:'node[role = "AGG"]',style:{height:82,'border-width':2.5,'background-color':dark?'#233b54':'#eef5ff','font-weight':700}},
-    {selector:'edge',style:{width:2.4,'curve-style':'bezier','control-point-step-size':45,'line-color':'data(color)',label:'data(label)','font-size':15,'font-weight':600,color:dark?'#dce6f4':'#4d6077','text-background-color':dark?'#172638':'#ffffff','text-background-opacity':1,'text-background-padding':'4px','text-background-shape':'roundrectangle','text-border-width':1,'text-border-opacity':1,'text-border-color':dark?'#33465d':'#e3eaf2','text-rotation':'none'}},
+    {selector:'node',style:{shape:'round-rectangle',width:'data(width)',height:72,'background-color':panel,'border-width':1.5,'border-color':'data(color)',label:'data(label)',color:ink,'font-family':'Inter, Segoe UI, sans-serif','font-size':18,'font-weight':500,'text-wrap':'wrap','text-valign':'center','text-halign':'center','line-height':1.6}},
+    {selector:'node[role = "AGG"]',style:{height:82,'border-width':2.5,'background-color':color('--node-agg','#eef5ff'),'font-weight':700}},
+    {selector:'edge',style:{width:2.4,'curve-style':'bezier','control-point-step-size':45,'line-color':'data(color)',label:'data(label)','font-size':15,'font-weight':600,color:color('--edge-ink','#4d6077'),'text-background-color':panel,'text-background-opacity':1,'text-background-padding':'4px','text-background-shape':'roundrectangle','text-border-width':1,'text-border-opacity':1,'text-border-color':line,'text-rotation':'none'}},
     {selector:'edge[lateral = 1]',style:{'curve-style':'unbundled-bezier','control-point-distances':'data(curveDistance)','control-point-weights':[0.5]}},
     {selector:'edge[state = "stale"], edge[state = "unknown"]',style:{'line-style':'dashed'}},
     {selector:':selected',style:{'overlay-color':'#55a7ce','overlay-opacity':0.12,'overlay-padding':7}},

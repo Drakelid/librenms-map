@@ -53,5 +53,9 @@ class LibreMapServiceProvider extends ServiceProvider
 
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'libremap');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        // The "Topology Map" navbar button: LibreNMS offers plugins no hook for
+        // top-level items, but its navbar includes an optional `menu.custom`
+        // view. Search this package's copy first; it renders the host's own.
+        $this->callAfterResolving('view', fn ($view) => $view->getFinder()->prependLocation(__DIR__.'/../resources/navbar'));
     }
 }

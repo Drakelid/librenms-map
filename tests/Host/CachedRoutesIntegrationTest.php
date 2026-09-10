@@ -25,6 +25,17 @@ class CachedRoutesIntegrationTest extends TestCase
         $this->getJson('/libremap/views')->assertOk()->assertExactJson(['views' => []]);
     }
 
+    public function testMapPageRendersWithTheNavbarButton(): void
+    {
+        $this->actingAs(User::factory()->create(['enabled' => 1]));
+        // The real provider, with the plugin enabled, registered the navbar view.
+        $this->get('/libremap')->assertOk()
+            ->assertSee('Topology Map')
+            ->assertSee('fa-sitemap', false)
+            ->assertSee('data-host-theme="true"', false)
+            ->assertSee('vendor/libremap/libremap.js?v=', false);
+    }
+
     public function testCachedRoutesStillCheckAuthenticationAndPluginEnablement(): void
     {
         $this->assertTrue($this->app->routesAreCached());

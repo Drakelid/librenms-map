@@ -24,5 +24,6 @@
 #libremap .lm-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
 #libremap .lm-pin-device, #libremap .lm-focus-device { display: block; width: 100%; margin: 10px 0; font-size: 12px; }
 #libremap .lm-pin-device[aria-pressed="true"] { background: #e6f3f4; color: #176b73; }
+#libremap.lm-dark .lm-pin-device[aria-pressed="true"] { background: #1f4448; color: #9fe0dc; }
 @media (max-width: 1100px) { #libremap .lm-views { width: 100%; margin-left: 0; } #libremap .lm-view-status { width: auto; margin-left: auto; } }
 @media (max-width: 720px) { #libremap .lm-viewbar { margin: 0 10px; } #libremap .lm-view-status { width: 100%; text-align: left; } }

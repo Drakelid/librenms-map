@@ -20,7 +20,7 @@ function snapshot(): Snapshot {
 async function load(page: Page, data: Snapshot) {
   await page.route('**/link-snapshot', route => route.fulfill({ json: data }));
   await page.route('**/link-review', route => route.fulfill({ contentType: 'text/html', body:
-    '<div id="libremap" data-endpoint="/link-snapshot" data-debug="true"></div><script type="module" src="/frontend/main.ts"></script>',
+    '<div id="libremap" data-endpoint="/link-snapshot" data-debug="true" data-host-theme="true"></div><script type="module" src="/frontend/main.ts"></script>',
   }));
   await page.goto('/link-review');
   await expect(page.locator('.lm-notice')).toContainText('Topology loaded');
@@ -39,7 +39,9 @@ test('parallel lateral links have separate selectable paths through refresh and 
     await page.mouse.click(bounds.x + edge.midpoint.x, bounds.y + edge.midpoint.y);
     await expect(page.locator('.lm-details dd').nth(1)).toHaveText(edge.port);
   }
-  await page.getByRole('button', { name: 'Theme' }).click();
+  // Switch theme the way LibreNMS does: toggle `dark` on <html>.
+  await page.evaluate(() => document.documentElement.classList.toggle('dark'));
+  await expect(page.locator('#libremap')).toHaveClass(/lm-dark/);
   await page.getByRole('button', { name: 'Refresh' }).click();
   await expect(page.locator('.lm-notice')).toContainText('layout unchanged');
   expect((await edges(page)).map(edge => edge.midpoint)).toEqual(before.map(edge => edge.midpoint));
