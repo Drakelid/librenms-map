@@ -7,8 +7,8 @@ const nodes=(count:number,tier=1):MapNode[]=>Array.from({length:count},(_,index)
   id:String(index+1),hostname:`site1er${index+1}`,status:'up',role:'ER',site:'site1',tier,reachable:true,
 }));
 
-test('large topology tiers wrap vertically instead of forming one very wide row',()=>{
-  const graph:Topology={nodes:nodes(256),links:[],deviceGroups:[]};
+test('a production-sized topology tier wraps vertically instead of forming one very wide row',()=>{
+  const graph:Topology={nodes:nodes(2048),links:[],deviceGroups:[]};
   const positions=packTierPositions(graph,new Map(graph.nodes.map((node,index)=>[node.id,index])));
   const xs=Object.values(positions).map(position=>position.x);
   const ys=Object.values(positions).map(position=>position.y);
