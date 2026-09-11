@@ -19449,7 +19449,7 @@ function s_(e) {
 		b = {
 			type: "link",
 			id: e.target.data("linkId")
-		}, l.elements().removeClass("lm-dim"), re();
+		}, e.target.union(e.target.connectedNodes()).removeClass("lm-dim"), re();
 	}), l.on("tap", (e) => {
 		e.target === l && (b = void 0, l.elements().removeClass("lm-dim"), ne());
 	}), l.on("dragfree", "node", (e) => {
@@ -19535,18 +19535,27 @@ function s_(e) {
 		}));
 	}, 1e4), (t || e.dataset.debug === "true") && Object.defineProperty(window, "libremapDebug", {
 		value: () => ({
+			zoom: l.zoom(),
 			nodes: l.nodes().map((e) => ({
 				id: e.id(),
 				tier: e.data("tier"),
 				position: e.position(),
 				renderedPosition: e.renderedPosition(),
-				visible: e.visible()
+				visible: e.visible(),
+				dimmed: e.hasClass("lm-dim")
 			})),
 			edges: l.edges().length,
 			links: l.edges().map((e) => ({
 				port: e.data("sourcePort"),
 				midpoint: e.renderedMidpoint(),
-				label: e.data("label")
+				label: e.data("label"),
+				dimmed: e.hasClass("lm-dim"),
+				labelBox: e.renderedBoundingBox({
+					includeNodes: !1,
+					includeEdges: !1,
+					includeLabels: !0,
+					includeOverlays: !1
+				})
 			}))
 		}),
 		configurable: !0
@@ -19612,7 +19621,8 @@ function u_(e) {
 				"text-border-width": 1,
 				"text-border-opacity": 1,
 				"text-border-color": a,
-				"text-rotation": "none"
+				"text-rotation": "none",
+				"text-events": "yes"
 			}
 		},
 		{

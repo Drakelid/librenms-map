@@ -299,7 +299,8 @@ function mount(root: HTMLElement) {
     } finally { busy=false; }
   }
   cy.on('tap','node',event=>selectNode(event.target.id()));
-  cy.on('tap','edge',event=>{selected={type:'link',id:event.target.data('linkId')};cy.elements().removeClass('lm-dim');renderDetails();});
+  // Inspecting a link keeps a selected device's neighborhood in focus; the link and its ends join it.
+  cy.on('tap','edge',event=>{selected={type:'link',id:event.target.data('linkId')};event.target.union(event.target.connectedNodes()).removeClass('lm-dim');renderDetails();});
   cy.on('tap',event=>{if(event.target===cy){selected=undefined;cy.elements().removeClass('lm-dim');detailsDefault();}});
   cy.on('dragfree','node',event=>{basePositions[event.target.id()]={...event.target.position()};persist();});
   cy.on('zoom',()=>cy.edges().toggleClass('lm-no-label',cy.zoom()<0.45));
@@ -347,9 +348,10 @@ site.addEventListener('change',()=>{filters();persist();});deviceGroup.addEventL
   // Read-only diagnostic hook for browser acceptance checks: the demo, or test
   // fixtures that opt in with data-debug. The plugin's own page never sets it.
   if(demo || root.dataset.debug==='true') Object.defineProperty(window,'libremapDebug',{value:()=>({
-    nodes:cy.nodes().map(n=>({id:n.id(),tier:n.data('tier'),position:n.position(),renderedPosition:n.renderedPosition(),visible:n.visible()})),
+    zoom:cy.zoom(),
+    nodes:cy.nodes().map(n=>({id:n.id(),tier:n.data('tier'),position:n.position(),renderedPosition:n.renderedPosition(),visible:n.visible(),dimmed:n.hasClass('lm-dim')})),
     edges:cy.edges().length,
-    links:cy.edges().map(e=>({port:e.data('sourcePort') as string,midpoint:e.renderedMidpoint(),label:e.data('label') as string})),
+    links:cy.edges().map(e=>({port:e.data('sourcePort') as string,midpoint:e.renderedMidpoint(),label:e.data('label') as string,dimmed:e.hasClass('lm-dim'),labelBox:e.renderedBoundingBox({includeNodes:false,includeEdges:false,includeLabels:true,includeOverlays:false})})),
   }),configurable:true});
 }
 
@@ -374,7 +376,7 @@ function styles(root:HTMLElement):StylesheetStyle[] {
   return [
     {selector:'node',style:{shape:'round-rectangle',width:'data(width)',height:72,'background-color':panel,'border-width':1.5,'border-color':'data(color)',label:'data(label)',color:ink,'font-family':'Inter, Segoe UI, sans-serif','font-size':18,'font-weight':500,'text-wrap':'wrap','text-valign':'center','text-halign':'center','line-height':1.6}},
     {selector:'node[role = "AGG"]',style:{height:82,'border-width':2.5,'background-color':color('--node-agg','#eef5ff'),'font-weight':700}},
-    {selector:'edge',style:{width:2.4,'curve-style':'bezier','control-point-step-size':PARALLEL_CONNECTION_GAP,'line-color':'data(color)',label:'data(label)','font-size':15,'font-weight':600,color:color('--edge-ink','#4d6077'),'text-background-color':panel,'text-background-opacity':1,'text-background-padding':'4px','text-background-shape':'roundrectangle','text-border-width':1,'text-border-opacity':1,'text-border-color':line,'text-rotation':'none'}},
+    {selector:'edge',style:{width:2.4,'curve-style':'bezier','control-point-step-size':PARALLEL_CONNECTION_GAP,'line-color':'data(color)',label:'data(label)','font-size':15,'font-weight':600,color:color('--edge-ink','#4d6077'),'text-background-color':panel,'text-background-opacity':1,'text-background-padding':'4px','text-background-shape':'roundrectangle','text-border-width':1,'text-border-opacity':1,'text-border-color':line,'text-rotation':'none','text-events':'yes'}},
     {selector:'edge[lateral = 1]',style:{'curve-style':'unbundled-bezier','control-point-distances':'data(curveDistance)','control-point-weights':[0.5]}},
     {selector:'edge[state = "stale"], edge[state = "unknown"]',style:{'line-style':'dashed'}},
     {selector:':selected',style:{'overlay-color':'#55a7ce','overlay-opacity':0.12,'overlay-padding':7}},

@@ -28,6 +28,16 @@ async function load(page: Page, data: Snapshot) {
 
 type DebugLink = { port: string; midpoint: { x: number; y: number }; label: string };
 const edges = (page: Page) => page.evaluate(() => (window as unknown as { libremapDebug: () => { links: DebugLink[] } }).libremapDebug().links);
+type DebugState = {
+  zoom: number;
+  nodes: { id: string; renderedPosition: { x: number; y: number }; dimmed: boolean }[];
+  links: (DebugLink & { dimmed: boolean; labelBox: { x1: number; x2: number; y1: number; y2: number } })[];
+};
+const debugState = (page: Page) => page.evaluate(() => (window as unknown as { libremapDebug: () => DebugState }).libremapDebug());
+const dimmed = async (page: Page) => {
+  const state = await debugState(page);
+  return Object.fromEntries([...state.nodes.map(node => [node.id, node.dimmed]), ...state.links.map(link => [link.port, link.dimmed])]);
+};
 
 test('hovering a link lazily shows both authenticated one-day interface graphs', async ({ page }) => {
   const graphRequests:string[]=[];
@@ -92,6 +102,41 @@ test('parallel links between tiers leave room for distinct load labels', async (
   expect(current.map(edge=>edge.label)).toEqual(['10%','82%']);
   const labelDistance=Math.hypot(current[0].midpoint.x-current[1].midpoint.x,current[0].midpoint.y-current[1].midpoint.y);
   expect(labelDistance).toBeGreaterThanOrEqual(80);
+});
+
+test('inspecting a link keeps the selected device in focus, including clicks on its load label', async ({ page }) => {
+  const data = snapshot();
+  // AGG -> ER -> ER draws both links vertically; the unlinked ER stays outside every focus.
+  data.devices = [
+    { id: '1', hostname: 'site1agg1', status: 'up' }, { id: '2', hostname: 'site1er1', status: 'up' },
+    { id: '3', hostname: 'site1er2', status: 'up' }, { id: '4', hostname: 'site1er3', status: 'up' },
+  ];
+  data.links[1] = { ...data.links[1], source: '2', target: '3' };
+  await load(page, data);
+  const bounds = (await page.locator('.lm-canvas').boundingBox())!;
+  const agg = (await debugState(page)).nodes.find(node => node.id === '1')!;
+  await page.mouse.click(bounds.x + agg.renderedPosition.x, bounds.y + agg.renderedPosition.y);
+  const focused = { '1': false, '2': false, '3': true, '4': true, 'local-a': false, 'local-b': true };
+  expect(await dimmed(page)).toEqual(focused);
+
+  // Zoom in on the AGG's link until its label reaches well past the line's own click tolerance.
+  for (let i = 0; i < 20 && (await debugState(page)).zoom < 1.5; i++) {
+    const link = (await debugState(page)).links.find(item => item.port === 'local-a')!;
+    await page.mouse.move(bounds.x + link.midpoint.x, bounds.y + link.midpoint.y);
+    await page.mouse.wheel(0, -50);
+  }
+  const link = (await debugState(page)).links.find(item => item.port === 'local-a')!;
+  await page.mouse.click(bounds.x + link.labelBox.x2 - 3, bounds.y + link.midpoint.y);
+  await expect(page.locator('.lm-details .lm-eyebrow')).toHaveText('PHYSICAL LINK');
+  await expect(page.locator('.lm-details dd').nth(1)).toHaveText('local-a');
+  expect(await dimmed(page)).toEqual(focused);
+
+  // A link beyond the focus joins it with its far device; unrelated devices stay dimmed.
+  await page.getByRole('button', { name: 'Fit' }).click();
+  const outside = (await debugState(page)).links.find(item => item.port === 'local-b')!;
+  await page.mouse.click(bounds.x + outside.midpoint.x, bounds.y + outside.midpoint.y);
+  await expect(page.locator('.lm-details dd').nth(1)).toHaveText('local-b');
+  expect(await dimmed(page)).toEqual({ ...focused, '3': false, 'local-b': false });
 });
 
 test('staleness updates selected details without replacing the focused close button', async ({ page }) => {
