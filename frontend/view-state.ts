@@ -1,8 +1,10 @@
 import { deviceName } from './topology';
-import type { Position, Topology, ViewState } from './types';
+import type { Link, Position, Topology, ViewState } from './types';
 import { FILTER_MAX, limitFilter, STORED_POSITIONS_MAX, textLength } from './view-limits';
 
-export const emptyView = (): ViewState => ({ rootId:null, deviceGroupId:null, site:'', search:'', backbone:false, showOther:false, positions:{}, pinned:[], zoom:1, pan:{x:0,y:0} });
+// Highlight depth around a selected device; the server validates the same bound.
+export const HOPS_MAX = 5;
+export const emptyView = (): ViewState => ({ rootId:null, deviceGroupId:null, site:'', search:'', backbone:false, showOther:false, hops:1, positions:{}, pinned:[], zoom:1, pan:{x:0,y:0} });
 const object = (value:unknown): value is Record<string, unknown> => !!value && typeof value==='object' && !Array.isArray(value);
 const coordinate = (n:unknown): n is number => typeof n==='number' && Number.isFinite(n) && Math.abs(n)<=1_000_000;
 const point = (p:unknown): p is Position => object(p) && coordinate(p.x) && coordinate(p.y);
@@ -19,6 +21,7 @@ export function normalizeView(value:unknown, graph?:Topology):ViewState {
   if(typeof value.search==='string') state.search=limitFilter(value.search);
   state.backbone=value.backbone===true;
   state.showOther=value.showOther===true;
+  if(typeof value.hops==='number' && Number.isInteger(value.hops) && value.hops>=1 && value.hops<=HOPS_MAX) state.hops=value.hops;
   // A loaded map bounds entries by its own devices (the server's limit follows
   // libremap.max_devices); unscoped storage keeps only a corruption guard.
   const limit=graph ? graph.nodes.length : STORED_POSITIONS_MAX;
@@ -49,6 +52,27 @@ export function branchNodes(graph:Topology, rootId:string|null):Set<string> {
     if(neighbor.role!=='AGG' || neighbor.site===root.site) queue.push(id);
   }
   return visited;
+}
+
+/** Devices within `hops` visible links of a device, and the links walked to reach them. */
+export function hopNeighborhood(graph:Topology, id:string, hops:number, visible:ReadonlySet<string>):{nodes:Set<string>;links:Set<string>} {
+  const adjacency=new Map<string,Link[]>();
+  for(const link of graph.links){
+    if(!visible.has(link.source) || !visible.has(link.target)) continue;
+    for(const end of [link.source,link.target]){const list=adjacency.get(end);if(list)list.push(link);else adjacency.set(end,[link]);}
+  }
+  const nodes=new Set([id]), links=new Set<string>();
+  let frontier=[id];
+  for(let hop=0;hop<hops && frontier.length;hop++){
+    const next:string[]=[];
+    for(const from of frontier) for(const link of adjacency.get(from) ?? []){
+      links.add(link.id);
+      const to=link.source===from ? link.target : link.source;
+      if(!nodes.has(to)){nodes.add(to);next.push(to);}
+    }
+    frontier=next;
+  }
+  return {nodes,links};
 }
 
 export function visibleNodes(graph:Topology, state:Pick<ViewState,'rootId'|'site'|'search'|'backbone'|'showOther'> & Partial<Pick<ViewState,'deviceGroupId'>>):Set<string> {

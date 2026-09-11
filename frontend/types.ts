@@ -18,6 +18,7 @@ export interface ViewState {
   search: string;
   backbone: boolean;
   showOther: boolean;
+  hops: number;
   positions: Record<string, Position>;
   pinned: string[];
   zoom: number;

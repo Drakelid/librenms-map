@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { arrangePositions, branchNodes, emptyView, normalizeView, visibleNodes } from '../frontend/view-state';
+import { arrangePositions, branchNodes, emptyView, HOPS_MAX, hopNeighborhood, normalizeView, visibleNodes } from '../frontend/view-state';
 import { topology } from '../frontend/topology';
 import type { MapNode, Topology } from '../frontend/types';
 import { demoSnapshot } from '../frontend/demo';
@@ -60,6 +60,23 @@ test('search matches the display name, hostname and sysName',()=>{
     {id:'2',hostname:'10.0.0.2',status:'up',role:'AGG',site:'rossa1',tier:0,reachable:true},
   ],links:[],deviceGroups:[]} satisfies Topology;
   for(const search of ['core agg','10.0.0.1','example.net']) assert.deepEqual([...visibleNodes(named,{rootId:null,site:'',search,backbone:false,showOther:false})],['1']);
+});
+test('highlight hops walk visible links outward from the selected device',()=>{
+  const link=(id:string,source:string,target:string)=>({id,source,target,sourcePort:'a',targetPort:'b',sourcePortId:id,targetPortId:id,speedBps:null,inBps:null,outBps:null,sampledAt:null,status:'up' as const});
+  const chain:Topology={nodes:['1','2','3','4','5'].map((id,i)=>({id,hostname:`n${id}`,status:'up' as const,role:i?'ER':'AGG',site:'s1',tier:i,reachable:true})),
+    links:[link('a','1','2'),link('b','2','3'),link('c','3','4'),link('d','1','5'),link('e','5','3')],deviceGroups:[]};
+  const all=new Set(chain.nodes.map(n=>n.id));
+  const one=hopNeighborhood(chain,'1',1,all);
+  assert.deepEqual([...one.nodes].sort(),['1','2','5']);assert.deepEqual([...one.links].sort(),['a','d']);
+  const two=hopNeighborhood(chain,'1',2,all);
+  assert.deepEqual([...two.nodes].sort(),['1','2','3','5']);assert.deepEqual([...two.links].sort(),['a','b','d','e']);
+  assert.deepEqual([...hopNeighborhood(chain,'1',HOPS_MAX,all).nodes].sort(),['1','2','3','4','5']);
+  // A hidden device neither lights up nor bridges to the devices beyond it.
+  assert.deepEqual([...hopNeighborhood(chain,'1',HOPS_MAX,new Set(['1','2','4','5'])).nodes].sort(),['1','2','5']);
+});
+test('highlight hops survive normalization only as whole numbers within bounds',()=>{
+  assert.equal(normalizeView({hops:3}).hops,3);
+  for(const hops of [0,HOPS_MAX+1,1.5,'2',null]) assert.equal(normalizeView({hops}).hops,1);
 });
 test('saved state redacts removed devices and rejects corrupt coordinates and roots',()=>{
   const result=normalizeView({rootId:'999',positions:{'0':{x:42,y:90},'999':{x:4,y:5},'1':{x:Infinity,y:3}},pinned:['0','1','999'],zoom:100,pan:{x:NaN,y:4},site:'private-site',search:'x'.repeat(200)},graph);

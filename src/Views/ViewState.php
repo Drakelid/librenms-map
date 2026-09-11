@@ -10,6 +10,9 @@ use Illuminate\Validation\ValidationException;
 
 class ViewState
 {
+    // Matches HOPS_MAX in frontend/view-state.ts.
+    private const HOPS_MAX = 5;
+
     public function validate(array $input, User $user): array
     {
         // Bounds match the client's own limits so the server never stores a
@@ -21,7 +24,7 @@ class ViewState
         };
         $data = Validator::make($input, [
             'name' => ['required', 'string', 'max:100'],
-            'state' => ['required', 'array:rootId,deviceGroupId,site,search,backbone,showOther,positions,pinned,zoom,pan'],
+            'state' => ['required', 'array:rootId,deviceGroupId,site,search,backbone,showOther,hops,positions,pinned,zoom,pan'],
             'state.rootId' => ['present', 'nullable', 'string', 'regex:/^[1-9][0-9]{0,9}$/'],
             'state.deviceGroupId' => ['sometimes', 'nullable', 'string', 'regex:/^[1-9][0-9]{0,9}$/'],
             'state.site' => ['present', 'nullable', 'string', 'max:200'],
@@ -31,6 +34,9 @@ class ViewState
             }],
             'state.showOther' => ['sometimes', function ($attribute, $value, $fail): void {
                 if (! is_bool($value)) { $fail('Show other devices must be a boolean.'); }
+            }],
+            'state.hops' => ['sometimes', function ($attribute, $value, $fail): void {
+                if (! is_int($value) || $value < 1 || $value > self::HOPS_MAX) { $fail('Highlight hops must be a whole number from 1 to '.self::HOPS_MAX.'.'); }
             }],
             'state.positions' => ['present', 'array', 'max:'.self::positionLimit()],
             'state.positions.*' => ['required', 'array:x,y'],
@@ -60,6 +66,7 @@ class ViewState
         $data['state']['site'] ??= '';
         $data['state']['search'] ??= '';
         $data['state']['showOther'] ??= false;
+        $data['state']['hops'] ??= 1;
         $data['state']['deviceGroupId'] ??= null;
         $ids = $this->ids($data['state']);
         if (array_diff($ids, $this->accessible($ids, $user))) {
@@ -116,7 +123,7 @@ class ViewState
     private function defaults(array $state): array
     {
         $defaults = [
-            'rootId' => null, 'deviceGroupId' => null, 'site' => '', 'search' => '', 'backbone' => false, 'showOther' => false,
+            'rootId' => null, 'deviceGroupId' => null, 'site' => '', 'search' => '', 'backbone' => false, 'showOther' => false, 'hops' => 1,
             'positions' => [], 'pinned' => [], 'zoom' => 1, 'pan' => ['x' => 0, 'y' => 0],
         ];
         // Return only the bounded schema; a row edited directly in the database

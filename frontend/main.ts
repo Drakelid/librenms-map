@@ -5,7 +5,7 @@ import { mountLinkPreview } from './link-preview';
 import { demoSnapshot } from './demo';
 import { deviceName, lateralOffsets, metric, PARALLEL_CONNECTION_GAP, topology } from './topology';
 import { limitFilter } from './view-limits';
-import { arrangePositions, emptyView, normalizeView, visibleNodes } from './view-state';
+import { arrangePositions, emptyView, HOPS_MAX, hopNeighborhood, normalizeView, visibleNodes } from './view-state';
 import { demoViewStore, httpViewStore } from './view-store';
 import { mountViews } from './views-panel';
 import type { Position, Snapshot, Topology, ViewState } from './types';
@@ -23,7 +23,7 @@ function mount(root: HTMLElement) {
       <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>NETWORK TOPOLOGY</span></div></div><div class="lm-header-right"><span class="lm-source">${demo ? 'DEMO DATA' : 'LIBRENMS'}</span><button data-action="theme" title="Toggle color theme">◐ <span>Theme</span></button><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
       <section class="lm-heading"><div><div class="lm-eyebrow">INFRASTRUCTURE / TOPOLOGY</div></div><div class="lm-summary" aria-label="Network summary"></div></section>
       <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device…"></label><label class="lm-select">Site <select aria-label="Site"><option value="">All sites</option></select></label><button data-action="overview">AGG backbone</button><button data-action="other-devices" aria-pressed="false">Show other devices</button><span class="lm-spacer"></span><button data-action="refresh">↻ Refresh</button><button data-action="layout">Re-layout</button><button data-action="fullscreen" title="Fullscreen">⛶</button></div>
-      <div class="lm-viewbar"><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><label class="lm-select">AGG root <select aria-label="AGG root"><option value="">All AGG groups</option></select></label><span class="lm-pin-count">0 pinned</span><button data-action="unpin-all">Unpin all</button><div class="lm-views"></div></div>
+      <div class="lm-viewbar"><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><label class="lm-select">AGG root <select aria-label="AGG root"><option value="">All AGG groups</option></select></label><label class="lm-select">Highlight <select aria-label="Highlight hops">${Array.from({length:HOPS_MAX},(_,i)=>`<option value="${i+1}">${i+1} hop${i?'s':''}</option>`).join('')}</select></label><span class="lm-pin-count">0 pinned</span><button data-action="unpin-all">Unpin all</button><div class="lm-views"></div></div>
       <div class="lm-notice" role="status" aria-live="polite">Loading topology…</div>
       <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong>Physical topology</strong><span>AGG → ER · discovered links</span></div><div class="lm-canvas" aria-label="Interactive network topology"></div><div class="lm-empty" hidden></div><div class="lm-map-controls"><button data-action="zoom-in" aria-label="Zoom in">+</button><button data-action="zoom-out" aria-label="Zoom out">−</button><button data-action="fit">Fit</button></div><div class="lm-legend"><span><i style="background:#6485b6"></i>&lt;50%</span><span><i style="background:#299e9b"></i>50–75%</span><span><i style="background:#cb9a28"></i>75–90%</span><span><i style="background:#e78636"></i>≥90%</span><span><i style="background:#e05b65"></i>Down</span><span><i style="background:#8a96a9"></i>Unknown / stale</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
       <footer><span class="lm-updated">Waiting for data</span><span>Drag to arrange · Scroll to zoom · Hover links for traffic · Click to inspect</span></footer>
@@ -39,6 +39,7 @@ function mount(root: HTMLElement) {
   const site = $<HTMLSelectElement>('[aria-label="Site"]');
   const deviceGroup = $<HTMLSelectElement>('[aria-label="Device group"]');
   const focus = $<HTMLSelectElement>('[aria-label="AGG root"]');
+  const hops = $<HTMLSelectElement>('[aria-label="Highlight hops"]');
   const cy: Core = cytoscape({ container:$('.lm-canvas'), minZoom:0.15, maxZoom:2.5, selectionType:'single', style:styles(root) });
   // LibreNMS toggles `dark` on <html> (live, in its "device" mode) and paints its
   // page background on <body>; the map adopts both. Elsewhere, such as the demo,
@@ -103,7 +104,7 @@ function mount(root: HTMLElement) {
     return positions;
   };
   function capture():ViewState {
-    return normalizeView({rootId:focus.value || null,deviceGroupId:deviceGroup.value || null,site:site.value,search:search.value,backbone,showOther,positions:workspacePositions(),pinned:[...pins],zoom:cy.zoom(),pan:cy.pan()},graph);
+    return normalizeView({rootId:focus.value || null,deviceGroupId:deviceGroup.value || null,site:site.value,search:search.value,backbone,showOther,hops:Number(hops.value),positions:workspacePositions(),pinned:[...pins],zoom:cy.zoom(),pan:cy.pan()},graph);
   }
   const persist = () => {
     // Never overwrite a stored workspace while no topology is loaded: an empty
@@ -120,7 +121,7 @@ function mount(root: HTMLElement) {
   // topology disables them exactly like an in-flight layout does.
   function syncControls(){
     const off=layoutPending || !snapshot;
-    search.disabled=off;site.disabled=off;deviceGroup.disabled=off;focus.disabled=off;
+    search.disabled=off;site.disabled=off;deviceGroup.disabled=off;focus.disabled=off;hops.disabled=off;
     for(const action of ['layout','zoom-in','zoom-out','fit','overview','other-devices'])$<HTMLButtonElement>(`[data-action="${action}"]`).disabled=off;
     root.querySelectorAll<HTMLButtonElement>('.lm-pin-device,.lm-focus-device').forEach(b=>{b.disabled=off;});
     $<HTMLButtonElement>('[data-action="unpin-all"]').disabled=off || pins.size===0;
@@ -140,7 +141,7 @@ function mount(root: HTMLElement) {
   function restoreView(value:ViewState){
     if(!snapshot)return;
     const state=normalizeView(value,graph);
-    focus.value=state.rootId ?? '';deviceGroup.value=state.deviceGroupId ?? '';site.value=state.site;search.value=state.search;backbone=state.backbone;showOther=state.showOther;pins=new Set(state.pinned);
+    focus.value=state.rootId ?? '';deviceGroup.value=state.deviceGroupId ?? '';site.value=state.site;search.value=state.search;backbone=state.backbone;showOther=state.showOther;hops.value=String(state.hops);pins=new Set(state.pinned);
     selected=undefined;cy.elements().unselect().removeClass('lm-dim');updatePins();renderDetails();updateBackbone();updateOtherDevices();
     layout(state.positions,state);
   }
@@ -156,7 +157,7 @@ function mount(root: HTMLElement) {
       const button = document.createElement('button'); button.textContent=`◈  ${deviceName(node)}`; button.addEventListener('click',()=>selectNode(node.id)); list.append(button);
     }
     panel.append(list);
-    const hint=document.createElement('p'); hint.className='lm-hint'; hint.textContent='Choose a LibreNMS device group or an AGG root to focus the map. Filters combine, and Show other devices reveals non-AGG/ER members inside that scope. Save a named view to return to this workspace.'; panel.append(hint);
+    const hint=document.createElement('p'); hint.className='lm-hint'; hint.textContent='Choose a LibreNMS device group or an AGG root to focus the map. Filters combine, and Show other devices reveals non-AGG/ER members inside that scope. Highlight sets how many connection hops around a selected device stay in view. Save a named view to return to this workspace.'; panel.append(hint);
   };
   function renderDetails() {
     if (!selected) return detailsDefault();
@@ -182,7 +183,8 @@ function mount(root: HTMLElement) {
   function selectNode(id:string) {
     const element=cy.getElementById(id); if (!element.length) return;
     selected={type:'node',id}; cy.elements().unselect(); element.select();
-    cy.elements().addClass('lm-dim'); element.closedNeighborhood().removeClass('lm-dim'); renderDetails();
+    const near=hopNeighborhood(graph,id,Number(hops.value),new Set(cy.nodes(':visible').map(n=>n.id())));
+    cy.elements().addClass('lm-dim'); cy.elements().filter(e=>e.isNode() ? near.nodes.has(e.id()) : near.links.has(e.data('linkId'))).removeClass('lm-dim'); renderDetails();
   }
   function filters(fit=true) {
     const visible = visibleNodes(graph,{rootId:focus.value || null,deviceGroupId:deviceGroup.value || null,site:site.value,search:search.value,backbone,showOther});
@@ -250,7 +252,7 @@ function mount(root: HTMLElement) {
     pins=new Set([...pins].filter(id=>graph.nodes.some(n=>n.id===id)));
     if(!initialized){
       // Also covers recovery after a failed fetch, which resets to this state.
-      const state=normalizeView(initialWorkspace,graph);focus.value=state.rootId ?? '';deviceGroup.value=state.deviceGroupId ?? '';site.value=state.site;search.value=state.search;backbone=state.backbone;showOther=state.showOther;pins=new Set(state.pinned);updateBackbone();updateOtherDevices();
+      const state=normalizeView(initialWorkspace,graph);focus.value=state.rootId ?? '';deviceGroup.value=state.deviceGroupId ?? '';site.value=state.site;search.value=state.search;backbone=state.backbone;showOther=state.showOther;hops.value=String(state.hops);pins=new Set(state.pinned);updateBackbone();updateOtherDevices();
     }
     cy.batch(()=>{
       const nodeIds=new Set(graph.nodes.map(n=>n.id)); const edgeIds=new Set(graph.links.map(l=>`edge:${l.id}`));
@@ -314,7 +316,7 @@ function mount(root: HTMLElement) {
     search.value=limitFilter(search.value);filters(false);
     clearTimeout(searchTimer);searchTimer=setTimeout(()=>{if(!snapshot)return;const visible=cy.elements(':visible');if(visible.length)cy.fit(visible,70);persist();},300);
   });
-site.addEventListener('change',()=>{filters();persist();});deviceGroup.addEventListener('change',()=>{filters();persist();});focus.addEventListener('change',()=>{filters();persist();});
+site.addEventListener('change',()=>{filters();persist();});deviceGroup.addEventListener('change',()=>{filters();persist();});focus.addEventListener('change',()=>{filters();persist();});hops.addEventListener('change',()=>{if(selected?.type==='node')selectNode(selected.id);persist();});
   root.addEventListener('click',event=>{
     const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button[data-action]'); if(!button) return;
     switch(button.dataset.action) {

@@ -38,6 +38,16 @@ const dimmed = async (page: Page) => {
   const state = await debugState(page);
   return Object.fromEntries([...state.nodes.map(node => [node.id, node.dimmed]), ...state.links.map(link => [link.port, link.dimmed])]);
 };
+// AGG -> ER -> ER draws both links vertically; the unlinked ER stays outside every focus.
+function chain(): Snapshot {
+  const data = snapshot();
+  data.devices = [
+    { id: '1', hostname: 'site1agg1', status: 'up' }, { id: '2', hostname: 'site1er1', status: 'up' },
+    { id: '3', hostname: 'site1er2', status: 'up' }, { id: '4', hostname: 'site1er3', status: 'up' },
+  ];
+  data.links[1] = { ...data.links[1], source: '2', target: '3' };
+  return data;
+}
 
 test('hovering a link lazily shows both authenticated one-day interface graphs', async ({ page }) => {
   const graphRequests:string[]=[];
@@ -105,14 +115,7 @@ test('parallel links between tiers leave room for distinct load labels', async (
 });
 
 test('inspecting a link keeps the selected device in focus, including clicks on its load label', async ({ page }) => {
-  const data = snapshot();
-  // AGG -> ER -> ER draws both links vertically; the unlinked ER stays outside every focus.
-  data.devices = [
-    { id: '1', hostname: 'site1agg1', status: 'up' }, { id: '2', hostname: 'site1er1', status: 'up' },
-    { id: '3', hostname: 'site1er2', status: 'up' }, { id: '4', hostname: 'site1er3', status: 'up' },
-  ];
-  data.links[1] = { ...data.links[1], source: '2', target: '3' };
-  await load(page, data);
+  await load(page, chain());
   const bounds = (await page.locator('.lm-canvas').boundingBox())!;
   const agg = (await debugState(page)).nodes.find(node => node.id === '1')!;
   await page.mouse.click(bounds.x + agg.renderedPosition.x, bounds.y + agg.renderedPosition.y);
@@ -137,6 +140,21 @@ test('inspecting a link keeps the selected device in focus, including clicks on 
   await page.mouse.click(bounds.x + outside.midpoint.x, bounds.y + outside.midpoint.y);
   await expect(page.locator('.lm-details dd').nth(1)).toHaveText('local-b');
   expect(await dimmed(page)).toEqual({ ...focused, '3': false, 'local-b': false });
+});
+
+test('the highlight hop count widens a selected device focus and persists across reloads', async ({ page }) => {
+  await load(page, chain());
+  const hops = page.getByLabel('Highlight hops');
+  await expect(hops).toHaveValue('1');
+  const bounds = (await page.locator('.lm-canvas').boundingBox())!;
+  const agg = (await debugState(page)).nodes.find(node => node.id === '1')!;
+  await page.mouse.click(bounds.x + agg.renderedPosition.x, bounds.y + agg.renderedPosition.y);
+  expect(await dimmed(page)).toEqual({ '1': false, '2': false, '3': true, '4': true, 'local-a': false, 'local-b': true });
+  await hops.selectOption('2');
+  expect(await dimmed(page)).toEqual({ '1': false, '2': false, '3': false, '4': true, 'local-a': false, 'local-b': false });
+  await page.reload();
+  await expect(page.locator('.lm-notice')).toContainText('Topology loaded');
+  await expect(hops).toHaveValue('2');
 });
 
 test('staleness updates selected details without replacing the focused close button', async ({ page }) => {

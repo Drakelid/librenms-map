@@ -120,10 +120,18 @@ class SavedViewsIntegrationTest extends TestCase
         unset($legacy['state']['deviceGroupId']);
         $this->postJson('/libremap/views', $legacy)->assertCreated()
             ->assertJsonPath('view.state.showOther', false)
-            ->assertJsonPath('view.state.deviceGroupId', null);
+            ->assertJsonPath('view.state.deviceGroupId', null)
+            ->assertJsonPath('view.state.hops', 1);
         $payload = $this->payload();
         $payload['state']['showOther'] = 'true';
         $this->postJson('/libremap/views', $payload)->assertUnprocessable();
+        $payload = $this->payload();
+        $payload['state']['hops'] = 3;
+        $this->postJson('/libremap/views', $payload)->assertCreated()->assertJsonPath('view.state.hops', 3);
+        foreach ([0, 6, '2', 1.5] as $hops) {
+            $payload['state']['hops'] = $hops;
+            $this->postJson('/libremap/views', $payload)->assertUnprocessable();
+        }
         $payload = $this->payload();
         $payload['state']['positions'] = ['hostname.example' => ['x' => 0, 'y' => 0]];
         $this->postJson('/libremap/views', $payload)->assertUnprocessable();
