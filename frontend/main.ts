@@ -3,7 +3,7 @@ import { layoutGraph, resetLayoutWorker } from './layout';
 import { compactWideRestore, packTierPositions } from './layout-positions';
 import { mountLinkPreview } from './link-preview';
 import { demoSnapshot } from './demo';
-import { deviceName, lateralOffsets, metric, PARALLEL_CONNECTION_GAP, topology } from './topology';
+import { deviceName, lateralOffsets, LOAD_COLORS, metric, PARALLEL_CONNECTION_GAP, topology } from './topology';
 import { limitFilter } from './view-limits';
 import { arrangePositions, emptyView, HOPS_MAX, hopNeighborhood, normalizeView, visibleNodes } from './view-state';
 import { demoViewStore, httpViewStore } from './view-store';
@@ -25,7 +25,7 @@ function mount(root: HTMLElement) {
       <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device…"></label><label class="lm-select">Site <select aria-label="Site"><option value="">All sites</option></select></label><button data-action="overview">AGG backbone</button><button data-action="other-devices" aria-pressed="false">Show other devices</button><span class="lm-spacer"></span><button data-action="refresh">↻ Refresh</button><button data-action="layout">Re-layout</button><button data-action="fullscreen" title="Fullscreen">⛶</button></div>
       <div class="lm-viewbar"><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><label class="lm-select">AGG root <select aria-label="AGG root"><option value="">All AGG groups</option></select></label><label class="lm-select">Highlight <select aria-label="Highlight hops">${Array.from({length:HOPS_MAX},(_,i)=>`<option value="${i+1}">${i+1} hop${i?'s':''}</option>`).join('')}</select></label><span class="lm-pin-count">0 pinned</span><button data-action="unpin-all">Unpin all</button><div class="lm-views"></div></div>
       <div class="lm-notice" role="status" aria-live="polite">Loading topology…</div>
-      <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong>Physical topology</strong><span>AGG → ER · discovered links</span></div><div class="lm-canvas" aria-label="Interactive network topology"></div><div class="lm-empty" hidden></div><div class="lm-map-controls"><button data-action="zoom-in" aria-label="Zoom in">+</button><button data-action="zoom-out" aria-label="Zoom out">−</button><button data-action="fit">Fit</button></div><div class="lm-legend"><span><i style="background:#6485b6"></i>&lt;50%</span><span><i style="background:#299e9b"></i>50–75%</span><span><i style="background:#cb9a28"></i>75–90%</span><span><i style="background:#e78636"></i>≥90%</span><span><i style="background:#e05b65"></i>Down</span><span><i style="background:#8a96a9"></i>Unknown / stale</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
+      <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong>Physical topology</strong><span>AGG → ER · discovered links</span></div><div class="lm-canvas" aria-label="Interactive network topology"></div><div class="lm-empty" hidden></div><div class="lm-map-controls"><button data-action="zoom-in" aria-label="Zoom in">+</button><button data-action="zoom-out" aria-label="Zoom out">−</button><button data-action="fit">Fit</button></div><div class="lm-legend"><span><i style="color:${LOAD_COLORS.normal}"></i>&lt;50%</span><span><i style="color:${LOAD_COLORS.warning}"></i>50–70%</span><span><i style="color:${LOAD_COLORS.high}"></i>&gt;70%</span><span><i class="lm-dashed" style="color:#e05b65"></i>Down</span><span><i class="lm-dashed" style="color:#8a96a9"></i>Unknown / stale</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
       <footer><span class="lm-updated">Waiting for data</span><span>Drag to arrange · Scroll to zoom · Hover links for traffic · Click to inspect</span></footer>
     </div>`;
   if (demo) root.querySelector('.lm-back')?.remove();
@@ -353,7 +353,7 @@ site.addEventListener('change',()=>{filters();persist();});deviceGroup.addEventL
     zoom:cy.zoom(),
     nodes:cy.nodes().map(n=>({id:n.id(),tier:n.data('tier'),position:n.position(),renderedPosition:n.renderedPosition(),visible:n.visible(),dimmed:n.hasClass('lm-dim')})),
     edges:cy.edges().length,
-    links:cy.edges().map(e=>({port:e.data('sourcePort') as string,midpoint:e.renderedMidpoint(),label:e.data('label') as string,dimmed:e.hasClass('lm-dim'),labelBox:e.renderedBoundingBox({includeNodes:false,includeEdges:false,includeLabels:true,includeOverlays:false})})),
+    links:cy.edges().map(e=>({port:e.data('sourcePort') as string,midpoint:e.renderedMidpoint(),label:e.data('label') as string,lineStyle:e.style('line-style') as string,dimmed:e.hasClass('lm-dim'),labelBox:e.renderedBoundingBox({includeNodes:false,includeEdges:false,includeLabels:true,includeOverlays:false})})),
   }),configurable:true});
 }
 
@@ -380,7 +380,8 @@ function styles(root:HTMLElement):StylesheetStyle[] {
     {selector:'node[role = "AGG"]',style:{height:82,'border-width':2.5,'background-color':color('--node-agg','#eef5ff'),'font-weight':700}},
     {selector:'edge',style:{width:2.4,'curve-style':'bezier','control-point-step-size':PARALLEL_CONNECTION_GAP,'line-color':'data(color)',label:'data(label)','font-size':15,'font-weight':600,color:color('--edge-ink','#4d6077'),'text-background-color':panel,'text-background-opacity':1,'text-background-padding':'4px','text-background-shape':'roundrectangle','text-border-width':1,'text-border-opacity':1,'text-border-color':line,'text-rotation':'none','text-events':'yes'}},
     {selector:'edge[lateral = 1]',style:{'curve-style':'unbundled-bezier','control-point-distances':'data(curveDistance)','control-point-weights':[0.5]}},
-    {selector:'edge[state = "stale"], edge[state = "unknown"]',style:{'line-style':'dashed'}},
+    // Dashed links carry no current load: down, stale or unknown. Down also sets a solid red >70% link apart.
+    {selector:'edge[state = "down"], edge[state = "stale"], edge[state = "unknown"]',style:{'line-style':'dashed'}},
     {selector:':selected',style:{'overlay-color':'#55a7ce','overlay-opacity':0.12,'overlay-padding':7}},
     {selector:'.lm-dim',style:{opacity:0.18}},
     {selector:'.lm-no-label',style:{label:''}},

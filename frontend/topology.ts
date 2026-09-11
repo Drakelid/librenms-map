@@ -95,6 +95,9 @@ export function lateralOffsets(graph: Topology): Map<string, number> {
   return offsets;
 }
 
+/** Link load bands: below 50%, 50–70%, and above 70%. */
+export const LOAD_COLORS = { normal: '#6485b6', warning: '#cb9a28', high: '#e03131' } as const;
+
 export function metric(link: Link, now: number, staleAfter: number) {
   if (link.status === 'down') return { label: 'DOWN', color: '#e05b65', state: 'down', utilization: null };
   if (link.status === 'disabled') return { label: 'DISABLED', color: '#8a96a9', state: 'unknown', utilization: null };
@@ -103,5 +106,7 @@ export function metric(link: Link, now: number, staleAfter: number) {
   if (link.status !== 'up' || !link.speedBps || link.speedBps <= 0 || link.inBps === null || link.outBps === null || link.inBps < 0 || link.outBps < 0 || ![link.speedBps, link.inBps, link.outBps].every(Number.isFinite))
     return { label: 'N/A', color: '#8a96a9', state: 'unknown', utilization: null };
   const utilization = Math.max(link.inBps, link.outBps) / link.speedBps * 100;
-  return { label: `${Math.round(utilization)}%`, color: utilization >= 90 ? '#e78636' : utilization >= 75 ? '#cb9a28' : utilization >= 50 ? '#299e9b' : '#6485b6', state: 'up', utilization };
+  // Band on the rounded label, so a link reading "70%" is never drawn as overloaded.
+  const percent = Math.round(utilization);
+  return { label: `${percent}%`, color: percent > 70 ? LOAD_COLORS.high : percent >= 50 ? LOAD_COLORS.warning : LOAD_COLORS.normal, state: 'up', utilization };
 }

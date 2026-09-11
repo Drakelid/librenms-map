@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classify, deviceName, lateralOffsets, metric, normalizeLinks, topology } from '../frontend/topology';
+import { classify, deviceName, lateralOffsets, LOAD_COLORS, metric, normalizeLinks, topology } from '../frontend/topology';
 import type { Config, Link, Snapshot } from '../frontend/types';
 const config: Config = { prefixes: ['hk-'], staleAfter: 900, overrides: {} };
 const link = (source: string, target: string, sourcePortId = '1', targetPortId = '2'): Link => ({ id: `${source}-${target}-${sourcePortId}`, source, target, sourcePortId, targetPortId, sourcePort: 'eth1', targetPort: 'eth2', speedBps: 1e9, inBps: 2e8, outBps: 5e8, sampledAt: 1000, status: 'up' });
@@ -43,6 +43,14 @@ test('utilization uses directional maximum, preserves zero, and distinguishes st
   assert.equal(metric(link('a','b'), 2000, 900).label, 'STALE');
   assert.equal(metric({ ...link('a','b'), status:'down' }, 2000, 900).label, 'DOWN');
   assert.equal(metric({ ...link('a','b'), outBps:1.2e9 }, 1100, 900).label, '120%');
+});
+test('load colors are blue under 50%, yellow from 50% and red above 70%, following the rounded label', () => {
+  const at = (inBps: number) => metric({ ...link('a','b'), inBps, outBps: 0 }, 1100, 900);
+  assert.deepEqual([at(4.94e8).label, at(4.94e8).color], ['49%', LOAD_COLORS.normal]);
+  assert.deepEqual([at(4.96e8).label, at(4.96e8).color], ['50%', LOAD_COLORS.warning]);
+  assert.deepEqual([at(7.04e8).label, at(7.04e8).color], ['70%', LOAD_COLORS.warning]);
+  assert.deepEqual([at(7.06e8).label, at(7.06e8).color], ['71%', LOAD_COLORS.high]);
+  assert.equal(at(1.2e9).color, LOAD_COLORS.high);
 });
 test('an IP-address hostname falls back to sysName and malformed config entries are ignored', () => {
   assert.deepEqual(classify({ id:'1', hostname:'10.20.30.40', sysName:'HK-ROSSA1ER2.example.net', status:'up' }, config), { role:'ER', site:'rossa1' });

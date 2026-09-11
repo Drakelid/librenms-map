@@ -26,7 +26,7 @@ async function load(page: Page, data: Snapshot) {
   await expect(page.locator('.lm-notice')).toContainText('Topology loaded');
 }
 
-type DebugLink = { port: string; midpoint: { x: number; y: number }; label: string };
+type DebugLink = { port: string; midpoint: { x: number; y: number }; label: string; lineStyle: string };
 const edges = (page: Page) => page.evaluate(() => (window as unknown as { libremapDebug: () => { links: DebugLink[] } }).libremapDebug().links);
 type DebugState = {
   zoom: number;
@@ -155,6 +155,13 @@ test('the highlight hop count widens a selected device focus and persists across
   await page.reload();
   await expect(page.locator('.lm-notice')).toContainText('Topology loaded');
   await expect(hops).toHaveValue('2');
+});
+
+test('down links are dashed so they stand apart from heavily loaded red links', async ({ page }) => {
+  const data = snapshot();
+  data.links[0].status = 'down';
+  await load(page, data);
+  expect((await edges(page)).map(edge => [edge.label, edge.lineStyle])).toEqual([['DOWN', 'dashed'], ['82%', 'solid']]);
 });
 
 test('staleness updates selected details without replacing the focused close button', async ({ page }) => {
