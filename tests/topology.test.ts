@@ -22,8 +22,7 @@ test('lateral arcs remain separate and stable with reversed observations and inp
   ],links:[link('1','2'),link('2','1','4','3'),link('1','2','5','6')]});
   const offsets=lateralOffsets(graph);
   const physical=graph.links.map(l=>offsets.get(l.id)!*(l.source<=l.target?1:-1));
-  assert.equal(new Set(physical).size,3);
-  assert.ok(physical.every(offset=>offset<0));
+  assert.deepEqual(physical,[-80,-170,-260]);
   assert.deepEqual(lateralOffsets({...graph,links:[...graph.links].reverse()}),offsets);
 });
 test('paired AGGs stay roots, dual-homed ER appears once, cycles terminate, orphans remain', () => {

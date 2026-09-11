@@ -11,7 +11,7 @@ function snapshot(): Snapshot {
     links: ['a', 'b'].map((id, i) => ({
       id, source: '1', target: '2', sourcePortId: String(i + 1), targetPortId: String(i + 11),
       sourcePort: `local-${id}`, targetPort: `remote-${id}`, status: 'up',
-      speedBps: 1000, inBps: 100, outBps: 100, sampledAt: now - 895,
+      speedBps: 1000, inBps: i === 0 ? 100 : 820, outBps: 100, sampledAt: now - 895,
     })),
     generatedAt: now, config: { prefixes: [], overrides: {}, staleAfter: 900 },
   };
@@ -64,11 +64,13 @@ test('hovering a link lazily shows both authenticated one-day interface graphs',
   await expect(preview).toBeHidden();
 });
 
-test('parallel lateral links have separate selectable paths through refresh and theme changes', async ({ page }) => {
+test('parallel lateral links leave room for distinct load labels through refresh and theme changes', async ({ page }) => {
   await load(page, snapshot());
   const before = await edges(page);
   expect(before).toHaveLength(2);
-  expect(before[0].midpoint).not.toEqual(before[1].midpoint);
+  expect(before.map(edge=>edge.label)).toEqual(['10%','82%']);
+  const labelDistance=Math.hypot(before[0].midpoint.x-before[1].midpoint.x,before[0].midpoint.y-before[1].midpoint.y);
+  expect(labelDistance).toBeGreaterThanOrEqual(80);
   const bounds = (await page.locator('.lm-canvas').boundingBox())!;
   for (const edge of before) {
     await page.mouse.click(bounds.x + edge.midpoint.x, bounds.y + edge.midpoint.y);
@@ -80,6 +82,16 @@ test('parallel lateral links have separate selectable paths through refresh and 
   await page.getByRole('button', { name: 'Refresh' }).click();
   await expect(page.locator('.lm-notice')).toContainText('layout unchanged');
   expect((await edges(page)).map(edge => edge.midpoint)).toEqual(before.map(edge => edge.midpoint));
+});
+
+test('parallel links between tiers leave room for distinct load labels', async ({ page }) => {
+  const data=snapshot();
+  data.devices[1].hostname='site1er1';
+  await load(page,data);
+  const current=await edges(page);
+  expect(current.map(edge=>edge.label)).toEqual(['10%','82%']);
+  const labelDistance=Math.hypot(current[0].midpoint.x-current[1].midpoint.x,current[0].midpoint.y-current[1].midpoint.y);
+  expect(labelDistance).toBeGreaterThanOrEqual(80);
 });
 
 test('staleness updates selected details without replacing the focused close button', async ({ page }) => {
@@ -105,5 +117,5 @@ test('staleness follows the server clock, not a skewed browser clock', async ({ 
   data.generatedAt += 3600;
   for (const link of data.links) link.sampledAt = data.generatedAt - 10;
   await load(page, data);
-  expect((await edges(page)).map(edge => edge.label)).toEqual(['10%', '10%']);
+  expect((await edges(page)).map(edge => edge.label)).toEqual(['10%', '82%']);
 });

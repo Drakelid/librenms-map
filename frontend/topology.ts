@@ -2,6 +2,7 @@ import type { Config, Device, Link, MapNode, Snapshot, Topology } from './types'
 
 // The numbered site boundary avoids false positives such as "server01".
 const ROLE_NAME = /^(?<site>.+?\d)(?<role>agg|er)(?<number>\d+)$/;
+export const PARALLEL_CONNECTION_GAP = 90;
 
 function nameParts(name: string, prefixes: string[]) {
   let short = name.toLowerCase().split('.')[0];
@@ -83,7 +84,7 @@ export function lateralOffsets(graph: Topology): Map<string, number> {
     group.sort((a, b) => a.id.localeCompare(b.id)).forEach((link, index) => {
       // Reverse the sign for reverse observations so each offset describes the
       // same physical side of the pair, regardless of the measuring endpoint.
-      offsets.set(link.id, (-80 - index * 60) * (link.source <= link.target ? 1 : -1));
+      offsets.set(link.id, (-80 - index * PARALLEL_CONNECTION_GAP) * (link.source <= link.target ? 1 : -1));
     });
   }
   return offsets;

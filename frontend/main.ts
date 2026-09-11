@@ -3,7 +3,7 @@ import { layoutGraph, resetLayoutWorker } from './layout';
 import { compactWideRestore, packTierPositions } from './layout-positions';
 import { mountLinkPreview } from './link-preview';
 import { demoSnapshot } from './demo';
-import { lateralOffsets, metric, topology } from './topology';
+import { lateralOffsets, metric, PARALLEL_CONNECTION_GAP, topology } from './topology';
 import { limitFilter } from './view-limits';
 import { arrangePositions, emptyView, normalizeView, visibleNodes } from './view-state';
 import { demoViewStore, httpViewStore } from './view-store';
@@ -373,7 +373,7 @@ function styles(root:HTMLElement):StylesheetStyle[] {
   return [
     {selector:'node',style:{shape:'round-rectangle',width:'data(width)',height:72,'background-color':panel,'border-width':1.5,'border-color':'data(color)',label:'data(label)',color:ink,'font-family':'Inter, Segoe UI, sans-serif','font-size':18,'font-weight':500,'text-wrap':'wrap','text-valign':'center','text-halign':'center','line-height':1.6}},
     {selector:'node[role = "AGG"]',style:{height:82,'border-width':2.5,'background-color':color('--node-agg','#eef5ff'),'font-weight':700}},
-    {selector:'edge',style:{width:2.4,'curve-style':'bezier','control-point-step-size':45,'line-color':'data(color)',label:'data(label)','font-size':15,'font-weight':600,color:color('--edge-ink','#4d6077'),'text-background-color':panel,'text-background-opacity':1,'text-background-padding':'4px','text-background-shape':'roundrectangle','text-border-width':1,'text-border-opacity':1,'text-border-color':line,'text-rotation':'none'}},
+    {selector:'edge',style:{width:2.4,'curve-style':'bezier','control-point-step-size':PARALLEL_CONNECTION_GAP,'line-color':'data(color)',label:'data(label)','font-size':15,'font-weight':600,color:color('--edge-ink','#4d6077'),'text-background-color':panel,'text-background-opacity':1,'text-background-padding':'4px','text-background-shape':'roundrectangle','text-border-width':1,'text-border-opacity':1,'text-border-color':line,'text-rotation':'none'}},
     {selector:'edge[lateral = 1]',style:{'curve-style':'unbundled-bezier','control-point-distances':'data(curveDistance)','control-point-weights':[0.5]}},
     {selector:'edge[state = "stale"], edge[state = "unknown"]',style:{'line-style':'dashed'}},
     {selector:':selected',style:{'overlay-color':'#55a7ce','overlay-opacity':0.12,'overlay-padding':7}},

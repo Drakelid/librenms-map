@@ -18744,7 +18744,7 @@ function Rg(e) {
 	}
 	let r = /* @__PURE__ */ new Map();
 	for (let e of n.values()) e.sort((e, t) => e.id.localeCompare(t.id)).forEach((e, t) => {
-		r.set(e.id, (-80 - t * 60) * (e.source <= e.target ? 1 : -1));
+		r.set(e.id, (-80 - t * 90) * (e.source <= e.target ? 1 : -1));
 	});
 	return r;
 }
@@ -19581,7 +19581,7 @@ function u_(e) {
 			style: {
 				width: 2.4,
 				"curve-style": "bezier",
-				"control-point-step-size": 45,
+				"control-point-step-size": 90,
 				"line-color": "data(color)",
 				label: "data(label)",
 				"font-size": 15,
