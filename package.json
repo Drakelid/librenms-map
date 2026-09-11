@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
-    "test": "tsx --test tests/topology.test.ts tests/view-state.test.ts",
+    "test": "tsx --test tests/topology.test.ts tests/view-state.test.ts tests/layout.test.ts",
     "test:browser": "playwright test"
   },
   "dependencies": {

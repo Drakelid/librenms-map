@@ -69,7 +69,9 @@ export function visibleNodes(graph:Topology, state:Pick<ViewState,'rootId'|'site
 }
 
 /** Keep pins fixed and move automatic nodes clear of them, including new devices. */
-const CARD_W=246, CARD_H=105;
+// Match the compact layout while retaining a small visual gutter around the
+// widest AGG card (220x82).
+const CARD_W=228, CARD_H=94;
 export function arrangePositions(graph:Topology, automatic:Record<string,Position>, restore:Record<string,Position>, pins:Set<string>):Record<string,Position> {
   const result:Record<string,Position>={};
   // Bucket reserved coordinates by card-sized cell. Two points can only overlap
@@ -92,9 +94,9 @@ export function arrangePositions(graph:Topology, automatic:Record<string,Positio
   for(const n of graph.nodes) if(point(restore[n.id])) {result[n.id]={...restore[n.id]};reserve(result[n.id]);}
   // Restored coordinates belong to the operator; never move them to resolve overlap.
   for(const n of graph.nodes) if(!result[n.id]) {
-    const p={...(automatic[n.id] ?? {x:0,y:n.tier*210})};
+    const p={...(automatic[n.id] ?? {x:0,y:n.tier*135})};
     const origin=p.x;
-    for(let step=1;overlap(p) && step<=graph.nodes.length*2+1;step++) p.x=origin+Math.ceil(step/2)*260*(step%2 ? 1 : -1);
+    for(let step=1;overlap(p) && step<=graph.nodes.length*2+1;step++) p.x=origin+Math.ceil(step/2)*CARD_W*(step%2 ? 1 : -1);
     result[n.id]=p;reserve(p);
   }
   // Pins without valid stored coordinates are ignored by normalizeView.

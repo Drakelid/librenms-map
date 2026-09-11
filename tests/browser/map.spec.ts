@@ -30,6 +30,27 @@ test('demo renders AGG roots, details, search, backbone and stable refresh', asy
   expect(errors).toEqual([]);
 });
 
+test('large tiers use a compact multi-row overview',async({page})=>{
+  const snapshot=demoSnapshot();
+  snapshot.devices=Array.from({length:100},(_,index)=>({id:String(index+1),hostname:`site1er${index+1}`,status:'up'}));
+  snapshot.links=[];snapshot.deviceGroups=[];
+  await page.addInitScript(()=>localStorage.setItem('libremap:v2:vertical-layout',JSON.stringify({
+    rootId:null,deviceGroupId:null,site:'',search:'',backbone:false,showOther:false,
+    positions:Object.fromEntries(Array.from({length:100},(_,index)=>[String(index+1),{x:index*260,y:0}])),
+    pinned:['1'],zoom:.15,pan:{x:9999,y:9999},
+  })));
+  await page.route('**/vertical-layout',route=>route.fulfill({contentType:'text/html',body:'<div id="libremap" data-endpoint="/vertical-snapshot" data-storage-key="vertical-layout" data-debug="true"></div><script type="module" src="/frontend/main.ts"></script>'}));
+  await page.route('**/vertical-snapshot',route=>route.fulfill({json:snapshot}));
+  await page.goto('/vertical-layout');
+  await expect(page.getByRole('status')).toContainText('Topology loaded');
+  const positions=await page.evaluate(()=>(window as unknown as {libremapDebug:()=>{nodes:{position:{x:number;y:number}}[]}}).libremapDebug().nodes.map(node=>node.position));
+  const xs=positions.map(position=>position.x),ys=positions.map(position=>position.y);
+  const width=Math.max(...xs)-Math.min(...xs)+210,height=Math.max(...ys)-Math.min(...ys)+76;
+  expect(new Set(ys).size).toBeGreaterThan(1);
+  expect(width/height).toBeLessThan(1.8);
+  expect(positions[0]).toEqual({x:0,y:0});
+});
+
 test('other devices start hidden and can be revealed inside the focused AGG group',async({page})=>{
   const snapshot=demoSnapshot();
   snapshot.devices=snapshot.devices.map(device=>device.id==='4'?{...device,hostname:'access-switch'}:device);
@@ -126,11 +147,17 @@ test('dragged positions survive refresh and a full page reload',async({page})=>{
 test('device group focus filters membership and persists its selection',async({page})=>{
   await page.goto('/');
   await expect(page.getByRole('status')).toContainText('Demo topology');
-  const nodes=()=>page.evaluate(()=>(window as unknown as {libremapDebug:()=>{nodes:{id:string;visible:boolean}[]}}).libremapDebug().nodes);
+  const nodes=()=>page.evaluate(()=>(window as unknown as {libremapDebug:()=>{nodes:{id:string;visible:boolean;position:{x:number;y:number}}[]}}).libremapDebug().nodes);
+  const baseline=await nodes();
   await page.getByRole('combobox',{name:'Device group'}).selectOption('101');
-  expect((await nodes()).find(node=>node.id==='4')!.visible).toBe(true);
-  expect((await nodes()).find(node=>node.id==='2')!.visible).toBe(false);
-  expect((await nodes()).find(node=>node.id==='15')!.visible).toBe(false);
+  const focused=await nodes();
+  expect(focused.find(node=>node.id==='4')!.visible).toBe(true);
+  expect(focused.find(node=>node.id==='2')!.visible).toBe(false);
+  expect(focused.find(node=>node.id==='15')!.visible).toBe(false);
+  expect(focused.filter(node=>node.visible).map(node=>node.position)).not.toEqual(baseline.filter(node=>focused.find(current=>current.id===node.id)?.visible).map(node=>node.position));
+  await page.getByRole('combobox',{name:'Device group'}).selectOption('');
+  expect((await nodes()).map(node=>node.position)).toEqual(baseline.map(node=>node.position));
+  await page.getByRole('combobox',{name:'Device group'}).selectOption('101');
   await page.getByRole('button',{name:'Show other devices',exact:true}).click();
   expect((await nodes()).find(node=>node.id==='15')!.visible).toBe(true);
   await page.reload();

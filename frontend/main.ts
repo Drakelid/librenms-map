@@ -1,5 +1,6 @@
 import cytoscape, { type Core, type StylesheetStyle } from 'cytoscape';
 import { layoutGraph, resetLayoutWorker } from './layout';
+import { compactWideRestore, packTierPositions } from './layout-positions';
 import { mountLinkPreview } from './link-preview';
 import { demoSnapshot } from './demo';
 import { lateralOffsets, metric, topology } from './topology';
@@ -89,14 +90,26 @@ function mount(root: HTMLElement) {
   let saved:Record<string,Position> = initialWorkspace.positions;
   let pins=new Set(initialWorkspace.pinned);
   let initialized=false;
+  let basePositions:Record<string,Position>={};
+  let focusedPacking=false;
+  const renderedPositions=():Record<string,Position>=>Object.fromEntries(cy.nodes().map(node=>[node.id(),node.position()]));
+  const workspacePositions=():Record<string,Position>=>{
+    const rendered=renderedPositions();
+    if(!focusedPacking)return rendered;
+    const positions={...basePositions};
+    // A device pinned while focused adopts its visible coordinate as its new
+    // full-map anchor; all other focused coordinates remain presentational.
+    for(const id of pins)if(rendered[id])positions[id]=rendered[id];
+    return positions;
+  };
   function capture():ViewState {
-    return normalizeView({rootId:focus.value || null,deviceGroupId:deviceGroup.value || null,site:site.value,search:search.value,backbone,showOther,positions:Object.fromEntries(cy.nodes().map(n=>[n.id(),n.position()])),pinned:[...pins],zoom:cy.zoom(),pan:cy.pan()},graph);
+    return normalizeView({rootId:focus.value || null,deviceGroupId:deviceGroup.value || null,site:site.value,search:search.value,backbone,showOther,positions:workspacePositions(),pinned:[...pins],zoom:cy.zoom(),pan:cy.pan()},graph);
   }
   const persist = () => {
     // Never overwrite a stored workspace while no topology is loaded: an empty
     // graph would silently erase the operator's saved positions and pins.
     if (!snapshot) return;
-    saved = Object.fromEntries(cy.nodes().map(n => [n.id(), n.position()]));
+    saved = workspacePositions();
     try { localStorage.setItem(workspaceKey, JSON.stringify(capture())); } catch { notice.textContent = 'Workspace could not be saved in this browser.'; }
   };
   const message = (text:string, error=false) => { notice.textContent=text; notice.classList.toggle('lm-error',error); };
@@ -160,7 +173,7 @@ function mount(root: HTMLElement) {
     const dl=document.createElement('dl'); for (const [label,value] of rows) { const dt=document.createElement('dt'); dt.textContent=label; const dd=document.createElement('dd'); dd.textContent=value; if(link && label==='Status')dd.dataset.linkStatus='true'; dl.append(dt,dd); } panel.append(dl);
     if(node){
       const pin=document.createElement('button');pin.className='lm-pin-device';pin.disabled=layoutPending;pin.textContent=pins.has(node.id)?'Unpin device':'Pin position';pin.setAttribute('aria-pressed',String(pins.has(node.id)));
-      pin.onclick=()=>{if(pins.has(node.id))pins.delete(node.id);else pins.add(node.id);updatePins();persist();renderDetails();};panel.append(pin);
+      pin.onclick=()=>{if(pins.has(node.id))pins.delete(node.id);else{pins.add(node.id);basePositions[node.id]={...cy.getElementById(node.id).position()};}updatePins();filters(false);persist();renderDetails();};panel.append(pin);
       if(node.role==='AGG'){const button=document.createElement('button');button.className='lm-focus-device';button.disabled=layoutPending;button.textContent='Focus AGG group';button.onclick=()=>{focus.value=node.id;filters();persist();};panel.append(button);}
     }
     if (node?.url) { const url = new URL(node.url,window.location.href); if (url.origin===window.location.origin && ['http:','https:'].includes(url.protocol)) { const a=document.createElement('a'); a.className='lm-device-link'; a.href=url.href; a.textContent='Open in LibreNMS ↗'; panel.append(a); } }
@@ -172,12 +185,30 @@ function mount(root: HTMLElement) {
   }
   function filters(fit=true) {
     const visible = visibleNodes(graph,{rootId:focus.value || null,deviceGroupId:deviceGroup.value || null,site:site.value,search:search.value,backbone,showOther});
-    cy.batch(()=> { cy.nodes().forEach(n=>{n.style('display',visible.has(n.id())?'element':'none');}); cy.edges().forEach(e=>{e.style('display',visible.has(e.source().id()) && visible.has(e.target().id())?'element':'none');}); });
+    const focused=!!focus.value || !!deviceGroup.value;
+    cy.batch(()=> {
+      cy.nodes().forEach(n=>{n.style('display',visible.has(n.id())?'element':'none');});
+      cy.edges().forEach(e=>{e.style('display',visible.has(e.source().id()) && visible.has(e.target().id())?'element':'none');});
+      if(focused && visible.size && Object.keys(basePositions).length){
+        const focusedGraph:Topology={nodes:graph.nodes.filter(node=>visible.has(node.id)),links:graph.links.filter(link=>visible.has(link.source) && visible.has(link.target)),deviceGroups:[]};
+        const order=new Map(focusedGraph.nodes.map(node=>[node.id,basePositions[node.id]?.x ?? 0]));
+        const automatic=packTierPositions(focusedGraph,order,true);
+        const focusedPins=new Set([...pins].filter(id=>visible.has(id)));
+        const pinRestore=Object.fromEntries([...focusedPins].filter(id=>basePositions[id]).map(id=>[id,basePositions[id]]));
+        const positions=arrangePositions(focusedGraph,automatic,pinRestore,focusedPins);
+        cy.nodes().filter(node=>visible.has(node.id()) && !pins.has(node.id())).forEach(node=>{node.position(positions[node.id()]);});
+        focusedPacking=true;
+      }else if(!focused && focusedPacking){
+        cy.nodes().filter(node=>!pins.has(node.id()) && !!basePositions[node.id()]).forEach(node=>{node.position(basePositions[node.id()]);});
+        focusedPacking=false;
+      }
+    });
     $('.lm-empty').hidden=visible.size>0; $('.lm-empty').textContent=graph.nodes.length ? 'No devices match these filters.' : 'No authorized devices are available.';
     if (fit && visible.size) cy.fit(cy.elements(':visible'),70);
   }
   function layout(restore:Record<string,Position>={},viewport?:Pick<ViewState,'zoom'|'pan'>) {
-    pendingRestore=restore;pendingViewport=viewport;layoutRequest++;
+    const compactRestore=compactWideRestore(restore,pins);
+    pendingRestore=compactRestore;pendingViewport=compactRestore===restore ? viewport : undefined;layoutRequest++;
     setLayoutPending(true);
     clearTimeout(layoutTimer);
     layoutTimer=setTimeout(()=>{layoutRequest++;resetLayoutWorker();setLayoutPending(false);message('Layout timed out. Existing positions are retained; retry Re-layout.',true);},20000);
@@ -191,6 +222,7 @@ function mount(root: HTMLElement) {
     if (requestId!==layoutRequest) return;
     clearTimeout(layoutTimer);
     const resolved=arrangePositions(graph,positions,pendingRestore,pins);
+    basePositions=resolved;focusedPacking=false;
     cy.batch(()=>cy.nodes().forEach(n=>{n.unlock();n.position(resolved[n.id()]);}));updatePins();
     filters(!pendingViewport);
     if(pendingViewport)cy.viewport(pendingViewport);
@@ -204,7 +236,7 @@ function mount(root: HTMLElement) {
     snapshot=next; graph=topology(next);
     clockOffset=Number.isFinite(next.generatedAt) ? next.generatedAt-Date.now()/1000 : 0;
     const signature=JSON.stringify([graph.nodes.map(n=>[n.id,n.role,n.site,n.tier]),graph.links.map(l=>l.id)]);
-    const currentPositions=Object.fromEntries(cy.nodes().map(n=>[n.id(),n.position()]));
+    const currentPositions=workspacePositions();
     const oldSite=site.value;
     site.replaceChildren(new Option('All sites',''),...Array.from(new Set(graph.nodes.map(n=>n.site))).sort().map(s=>new Option(s,s)));
     if ([...site.options].some(o=>o.value===oldSite)) site.value=oldSite;
@@ -254,7 +286,7 @@ function mount(root: HTMLElement) {
     } catch(error) {
       linkPreview?.hide();
       // Permissions may have changed. Do not leave previously authorized graph data on screen.
-      cy.elements().remove(); graph={nodes:[],links:[],deviceGroups:[]}; selected=undefined; snapshot=undefined; layoutRequest++; clearTimeout(layoutTimer); detailsDefault();
+      cy.elements().remove(); graph={nodes:[],links:[],deviceGroups:[]}; basePositions={};focusedPacking=false;selected=undefined; snapshot=undefined; layoutRequest++; clearTimeout(layoutTimer); detailsDefault();
       setLayoutPending(false);clearTimeout(viewportTimer);clearTimeout(searchTimer);
       // Clear the on-screen pins, but reload the stored workspace rather than
       // emptying it: a transient failure must not cost the operator their saved
@@ -268,7 +300,7 @@ function mount(root: HTMLElement) {
   cy.on('tap','node',event=>selectNode(event.target.id()));
   cy.on('tap','edge',event=>{selected={type:'link',id:event.target.data('linkId')};cy.elements().removeClass('lm-dim');renderDetails();});
   cy.on('tap',event=>{if(event.target===cy){selected=undefined;cy.elements().removeClass('lm-dim');detailsDefault();}});
-  cy.on('dragfree','node',persist);
+  cy.on('dragfree','node',event=>{basePositions[event.target.id()]={...event.target.position()};persist();});
   cy.on('zoom',()=>cy.edges().toggleClass('lm-no-label',cy.zoom()<0.45));
   cy.on('pan zoom',()=>{
     if(!snapshot || layoutPending)return;
@@ -287,7 +319,7 @@ site.addEventListener('change',()=>{filters();persist();});deviceGroup.addEventL
       case 'refresh': void refresh(); break;
       case 'fit':cy.fit(cy.elements(':visible'),70);break;
       case 'layout':layout(Object.fromEntries(cy.nodes().map(n=>({id:n.id(),position:n.position()})).filter(n=>pins.has(n.id)).map(n=>[n.id,n.position])));break;
-      case 'unpin-all':pins.clear();updatePins();persist();renderDetails();break;
+      case 'unpin-all':pins.clear();updatePins();filters(false);persist();renderDetails();break;
       case 'zoom-in':cy.zoom({level:cy.zoom()*1.2,renderedPosition:{x:cy.width()/2,y:cy.height()/2}});break;
       case 'zoom-out':cy.zoom({level:cy.zoom()/1.2,renderedPosition:{x:cy.width()/2,y:cy.height()/2}});break;
       case 'overview':backbone=!backbone;updateBackbone();filters();persist();break;

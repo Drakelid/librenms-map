@@ -79,7 +79,7 @@ test('automatic re-layout respects a pinned device and avoids its occupied posit
   const result=arrangePositions(graph,automatic,restore,pins);
   assert.deepEqual(result['0'],restore['0']);assert.notDeepEqual(result['4'],restore['0']);
   assert.equal(Object.keys(result).length,graph.nodes.length);
-  for(const n of graph.nodes.filter(n=>n.id!=='0')) assert.ok(Math.abs(result[n.id].x-result['0'].x)>=246 || Math.abs(result[n.id].y-result['0'].y)>=105);
+  for(const n of graph.nodes.filter(n=>n.id!=='0')) assert.ok(Math.abs(result[n.id].x-result['0'].x)>=228 || Math.abs(result[n.id].y-result['0'].y)>=94);
 });
 
 test('dense placement keeps every automatic node clear of the others',()=>{
@@ -91,7 +91,7 @@ test('dense placement keeps every automatic node clear of the others',()=>{
   const points=Object.values(result);
   assert.equal(points.length,nodes.length);
   for(let i=0;i<points.length;i++) for(let j=i+1;j<points.length;j++)
-    assert.ok(Math.abs(points[i].x-points[j].x)>=246 || Math.abs(points[i].y-points[j].y)>=105,`nodes ${i} and ${j} overlap`);
+    assert.ok(Math.abs(points[i].x-points[j].x)>=228 || Math.abs(points[i].y-points[j].y)>=94,`nodes ${i} and ${j} overlap`);
 });
 
 test('saved positions are bounded by the loaded map, not a fixed 2,000',()=>{
