@@ -97,7 +97,7 @@ export function arrangePositions(graph:Topology, automatic:Record<string,Positio
   for(const n of graph.nodes) if(point(restore[n.id])) {result[n.id]={...restore[n.id]};reserve(result[n.id]);}
   // Restored coordinates belong to the operator; never move them to resolve overlap.
   for(const n of graph.nodes) if(!result[n.id]) {
-    const p={...(automatic[n.id] ?? {x:0,y:n.tier*135})};
+    const p={...(automatic[n.id] ?? {x:0,y:n.tier*180})};
     const origin=p.x;
     for(let step=1;overlap(p) && step<=graph.nodes.length*2+1;step++) p.x=origin+Math.ceil(step/2)*CARD_W*(step%2 ? 1 : -1);
     result[n.id]=p;reserve(p);

@@ -28,8 +28,8 @@ test('small tiers remain on one row and later tiers stay below earlier tiers',()
   assert.equal(new Set(first.map(node=>positions[node.id].y)).size,1);
   assert.equal(new Set(second.map(node=>positions[node.id].y)).size,1);
   assert.ok(Math.min(...second.map(node=>positions[node.id].y))>Math.max(...first.map(node=>positions[node.id].y)));
-  assert.equal(Math.abs(positions[first[1].id].x-positions[first[0].id].x),238);
-  assert.equal(positions[second[0].id].y-positions[first[0].id].y,135);
+  assert.equal(Math.abs(positions[first[1].id].x-positions[first[0].id].x),256);
+  assert.equal(positions[second[0].id].y-positions[first[0].id].y,180);
 });
 
 test('focused tiers use tighter spacing and fewer columns',()=>{
@@ -38,8 +38,8 @@ test('focused tiers use tighter spacing and fewer columns',()=>{
   const xs=[...new Set(Object.values(positions).map(position=>position.x))].sort((a,b)=>a-b);
   const ys=[...new Set(Object.values(positions).map(position=>position.y))].sort((a,b)=>a-b);
 
-  assert.equal(xs[1]-xs[0],228);
-  assert.equal(ys[1]-ys[0],112);
+  assert.equal(xs[1]-xs[0],246);
+  assert.equal(ys[1]-ys[0],155);
   assert.equal(xs.length,4);
   assert.equal(ys.length,5);
 });
@@ -49,6 +49,8 @@ test('old automatic restores are repacked without moving pinned devices',()=>{
   assert.deepEqual(compactWideRestore(wide,new Set(['4'])),{'4':wide['4']});
   const legacyGrid=Object.fromEntries(Array.from({length:20},(_,index)=>[String(index+1),{x:(index%5)*260,y:Math.floor(index/5)*210}]));
   assert.deepEqual(compactWideRestore(legacyGrid,new Set(['4'])),{'4':legacyGrid['4']});
-  const currentGrid=Object.fromEntries(Array.from({length:20},(_,index)=>[String(index+1),{x:(index%5)*238,y:Math.floor(index/5)*135}]));
+  const compactGrid=Object.fromEntries(Array.from({length:20},(_,index)=>[String(index+1),{x:(index%5)*238,y:Math.floor(index/5)*135}]));
+  assert.deepEqual(compactWideRestore(compactGrid,new Set(['4'])),{'4':compactGrid['4']});
+  const currentGrid=Object.fromEntries(Array.from({length:20},(_,index)=>[String(index+1),{x:(index%5)*256,y:Math.floor(index/5)*180}]));
   assert.equal(compactWideRestore(currentGrid,new Set()),currentGrid);
 });

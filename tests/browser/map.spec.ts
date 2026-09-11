@@ -49,7 +49,7 @@ test('all device groups migrates a legacy grid to a compact multi-row overview',
   expect(new Set(ys).size).toBeGreaterThan(1);
   expect(width/height).toBeLessThan(1.8);
   const rowYs=[...new Set(ys)].sort((a,b)=>a-b);
-  expect(Math.max(...rowYs.slice(1).map((y,index)=>y-rowYs[index]))).toBeLessThanOrEqual(135);
+  expect(Math.max(...rowYs.slice(1).map((y,index)=>y-rowYs[index]))).toBeLessThanOrEqual(180);
   expect(positions[0]).toEqual({x:0,y:0});
 });
 

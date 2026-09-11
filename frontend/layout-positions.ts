@@ -1,14 +1,15 @@
 import type { Position, Topology } from './types';
 
-const NORMAL_COLUMN_GAP = 238;
-const NORMAL_ROW_GAP = 135;
-const FOCUSED_COLUMN_GAP = 228;
-const FOCUSED_ROW_GAP = 112;
+// Gaps leave room between cards for the link load labels.
+const NORMAL_COLUMN_GAP = 256;
+const NORMAL_ROW_GAP = 180;
+const FOCUSED_COLUMN_GAP = 246;
+const FOCUSED_ROW_GAP = 155;
 const MIN_COLUMNS = 8;
 const FOCUSED_MIN_COLUMNS = 4;
 const LEGACY_WIDE_RATIO = 4;
-const LEGACY_COLUMN_GAP = 260;
-const LEGACY_ROW_GAP = 210;
+// Earlier automatic grids: the original 260x210 one and the tighter 238x135 one.
+const FORMER_GRIDS = [{ column:260, row:210 }, { column:238, row:135 }];
 const LEGACY_GRID_TOLERANCE = 2;
 
 function nearLegacyMultiple(distance:number,gap:number):boolean {
@@ -17,8 +18,8 @@ function nearLegacyMultiple(distance:number,gap:number):boolean {
   return Math.abs(distance-multiple*gap)<=LEGACY_GRID_TOLERANCE;
 }
 
-/** Match the former automatic 260x210 grid without treating arbitrary manual layouts as stale. */
-function looksLikeLegacyGrid(entries:[string,Position][]):boolean {
+/** Match a former automatic grid without treating arbitrary manual layouts as stale. */
+function looksLikeFormerGrid(entries:[string,Position][], grid:{column:number;row:number}):boolean {
   if(entries.length<=MIN_COLUMNS)return false;
   const rows=new Map<number,number[]>();
   for(const [,position] of entries){
@@ -32,8 +33,8 @@ function looksLikeLegacyGrid(entries:[string,Position][]):boolean {
     return sorted.slice(1).map((x,index)=>x-sorted[index]).filter(gap=>gap>0);
   });
   if(verticalGaps.length===0 || horizontalGaps.length<2)return false;
-  const verticalMatches=verticalGaps.filter(gap=>nearLegacyMultiple(gap,LEGACY_ROW_GAP)).length;
-  const horizontalMatches=horizontalGaps.filter(gap=>nearLegacyMultiple(gap,LEGACY_COLUMN_GAP)).length;
+  const verticalMatches=verticalGaps.filter(gap=>nearLegacyMultiple(gap,grid.row)).length;
+  const horizontalMatches=horizontalGaps.filter(gap=>nearLegacyMultiple(gap,grid.column)).length;
   return verticalMatches/verticalGaps.length>=.75 && horizontalMatches/horizontalGaps.length>=.75;
 }
 
@@ -45,7 +46,7 @@ export function compactWideRestore(positions:Record<string,Position>, pinned:Rea
   const width=Math.max(...xs)-Math.min(...xs)+210;
   const height=Math.max(...ys)-Math.min(...ys)+76;
   const automaticEntries=entries.filter(([id])=>!pinned.has(id));
-  if(width/height<=LEGACY_WIDE_RATIO && !looksLikeLegacyGrid(automaticEntries))return positions;
+  if(width/height<=LEGACY_WIDE_RATIO && !FORMER_GRIDS.some(grid=>looksLikeFormerGrid(automaticEntries,grid)))return positions;
   return Object.fromEntries(entries.filter(([id])=>pinned.has(id)));
 }
 
