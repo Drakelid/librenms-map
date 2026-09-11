@@ -161,7 +161,7 @@ class TopologyIntegrationTest extends TestCase
         $this->assertSame(1000000000.0, $actual['speedBps']);
         $this->assertSame('up', $actual['status']);
         foreach ($result['devices'] as $device) {
-            $this->assertSame(['id', 'hostname', 'sysName', 'status', 'url'], array_keys($device));
+            $this->assertSame(['id', 'hostname', 'sysName', 'displayName', 'status', 'url'], array_keys($device));
         }
 
         // A rate at the host column's 32-bit ceiling was clamped, not measured.
@@ -169,6 +169,19 @@ class TopologyIntegrationTest extends TestCase
         $clamped = collect(app(LibreNmsTopology::class)->forUser(User::factory()->admin()->create())['links'])
             ->firstWhere('id', (string) $link->id);
         $this->assertNull($clamped['inBps']);
+    }
+
+    public function testLabelsUseTheDisplayNameAndPreferSysNameOverAnIpAddress(): void
+    {
+        $named = Device::factory()->create(['hostname' => '192.0.2.10', 'sysName' => 'rossa1agg1', 'display' => 'Core AGG 1']);
+        $byIp = Device::factory()->create(['hostname' => '192.0.2.11', 'sysName' => 'rossa1agg2', 'display' => null]);
+        $bare = Device::factory()->create(['hostname' => '192.0.2.12', 'sysName' => '', 'display' => null]);
+
+        $devices = collect(app(LibreNmsTopology::class)->forUser(User::factory()->admin()->create())['devices'])->keyBy('id');
+
+        $this->assertSame('Core AGG 1', $devices[(string) $named->device_id]['displayName']);
+        $this->assertSame('rossa1agg2', $devices[(string) $byIp->device_id]['displayName']);
+        $this->assertSame('192.0.2.12', $devices[(string) $bare->device_id]['displayName']);
     }
 
     public function testMalformedConfigIsSanitizedBeforeSerialization(): void

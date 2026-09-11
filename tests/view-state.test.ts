@@ -54,6 +54,13 @@ test('device group focus intersects branch, site, role visibility and search fil
   assert.equal(normalizeView({deviceGroupId:'7'},scoped).deviceGroupId,'7');
   assert.equal(normalizeView({deviceGroupId:'999'},scoped).deviceGroupId,null);
 });
+test('search matches the display name, hostname and sysName',()=>{
+  const named={nodes:[
+    {id:'1',hostname:'10.0.0.1',sysName:'rossa1agg1.example.net',displayName:'Core AGG',status:'up',role:'AGG',site:'rossa1',tier:0,reachable:true},
+    {id:'2',hostname:'10.0.0.2',status:'up',role:'AGG',site:'rossa1',tier:0,reachable:true},
+  ],links:[],deviceGroups:[]} satisfies Topology;
+  for(const search of ['core agg','10.0.0.1','example.net']) assert.deepEqual([...visibleNodes(named,{rootId:null,site:'',search,backbone:false,showOther:false})],['1']);
+});
 test('saved state redacts removed devices and rejects corrupt coordinates and roots',()=>{
   const result=normalizeView({rootId:'999',positions:{'0':{x:42,y:90},'999':{x:4,y:5},'1':{x:Infinity,y:3}},pinned:['0','1','999'],zoom:100,pan:{x:NaN,y:4},site:'private-site',search:'x'.repeat(200)},graph);
   assert.deepEqual(result.positions,{'0':{x:42,y:90}});

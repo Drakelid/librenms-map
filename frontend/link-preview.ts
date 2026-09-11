@@ -32,8 +32,8 @@ export function mountLinkPreview(root:HTMLElement,cy:Core,refreshKey:()=>number|
   };
   const show=(edge:EdgeSingular,position:{x:number;y:number})=>{
     const endpoints=[
-      {hostname:String(edge.source().data('hostname') ?? ''),port:String(edge.data('sourcePort') ?? ''),portId:String(edge.data('sourcePortId') ?? '')},
-      {hostname:String(edge.target().data('hostname') ?? ''),port:String(edge.data('targetPort') ?? ''),portId:String(edge.data('targetPortId') ?? '')},
+      {hostname:String(edge.source().data('name') ?? ''),port:String(edge.data('sourcePort') ?? ''),portId:String(edge.data('sourcePortId') ?? '')},
+      {hostname:String(edge.target().data('name') ?? ''),port:String(edge.data('targetPort') ?? ''),portId:String(edge.data('targetPortId') ?? '')},
     ];
     const title=document.createElement('div');title.className='lm-link-preview-title';title.textContent='Interface traffic · last 24 hours';
     const graphs=document.createElement('div');graphs.className='lm-link-preview-graphs';

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classify, lateralOffsets, metric, normalizeLinks, topology } from '../frontend/topology';
+import { classify, deviceName, lateralOffsets, metric, normalizeLinks, topology } from '../frontend/topology';
 import type { Config, Link, Snapshot } from '../frontend/types';
 const config: Config = { prefixes: ['hk-'], staleAfter: 900, overrides: {} };
 const link = (source: string, target: string, sourcePortId = '1', targetPortId = '2'): Link => ({ id: `${source}-${target}-${sourcePortId}`, source, target, sourcePortId, targetPortId, sourcePort: 'eth1', targetPort: 'eth2', speedBps: 1e9, inBps: 2e8, outBps: 5e8, sampledAt: 1000, status: 'up' });
@@ -50,4 +50,13 @@ test('an IP-address hostname falls back to sysName and malformed config entries 
   assert.equal(classify({ id:'1', hostname:'10.20.30.40', sysName:null, status:'up' }, config).site, 'Unclassified');
   const malformed: Config = { ...config, prefixes:['hk-', 7 as unknown as string], overrides:{ '1':{ role:5 as unknown as string, site:'manual' } } };
   assert.deepEqual(classify({ id:'1', hostname:'hk-rossa1agg1', status:'up' }, malformed), { role:'AGG', site:'manual' });
+});
+test('labels prefer the server display name, fall back to the hostname and order nodes by label', () => {
+  assert.equal(deviceName({ id:'1', hostname:'10.20.30.40', displayName:'Core AGG 1', status:'up' }), 'Core AGG 1');
+  assert.equal(deviceName({ id:'1', hostname:'10.20.30.40', displayName:'  ', status:'up' }), '10.20.30.40');
+  assert.equal(deviceName({ id:'1', hostname:'rossa1agg1', displayName:null, status:'up' }), 'rossa1agg1');
+  const graph = topology({ config, generatedAt:1000, links:[], devices:[
+    { id:'1', hostname:'10.0.0.1', displayName:'rossa1agg2', status:'up' }, { id:'2', hostname:'10.0.0.2', displayName:'rossa1agg1', status:'up' },
+  ] });
+  assert.deepEqual(graph.nodes.map(n => n.id), ['2','1']);
 });

@@ -19,7 +19,8 @@ class LibreNmsTopology
         $maxDevices = max(1, (int) config('libremap.max_devices', 2000));
         $maxLinks = max(1, (int) config('libremap.max_links', 10000));
         $devices = Device::hasAccess($user)
-            ->select(['device_id', 'hostname', 'sysName', 'status', 'disabled'])
+            // display, ip and overwrite_ip feed the host's Device::displayName().
+            ->select(['device_id', 'hostname', 'sysName', 'display', 'ip', 'overwrite_ip', 'status', 'disabled'])
             ->orderBy('device_id')->limit($maxDevices + 1)->get();
         abort_if($devices->count() > $maxDevices, 422, 'LibreMap device limit exceeded. Increase libremap.max_devices before loading this network.');
         $deviceIds = $devices->pluck('device_id')->all();
@@ -74,6 +75,7 @@ class LibreNmsTopology
                 'hostname' => (string) $device->hostname,
                 // Classification falls back to sysName for devices added by IP address.
                 'sysName' => is_string($device->sysName) && $device->sysName !== '' ? $device->sysName : null,
+                'displayName' => $this->displayName($device),
                 'status' => $device->disabled ? 'disabled' : ($device->status === null ? 'unknown' : ($device->status ? 'up' : 'down')),
                 'url' => url('device/device='.(int) $device->device_id.'/'),
             ])->values()->all(),
@@ -108,6 +110,18 @@ class LibreNmsTopology
                 'name' => (string) $group->name,
                 'deviceIds' => $group->devices->pluck('device_id')->map(fn ($id) => (string) $id)->values()->all(),
             ])->values()->all();
+    }
+
+    /** The LibreNMS display name, except that a known sysName beats a bare IP address. */
+    private function displayName(Device $device): string
+    {
+        $name = trim((string) $device->displayName());
+        $sysName = is_string($device->sysName) ? trim($device->sysName) : '';
+        if ($sysName !== '' && ($name === '' || filter_var($name, FILTER_VALIDATE_IP) !== false)) {
+            return $sysName;
+        }
+
+        return $name !== '' ? $name : (string) $device->hostname;
     }
 
     /** Config is admin-edited PHP; send the client only well-typed values. */

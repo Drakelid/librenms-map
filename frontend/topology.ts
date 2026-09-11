@@ -12,6 +12,11 @@ function nameParts(name: string, prefixes: string[]) {
   return ROLE_NAME.exec(short)?.groups;
 }
 
+/** The label the server resolved from LibreNMS's display name, else the hostname. */
+export function deviceName(device: Device): string {
+  return typeof device.displayName === 'string' && device.displayName.trim() !== '' ? device.displayName.trim() : device.hostname;
+}
+
 export function classify(device: Device, config: Config): Pick<MapNode, 'role' | 'site'> {
   // Config is admin-edited; ignore entries of the wrong type instead of failing the map.
   const prefixes = config.prefixes.filter(p => typeof p === 'string' && p !== '').map(p => p.toLowerCase()).sort((a, b) => b.length - a.length);
@@ -64,7 +69,7 @@ export function topology(snapshot: Snapshot): Topology {
   }
   const disconnectedTier = Math.max(0, ...nodes.map(n => n.tier)) + 1;
   for (const n of nodes) if (n.tier < 0) n.tier = disconnectedTier;
-  nodes.sort((a, b) => a.tier - b.tier || a.site.localeCompare(b.site) || a.hostname.localeCompare(b.hostname, undefined, { numeric: true }));
+  nodes.sort((a, b) => a.tier - b.tier || a.site.localeCompare(b.site) || deviceName(a).localeCompare(deviceName(b), undefined, { numeric: true }));
   return { nodes, links, deviceGroups };
 }
 

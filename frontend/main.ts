@@ -3,7 +3,7 @@ import { layoutGraph, resetLayoutWorker } from './layout';
 import { compactWideRestore, packTierPositions } from './layout-positions';
 import { mountLinkPreview } from './link-preview';
 import { demoSnapshot } from './demo';
-import { lateralOffsets, metric, PARALLEL_CONNECTION_GAP, topology } from './topology';
+import { deviceName, lateralOffsets, metric, PARALLEL_CONNECTION_GAP, topology } from './topology';
 import { limitFilter } from './view-limits';
 import { arrangePositions, emptyView, normalizeView, visibleNodes } from './view-state';
 import { demoViewStore, httpViewStore } from './view-store';
@@ -131,7 +131,7 @@ function mount(root: HTMLElement) {
   }
   function updatePins(){
     cy.nodes().forEach(n=>{
-      const pinned=pins.has(n.id());n.data({pinned:pinned?1:0,label:`${n.data('hostname')}\n${n.data('role')}  ·  ${String(n.data('status')).toUpperCase()}${pinned?'  ·  PIN':''}`});
+      const pinned=pins.has(n.id());n.data({pinned:pinned?1:0,label:`${n.data('name')}\n${n.data('role')}  ·  ${String(n.data('status')).toUpperCase()}${pinned?'  ·  PIN':''}`});
       if(pinned)n.lock();else n.unlock();
     });
     $('.lm-pin-count').textContent=`${pins.size} pinned`;
@@ -153,7 +153,7 @@ function mount(root: HTMLElement) {
     const desc = document.createElement('p'); desc.textContent='Hover a link to preview both interface traffic graphs. Select a device or link to inspect its status and traffic.'; panel.append(desc);
     const list = document.createElement('div'); list.className='lm-device-list';
     for (const node of graph.nodes.filter(n => n.role==='AGG')) {
-      const button = document.createElement('button'); button.textContent=`◈  ${node.hostname}`; button.addEventListener('click',()=>selectNode(node.id)); list.append(button);
+      const button = document.createElement('button'); button.textContent=`◈  ${deviceName(node)}`; button.addEventListener('click',()=>selectNode(node.id)); list.append(button);
     }
     panel.append(list);
     const hint=document.createElement('p'); hint.className='lm-hint'; hint.textContent='Choose a LibreNMS device group or an AGG root to focus the map. Filters combine, and Show other devices reveals non-AGG/ER members inside that scope. Save a named view to return to this workspace.'; panel.append(hint);
@@ -166,8 +166,9 @@ function mount(root: HTMLElement) {
     const panel=$('.lm-details'); panel.replaceChildren();
     const close=document.createElement('button'); close.className='lm-close'; close.textContent='×'; close.setAttribute('aria-label','Close details'); close.onclick=()=>{ selected=undefined; cy.elements().removeClass('lm-dim'); cy.elements().unselect(); detailsDefault(); }; panel.append(close);
     const eyebrow=document.createElement('div'); eyebrow.className='lm-eyebrow'; eyebrow.textContent=node ? `${node.role} / DEVICE` : 'PHYSICAL LINK'; panel.append(eyebrow);
-    const title=document.createElement('h2'); title.textContent=node?.hostname ?? `${graph.nodes.find(n=>n.id===link!.source)?.hostname} ↔ ${graph.nodes.find(n=>n.id===link!.target)?.hostname}`; panel.append(title);
-    const rows: [string,string][] = node ? [['Status',node.status],['Role',node.role],['Site',node.site],['Placement',node.reachable ? node.tier===0 ? 'Root tier' : `Hop ${node.tier} from AGG` : 'No discovered AGG path'],['Connections',String(graph.links.filter(l=>l.source===node.id || l.target===node.id).length)]] : [
+    const nameOf=(id:string)=>{const n=graph.nodes.find(n=>n.id===id);return n ? deviceName(n) : undefined;};
+    const title=document.createElement('h2'); title.textContent=node ? deviceName(node) : `${nameOf(link!.source)} ↔ ${nameOf(link!.target)}`; panel.append(title);
+    const rows: [string,string][] = node ? [['Status',node.status],...(deviceName(node)!==node.hostname ? [['Hostname',node.hostname] as [string,string]] : []),['Role',node.role],['Site',node.site],['Placement',node.reachable ? node.tier===0 ? 'Root tier' : `Hop ${node.tier} from AGG` : 'No discovered AGG path'],['Connections',String(graph.links.filter(l=>l.source===node.id || l.target===node.id).length)]] : [
       ['Status',metric(link!,serverNow(),snapshot!.config.staleAfter).label], ['Source interface',link!.sourcePort],['Remote interface',link!.targetPort],['Capacity',rate(link!.speedBps)],['Inbound at source',rate(link!.inBps)],['Outbound at source',rate(link!.outBps)],['Sample time',link!.sampledAt ? new Date(link!.sampledAt*1000).toLocaleString() : 'Unavailable'],
     ];
     const dl=document.createElement('dl'); for (const [label,value] of rows) { const dt=document.createElement('dt'); dt.textContent=label; const dd=document.createElement('dd'); dd.textContent=value; if(link && label==='Status')dd.dataset.linkStatus='true'; dl.append(dt,dd); } panel.append(dl);
@@ -241,7 +242,7 @@ function mount(root: HTMLElement) {
     site.replaceChildren(new Option('All sites',''),...Array.from(new Set(graph.nodes.map(n=>n.site))).sort().map(s=>new Option(s,s)));
     if ([...site.options].some(o=>o.value===oldSite)) site.value=oldSite;
     const oldFocus=focus.value;
-    focus.replaceChildren(new Option('All AGG groups',''),...graph.nodes.filter(n=>n.role==='AGG').map(n=>new Option(n.hostname,n.id)));
+    focus.replaceChildren(new Option('All AGG groups',''),...graph.nodes.filter(n=>n.role==='AGG').map(n=>new Option(deviceName(n),n.id)));
     if([...focus.options].some(o=>o.value===oldFocus))focus.value=oldFocus;
     const oldDeviceGroup=deviceGroup.value;
     deviceGroup.replaceChildren(new Option('All device groups',''),...graph.deviceGroups.map(group=>new Option(group.name,group.id)));
@@ -254,7 +255,7 @@ function mount(root: HTMLElement) {
     cy.batch(()=>{
       const nodeIds=new Set(graph.nodes.map(n=>n.id)); const edgeIds=new Set(graph.links.map(l=>`edge:${l.id}`));
       cy.edges().filter(e=>!edgeIds.has(e.id())).remove(); cy.nodes().filter(n=>!nodeIds.has(n.id())).remove();
-      for (const n of graph.nodes) { const data={...n,label:`${n.hostname}\n${n.role}  ·  ${n.status.toUpperCase()}`,color:n.status==='down'?'#e05b65':n.status==='up'?'#36b89a':'#8a96a9',width:n.role==='AGG'?220:206}; const old=cy.getElementById(n.id); if(old.length) old.data(data); else cy.add({data}); }
+      for (const n of graph.nodes) { const name=deviceName(n); const data={...n,name,label:`${name}\n${n.role}  ·  ${n.status.toUpperCase()}`,color:n.status==='down'?'#e05b65':n.status==='up'?'#36b89a':'#8a96a9',width:n.role==='AGG'?220:206}; const old=cy.getElementById(n.id); if(old.length) old.data(data); else cy.add({data}); }
       const offsets=lateralOffsets(graph);
       for (const l of graph.links) { const m=metric(l,serverNow(),next.config.staleAfter); const data={...l,id:`edge:${l.id}`,linkId:l.id,label:m.label,color:m.color,state:m.state,lateral:offsets.has(l.id)?1:0,curveDistance:offsets.get(l.id) ?? 0}; const old=cy.getElementById(data.id); if(old.length) old.data(data); else cy.add({data}); }
     });

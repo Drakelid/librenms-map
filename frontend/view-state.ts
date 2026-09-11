@@ -1,3 +1,4 @@
+import { deviceName } from './topology';
 import type { Position, Topology, ViewState } from './types';
 import { FILTER_MAX, limitFilter, STORED_POSITIONS_MAX, textLength } from './view-limits';
 
@@ -59,7 +60,9 @@ export function visibleNodes(graph:Topology, state:Pick<ViewState,'rootId'|'site
     const roleVisible=state.backbone ? n.role==='AGG' : state.showOther || n.role==='AGG' || n.role==='ER';
     return branch.has(n.id) && (!groupDevices || groupDevices.has(n.id)) && (!state.site || n.site===state.site) && roleVisible;
   }).map(n=>n.id));
-  const matching=new Set(graph.nodes.filter(n=>scope.has(n.id) && n.hostname.toLowerCase().includes(state.search.toLowerCase())).map(n=>n.id));
+  // Labels show the display name; the hostname and sysName stay searchable.
+  const query=state.search.toLowerCase();
+  const matching=new Set(graph.nodes.filter(n=>scope.has(n.id) && [deviceName(n),n.hostname,n.sysName ?? ''].some(name=>name.toLowerCase().includes(query))).map(n=>n.id));
   const visible=new Set(matching);
   if(state.search) for(const l of graph.links){
     if(matching.has(l.source) && scope.has(l.target)) visible.add(l.target);
