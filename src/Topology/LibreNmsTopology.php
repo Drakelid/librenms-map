@@ -3,6 +3,7 @@
 namespace LibreMap\Topology;
 
 use App\Models\Device;
+use App\Models\DeviceGroup;
 use App\Models\Link;
 use App\Models\Port;
 use App\Models\User;
@@ -77,6 +78,7 @@ class LibreNmsTopology
                 'url' => url('device/device='.(int) $device->device_id.'/'),
             ])->values()->all(),
             'links' => $resultLinks,
+            'deviceGroups' => $this->deviceGroups($user, $deviceIds),
             'generatedAt' => time(),
             'config' => [
                 'prefixes' => $this->prefixes(),
@@ -85,6 +87,27 @@ class LibreNmsTopology
                 'overrides' => (object) $this->overrides($deviceIds),
             ],
         ];
+    }
+
+    /** Return only groups the user may view, with only already-visible members. */
+    private function deviceGroups(User $user, array $deviceIds): array
+    {
+        if ($deviceIds === []) {
+            return [];
+        }
+
+        return DeviceGroup::hasAccess($user)
+            ->whereHas('devices', fn ($query) => $query->whereIntegerInRaw('devices.device_id', $deviceIds))
+            ->with(['devices' => fn ($query) => $query
+                ->whereIntegerInRaw('devices.device_id', $deviceIds)
+                ->select('devices.device_id')
+                ->orderBy('devices.device_id')])
+            ->orderBy('name')->orderBy('id')->get(['id', 'name'])
+            ->map(fn (DeviceGroup $group) => [
+                'id' => (string) $group->id,
+                'name' => (string) $group->name,
+                'deviceIds' => $group->devices->pluck('device_id')->map(fn ($id) => (string) $id)->values()->all(),
+            ])->values()->all();
     }
 
     /** Config is admin-edited PHP; send the client only well-typed values. */

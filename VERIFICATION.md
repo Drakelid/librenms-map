@@ -2,14 +2,14 @@
 
 ## Confirmed locally
 
-- `npm test`: 14 passing domain tests covering topology/metrics, root-group boundaries, search and role-visibility scope, corrupt/unauthorized saved-state filtering, pin collision avoidance, dense placement across 400 colliding nodes, distinct lateral arcs with reversed observations, Unicode filter limits, the sysName classification fallback with malformed config, and saved views above 2,000 positions.
+- `npm test`: 15 passing domain tests covering topology/metrics, root-group boundaries, device-group/search/role-visibility scope, corrupt/unauthorized saved-state filtering, pin collision avoidance, dense placement across 400 colliding nodes, distinct lateral arcs with reversed observations, Unicode filter limits, the sysName classification fallback with malformed config, and saved views above 2,000 positions.
 - `npm run build`: TypeScript strict checking and production asset build pass. ELK runs in a separately emitted web worker with a relative asset URL.
 - `node tests/php-syntax.cjs`: 17 PHP files, including both migrations and expanded host tests, parse in PHP 8.2 mode. This uses a JavaScript PHP parser; PHP itself is unavailable locally.
-- `npm run test:browser`: 21 Chromium tests pass: original topology/controls/failure/compiled-bundle checks, lazy dual-interface graph previews on link hover, default hiding and scoped reveal of other devices, actionable topology-limit errors, drag persistence, authorization loss, root focus/pin/named-view persistence, malformed demo-view storage recovery, mocked live CRUD with CSRF and revision conflict recovery, migration-pending error isolation, workspace survival across a failed refresh, independently selectable parallel lateral links, stale selected details with retained keyboard focus, server-sized Unicode names/filters, staleness under a skewed browser clock, the server's reason for a rejected save, the map following LibreNMS's `dark` class and page background live, and the standalone map following the OS color scheme. The LibreNMS case uses a fixture that reproduces LibreNMS's body backgrounds (`#fff`, and `#272b30` under `.dark`); it has not been checked inside a running LibreNMS browser session.
+- `npm run test:browser`: 22 Chromium tests pass: original topology/controls/failure/compiled-bundle checks, lazy dual-interface graph previews on link hover, permission-scoped device-group selection and persistence, default hiding and scoped reveal of other devices, actionable topology-limit errors, drag persistence, authorization loss, root/device-group focus with pin/named-view persistence, malformed demo-view storage recovery, mocked live CRUD with CSRF and revision conflict recovery, migration-pending error isolation, workspace survival across a failed refresh, independently selectable parallel lateral links, stale selected details with retained keyboard focus, server-sized Unicode names/filters, staleness under a skewed browser clock, the server's reason for a rejected save, the map following LibreNMS's `dark` class and page background live, and the standalone map following the OS color scheme. The LibreNMS case uses a fixture that reproduces LibreNMS's body backgrounds (`#fff`, and `#272b30` under `.dark`); it has not been checked inside a running LibreNMS browser session.
 - Light/dark screenshots, `test-results/libremap-views.png` and `test-results/libremap-link-preview.png` captured. The link preview was inspected visually with two labeled endpoint graph panels; the operator-controls screenshot was inspected with a focused root, pinned AGG and selected named view.
 - Dependency installation audit reported zero vulnerabilities at installation time.
 
-The local Node runtime was found at `C:/Users/ex_410156/AppData/Local/node24/PFiles64/nodejs`; browser checks used existing Chromium via `CHROMIUM_PATH`. Playwright requested a browser build newer than any installed, so an existing Chromium was selected explicitly rather than downloading one. No global runtime installation or live system modification was performed.
+The local Node runtime was found at `C:/Users/ex_410156/Documents/FieldOps/.tools/node-v22.14.0-win-x64`; browser checks used the installed Microsoft Edge Chromium executable via `CHROMIUM_PATH`. Playwright requested a browser build newer than any installed, so an existing Chromium browser was selected explicitly rather than downloading one. No global runtime installation or live system modification was performed.
 
 ## Corrections supported by failures
 
@@ -24,7 +24,7 @@ The local Node runtime was found at `C:/Users/ex_410156/AppData/Local/node24/PFi
 
 ## Host CI added in this update
 
-[Host workflow](.github/workflows/host.yml) targets LibreNMS 26.7.0 and 26.8.0, PHP 8.4, and MySQL 8.0/MariaDB 11.7. Its 27 test methods cover real port enum/string attributes, partial permissions, deleted ports, private views, revision conflicts, batched authorization, Unicode limits, migration schema, cached routes, map and navbar rendering, concurrent creates, sanitized config, the octet-rate column ceiling, view deletion with the owner account, the position limit and the named rate limiter. The concurrency method exercises both isolation levels, first creates, the 49-to-50 boundary and a deliberately held owner lock. CI fails if a required test is skipped.
+[Host workflow](.github/workflows/host.yml) targets LibreNMS 26.7.0 and 26.8.0, PHP 8.4, and MySQL 8.0/MariaDB 11.7. Its 29 test methods cover real port enum/string attributes, partial device and device-group permissions, deleted ports, private views, group-focus redaction, revision conflicts, batched authorization, Unicode limits, migration schema, cached routes, map and navbar rendering, concurrent creates, sanitized config, the octet-rate column ceiling, view deletion with the owner account, the position limit and the named rate limiter. The concurrency method exercises both isolation levels, first creates, the 49-to-50 boundary and a deliberately held owner lock. CI fails if a required test is skipped.
 
 The workflow performs migration, repeated migration, rollback and reapply before the suite. Cached-route tests run separately after enabling the plugin and building a real Laravel route cache. [Frontend workflow](.github/workflows/frontend.yml) also verifies committed assets match the build.
 
@@ -57,6 +57,10 @@ The new unit and browser tests were written together with the fixes and were not
 ## Link traffic previews
 
 - A 180 ms dwell on a live topology edge opens a bounded hover card with the source and destination interface names and their one-day `port_bits` graphs. The graph URLs use the configured LibreNMS base path, remain same-origin and include the current snapshot timestamp as a refresh key. A browser regression verifies lazy loading, both authorized port IDs, graph parameters, base-path handling and dismissal when the pointer leaves.
+
+## Device-group focus
+
+- The live snapshot lists only LibreNMS device groups visible to the signed-in user and serializes only members already present in that user's authorized device snapshot. The selector intersects AGG-root, site, search, backbone, and role-visibility filters. Its value persists in browser workspaces and private named views; missing, deleted, and inaccessible group references safely revert to all groups.
 
 ## Not yet verified
 

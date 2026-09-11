@@ -45,6 +45,11 @@ export function normalizeLinks(links: Link[], ids: Set<string>): Link[] {
 export function topology(snapshot: Snapshot): Topology {
   const nodes: MapNode[] = snapshot.devices.map(d => ({ ...d, ...classify(d, snapshot.config), tier: -1, reachable: false }));
   const byId = new Map(nodes.map(n => [n.id, n]));
+  const deviceGroups = (Array.isArray(snapshot.deviceGroups) ? snapshot.deviceGroups : []).flatMap(group => {
+    if (!group || typeof group.id !== 'string' || !/^[1-9]\d{0,9}$/.test(group.id) || typeof group.name !== 'string' || group.name.trim() === '' || !Array.isArray(group.deviceIds)) return [];
+    const deviceIds = [...new Set(group.deviceIds.filter((id): id is string => typeof id === 'string' && byId.has(id)))];
+    return deviceIds.length ? [{ id:group.id, name:group.name, deviceIds }] : [];
+  }).sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}) || a.id.localeCompare(b.id));
   const links = normalizeLinks(snapshot.links, new Set(byId.keys()));
   const neighbors = new Map(nodes.map(n => [n.id, new Set<string>()]));
   for (const l of links) { neighbors.get(l.source)!.add(l.target); neighbors.get(l.target)!.add(l.source); }
@@ -59,7 +64,7 @@ export function topology(snapshot: Snapshot): Topology {
   const disconnectedTier = Math.max(0, ...nodes.map(n => n.tier)) + 1;
   for (const n of nodes) if (n.tier < 0) n.tier = disconnectedTier;
   nodes.sort((a, b) => a.tier - b.tier || a.site.localeCompare(b.site) || a.hostname.localeCompare(b.hostname, undefined, { numeric: true }));
-  return { nodes, links };
+  return { nodes, links, deviceGroups };
 }
 
 /** Give same-tier physical links separate arcs, independent of observation order. */

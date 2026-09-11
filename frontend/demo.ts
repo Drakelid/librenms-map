@@ -8,6 +8,10 @@ export function demoSnapshot(): Snapshot {
     generatedAt: now,
     config: { prefixes: ['hk-'], staleAfter: 900, overrides: {} },
     devices: names.map((hostname, i) => ({ id:String(i), hostname, status:i === 14 ? 'down' : i === 15 ? 'unknown' : 'up' })),
+    deviceGroups: [
+      { id:'101', name:'Rossa access', deviceIds:['0','1','4','5','6','7','10','11','12','15'] },
+      { id:'102', name:'Heiane access', deviceIds:['2','3','8','9','13','14'] },
+    ],
     links: connections.map(([source,target,percent], i) => ({ id:`demo-${i}`, source:String(source), target:String(target), sourcePortId:String(i*2+1), targetPortId:String(i*2+2), sourcePort:`xe-0/0/${i}`, targetPort:'xe-0/0/0', speedBps:1e10, inBps:percent*1e8, outBps:percent*6e7, sampledAt:i === 15 ? now-1800 : now, status:target === 14 || source === 14 ? 'down' : 'up' })),
   };
 }

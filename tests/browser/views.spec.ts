@@ -57,6 +57,7 @@ test('server-sized names and filters round-trip without truncation, including Un
 test('root focus, pins and named demo views survive layout and reload',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');await expect(page.getByRole('status')).toContainText('Demo topology');
+  await page.getByRole('combobox',{name:'Device group'}).selectOption('101');
   await page.getByRole('combobox',{name:'AGG root'}).selectOption('0');
   expect((await graph(page)).nodes.find(n=>n.id==='8')!.visible).toBe(false);
   expect((await graph(page)).nodes.find(n=>n.id==='1')!.visible).toBe(true);
@@ -72,15 +73,18 @@ test('root focus, pins and named demo views survive layout and reload',async({pa
   await page.getByRole('button',{name:'Save as new',exact:true}).click();
   await expect(page.locator('.lm-view-status')).toContainText('Saved “Rossa primary”');
   const id=await page.getByRole('combobox',{name:'Saved view',exact:true}).inputValue();
+  await page.getByRole('combobox',{name:'Device group'}).selectOption('102');
   await page.getByRole('combobox',{name:'AGG root'}).selectOption('2');
   await page.getByRole('button',{name:'Unpin all',exact:true}).click();
   await page.getByRole('button',{name:'Hide other devices',exact:true}).click();
   await page.getByRole('combobox',{name:'Saved view',exact:true}).selectOption('');
   await page.getByRole('combobox',{name:'Saved view',exact:true}).selectOption(id);
+  await expect(page.getByRole('combobox',{name:'Device group'})).toHaveValue('101');
   await expect(page.getByRole('combobox',{name:'AGG root'})).toHaveValue('0');
   await expect(page.locator('.lm-pin-count')).toHaveText('1 pinned');
   await expect(page.getByRole('button',{name:'Hide other devices',exact:true})).toHaveAttribute('aria-pressed','true');
   await page.reload();await expect(page.getByRole('status')).toContainText('Demo topology');
+  await expect(page.getByRole('combobox',{name:'Device group'})).toHaveValue('101');
   await expect(page.getByRole('combobox',{name:'AGG root'})).toHaveValue('0');
   await expect(page.locator('.lm-pin-count')).toHaveText('1 pinned');
   await expect(page.getByRole('button',{name:'Hide other devices',exact:true})).toHaveAttribute('aria-pressed','true');

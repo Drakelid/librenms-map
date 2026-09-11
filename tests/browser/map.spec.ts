@@ -123,6 +123,22 @@ test('dragged positions survive refresh and a full page reload',async({page})=>{
   expect((await read()).position).toEqual(moved.position);
 });
 
+test('device group focus filters membership and persists its selection',async({page})=>{
+  await page.goto('/');
+  await expect(page.getByRole('status')).toContainText('Demo topology');
+  const nodes=()=>page.evaluate(()=>(window as unknown as {libremapDebug:()=>{nodes:{id:string;visible:boolean}[]}}).libremapDebug().nodes);
+  await page.getByRole('combobox',{name:'Device group'}).selectOption('101');
+  expect((await nodes()).find(node=>node.id==='4')!.visible).toBe(true);
+  expect((await nodes()).find(node=>node.id==='2')!.visible).toBe(false);
+  expect((await nodes()).find(node=>node.id==='15')!.visible).toBe(false);
+  await page.getByRole('button',{name:'Show other devices',exact:true}).click();
+  expect((await nodes()).find(node=>node.id==='15')!.visible).toBe(true);
+  await page.reload();
+  await expect(page.getByRole('status')).toContainText('Demo topology');
+  await expect(page.getByRole('combobox',{name:'Device group'})).toHaveValue('101');
+  await expect(page.getByRole('button',{name:'Hide other devices',exact:true})).toHaveAttribute('aria-pressed','true');
+});
+
 test('loss of authorization clears the previously rendered topology',async({page})=>{
   let authorized=true;
   await page.route('**/live-test',route=>route.fulfill({contentType:'text/html',body:'<div id="libremap" data-endpoint="/snapshot"></div><script type="module" src="/frontend/main.ts"></script>'}));

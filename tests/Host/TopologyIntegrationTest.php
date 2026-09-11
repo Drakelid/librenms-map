@@ -3,6 +3,7 @@
 namespace LibreMap\Tests\Host;
 
 use App\Models\Device;
+use App\Models\DeviceGroup;
 use App\Models\Link;
 use App\Models\Port;
 use App\Models\User;
@@ -83,6 +84,26 @@ class TopologyIntegrationTest extends TestCase
         $this->assertSame([], (array) $result['config']['overrides']);
     }
 
+    public function testDeviceGroupsArePermissionScopedAndContainOnlyVisibleDevices(): void
+    {
+        $user = User::factory()->create();
+        $visible = Device::factory()->create();
+        $hidden = Device::factory()->create();
+        $user->devicesOwned()->attach($visible->device_id);
+        $allowedGroup = DeviceGroup::create(['name' => 'Allowed group', 'desc' => '', 'type' => 'static']);
+        $allowedGroup->devices()->attach([$visible->device_id, $hidden->device_id]);
+        $deniedGroup = DeviceGroup::create(['name' => 'Denied group', 'desc' => '', 'type' => 'static']);
+        $deniedGroup->devices()->attach($hidden->device_id);
+
+        $result = app(LibreNmsTopology::class)->forUser($user);
+
+        $this->assertSame([[
+            'id' => (string) $allowedGroup->id,
+            'name' => 'Allowed group',
+            'deviceIds' => [(string) $visible->device_id],
+        ]], $result['deviceGroups']);
+    }
+
     public function testDeletedEndpointPortsAreOmitted(): void
     {
         $devices = Device::factory()->count(2)->create();
@@ -106,6 +127,7 @@ class TopologyIntegrationTest extends TestCase
 
         $this->assertSame([], $result['devices']);
         $this->assertSame([], $result['links']);
+        $this->assertSame([], $result['deviceGroups']);
         $this->assertSame([], (array) $result['config']['overrides']);
     }
 

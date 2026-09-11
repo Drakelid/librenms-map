@@ -22,7 +22,7 @@ function mount(root: HTMLElement) {
       <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>NETWORK TOPOLOGY</span></div></div><div class="lm-header-right"><span class="lm-source">${demo ? 'DEMO DATA' : 'LIBRENMS'}</span><button data-action="theme" title="Toggle color theme">◐ <span>Theme</span></button><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
       <section class="lm-heading"><div><div class="lm-eyebrow">INFRASTRUCTURE / TOPOLOGY</div></div><div class="lm-summary" aria-label="Network summary"></div></section>
       <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device…"></label><label class="lm-select">Site <select aria-label="Site"><option value="">All sites</option></select></label><button data-action="overview">AGG backbone</button><button data-action="other-devices" aria-pressed="false">Show other devices</button><span class="lm-spacer"></span><button data-action="refresh">↻ Refresh</button><button data-action="layout">Re-layout</button><button data-action="fullscreen" title="Fullscreen">⛶</button></div>
-      <div class="lm-viewbar"><label class="lm-select">AGG root <select aria-label="AGG root"><option value="">All AGG groups</option></select></label><span class="lm-pin-count">0 pinned</span><button data-action="unpin-all">Unpin all</button><div class="lm-views"></div></div>
+      <div class="lm-viewbar"><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><label class="lm-select">AGG root <select aria-label="AGG root"><option value="">All AGG groups</option></select></label><span class="lm-pin-count">0 pinned</span><button data-action="unpin-all">Unpin all</button><div class="lm-views"></div></div>
       <div class="lm-notice" role="status" aria-live="polite">Loading topology…</div>
       <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong>Physical topology</strong><span>AGG → ER · discovered links</span></div><div class="lm-canvas" aria-label="Interactive network topology"></div><div class="lm-empty" hidden></div><div class="lm-map-controls"><button data-action="zoom-in" aria-label="Zoom in">+</button><button data-action="zoom-out" aria-label="Zoom out">−</button><button data-action="fit">Fit</button></div><div class="lm-legend"><span><i style="background:#6485b6"></i>&lt;50%</span><span><i style="background:#299e9b"></i>50–75%</span><span><i style="background:#cb9a28"></i>75–90%</span><span><i style="background:#e78636"></i>≥90%</span><span><i style="background:#e05b65"></i>Down</span><span><i style="background:#8a96a9"></i>Unknown / stale</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
       <footer><span class="lm-updated">Waiting for data</span><span>Drag to arrange · Scroll to zoom · Hover links for traffic · Click to inspect</span></footer>
@@ -36,6 +36,7 @@ function mount(root: HTMLElement) {
   const notice = $('.lm-notice');
   const search = $<HTMLInputElement>('[aria-label="Find device"]');
   const site = $<HTMLSelectElement>('[aria-label="Site"]');
+  const deviceGroup = $<HTMLSelectElement>('[aria-label="Device group"]');
   const focus = $<HTMLSelectElement>('[aria-label="AGG root"]');
   const cy: Core = cytoscape({ container:$('.lm-canvas'), minZoom:0.15, maxZoom:2.5, selectionType:'single', style:styles(root) });
   // LibreNMS toggles `dark` on <html> (live, in its "device" mode) and paints its
@@ -60,7 +61,7 @@ function mount(root: HTMLElement) {
   else systemDark.addEventListener('change',applyTheme);
   let snapshot: Snapshot | undefined;
   const linkPreview=demo ? undefined : mountLinkPreview(root,cy,()=>snapshot?.generatedAt);
-  let graph: Topology = { nodes:[], links:[] };
+  let graph: Topology = { nodes:[], links:[], deviceGroups:[] };
   let backbone = false;
   let showOther = false;
   let busy = false;
@@ -89,7 +90,7 @@ function mount(root: HTMLElement) {
   let pins=new Set(initialWorkspace.pinned);
   let initialized=false;
   function capture():ViewState {
-    return normalizeView({rootId:focus.value || null,site:site.value,search:search.value,backbone,showOther,positions:Object.fromEntries(cy.nodes().map(n=>[n.id(),n.position()])),pinned:[...pins],zoom:cy.zoom(),pan:cy.pan()},graph);
+    return normalizeView({rootId:focus.value || null,deviceGroupId:deviceGroup.value || null,site:site.value,search:search.value,backbone,showOther,positions:Object.fromEntries(cy.nodes().map(n=>[n.id(),n.position()])),pinned:[...pins],zoom:cy.zoom(),pan:cy.pan()},graph);
   }
   const persist = () => {
     // Never overwrite a stored workspace while no topology is loaded: an empty
@@ -106,7 +107,7 @@ function mount(root: HTMLElement) {
   // topology disables them exactly like an in-flight layout does.
   function syncControls(){
     const off=layoutPending || !snapshot;
-    search.disabled=off;site.disabled=off;focus.disabled=off;
+    search.disabled=off;site.disabled=off;deviceGroup.disabled=off;focus.disabled=off;
     for(const action of ['layout','zoom-in','zoom-out','fit','overview','other-devices'])$<HTMLButtonElement>(`[data-action="${action}"]`).disabled=off;
     root.querySelectorAll<HTMLButtonElement>('.lm-pin-device,.lm-focus-device').forEach(b=>{b.disabled=off;});
     $<HTMLButtonElement>('[data-action="unpin-all"]').disabled=off || pins.size===0;
@@ -126,7 +127,7 @@ function mount(root: HTMLElement) {
   function restoreView(value:ViewState){
     if(!snapshot)return;
     const state=normalizeView(value,graph);
-    focus.value=state.rootId ?? '';site.value=state.site;search.value=state.search;backbone=state.backbone;showOther=state.showOther;pins=new Set(state.pinned);
+    focus.value=state.rootId ?? '';deviceGroup.value=state.deviceGroupId ?? '';site.value=state.site;search.value=state.search;backbone=state.backbone;showOther=state.showOther;pins=new Set(state.pinned);
     selected=undefined;cy.elements().unselect().removeClass('lm-dim');updatePins();renderDetails();updateBackbone();updateOtherDevices();
     layout(state.positions,state);
   }
@@ -142,7 +143,7 @@ function mount(root: HTMLElement) {
       const button = document.createElement('button'); button.textContent=`◈  ${node.hostname}`; button.addEventListener('click',()=>selectNode(node.id)); list.append(button);
     }
     panel.append(list);
-    const hint=document.createElement('p'); hint.className='lm-hint'; hint.textContent='Choose an AGG root to focus its group and ER branches. Pin devices to keep their positions during Re-layout. Save a named view to return to this workspace.'; panel.append(hint);
+    const hint=document.createElement('p'); hint.className='lm-hint'; hint.textContent='Choose a LibreNMS device group or an AGG root to focus the map. Filters combine, and Show other devices reveals non-AGG/ER members inside that scope. Save a named view to return to this workspace.'; panel.append(hint);
   };
   function renderDetails() {
     if (!selected) return detailsDefault();
@@ -170,7 +171,7 @@ function mount(root: HTMLElement) {
     cy.elements().addClass('lm-dim'); element.closedNeighborhood().removeClass('lm-dim'); renderDetails();
   }
   function filters(fit=true) {
-    const visible = visibleNodes(graph,{rootId:focus.value || null,site:site.value,search:search.value,backbone,showOther});
+    const visible = visibleNodes(graph,{rootId:focus.value || null,deviceGroupId:deviceGroup.value || null,site:site.value,search:search.value,backbone,showOther});
     cy.batch(()=> { cy.nodes().forEach(n=>{n.style('display',visible.has(n.id())?'element':'none');}); cy.edges().forEach(e=>{e.style('display',visible.has(e.source().id()) && visible.has(e.target().id())?'element':'none');}); });
     $('.lm-empty').hidden=visible.size>0; $('.lm-empty').textContent=graph.nodes.length ? 'No devices match these filters.' : 'No authorized devices are available.';
     if (fit && visible.size) cy.fit(cy.elements(':visible'),70);
@@ -210,10 +211,13 @@ function mount(root: HTMLElement) {
     const oldFocus=focus.value;
     focus.replaceChildren(new Option('All AGG groups',''),...graph.nodes.filter(n=>n.role==='AGG').map(n=>new Option(n.hostname,n.id)));
     if([...focus.options].some(o=>o.value===oldFocus))focus.value=oldFocus;
+    const oldDeviceGroup=deviceGroup.value;
+    deviceGroup.replaceChildren(new Option('All device groups',''),...graph.deviceGroups.map(group=>new Option(group.name,group.id)));
+    if([...deviceGroup.options].some(option=>option.value===oldDeviceGroup))deviceGroup.value=oldDeviceGroup;
     pins=new Set([...pins].filter(id=>graph.nodes.some(n=>n.id===id)));
     if(!initialized){
       // Also covers recovery after a failed fetch, which resets to this state.
-      const state=normalizeView(initialWorkspace,graph);focus.value=state.rootId ?? '';site.value=state.site;search.value=state.search;backbone=state.backbone;showOther=state.showOther;pins=new Set(state.pinned);updateBackbone();updateOtherDevices();
+      const state=normalizeView(initialWorkspace,graph);focus.value=state.rootId ?? '';deviceGroup.value=state.deviceGroupId ?? '';site.value=state.site;search.value=state.search;backbone=state.backbone;showOther=state.showOther;pins=new Set(state.pinned);updateBackbone();updateOtherDevices();
     }
     cy.batch(()=>{
       const nodeIds=new Set(graph.nodes.map(n=>n.id)); const edgeIds=new Set(graph.links.map(l=>`edge:${l.id}`));
@@ -250,13 +254,13 @@ function mount(root: HTMLElement) {
     } catch(error) {
       linkPreview?.hide();
       // Permissions may have changed. Do not leave previously authorized graph data on screen.
-      cy.elements().remove(); graph={nodes:[],links:[]}; selected=undefined; snapshot=undefined; layoutRequest++; clearTimeout(layoutTimer); detailsDefault();
+      cy.elements().remove(); graph={nodes:[],links:[],deviceGroups:[]}; selected=undefined; snapshot=undefined; layoutRequest++; clearTimeout(layoutTimer); detailsDefault();
       setLayoutPending(false);clearTimeout(viewportTimer);clearTimeout(searchTimer);
       // Clear the on-screen pins, but reload the stored workspace rather than
       // emptying it: a transient failure must not cost the operator their saved
       // positions, and normalizeView re-filters them against whatever loads next.
       pins.clear();initialWorkspace=readWorkspace();saved=initialWorkspace.positions;initialized=false;
-      site.replaceChildren(new Option('All sites',''));focus.replaceChildren(new Option('All AGG groups',''));views.setAvailable(false);updatePins();
+      site.replaceChildren(new Option('All sites',''));deviceGroup.replaceChildren(new Option('All device groups',''));focus.replaceChildren(new Option('All AGG groups',''));views.setAvailable(false);updatePins();
       $('.lm-summary').replaceChildren(); $('.lm-empty').hidden=false; $('.lm-empty').textContent='Topology unavailable. Use Refresh to retry.';
       message(error instanceof Error?error.message:'Unable to load topology',true);
     } finally { busy=false; }
@@ -276,7 +280,7 @@ function mount(root: HTMLElement) {
     search.value=limitFilter(search.value);filters(false);
     clearTimeout(searchTimer);searchTimer=setTimeout(()=>{if(!snapshot)return;const visible=cy.elements(':visible');if(visible.length)cy.fit(visible,70);persist();},300);
   });
-site.addEventListener('change',()=>{filters();persist();});focus.addEventListener('change',()=>{filters();persist();});
+site.addEventListener('change',()=>{filters();persist();});deviceGroup.addEventListener('change',()=>{filters();persist();});focus.addEventListener('change',()=>{filters();persist();});
   root.addEventListener('click',event=>{
     const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button[data-action]'); if(!button) return;
     switch(button.dataset.action) {

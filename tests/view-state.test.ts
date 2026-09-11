@@ -30,11 +30,29 @@ test('other devices are hidden by default and revealed only inside the active sc
     {id:'1-2',source:'1',target:'2',sourcePort:'a',targetPort:'b',sourcePortId:'1',targetPortId:'2',speedBps:null,inBps:null,outBps:null,sampledAt:null,status:'up'},
     {id:'2-3',source:'2',target:'3',sourcePort:'a',targetPort:'b',sourcePortId:'3',targetPortId:'4',speedBps:null,inBps:null,outBps:null,sampledAt:null,status:'up'},
     {id:'1-4',source:'1',target:'4',sourcePort:'a',targetPort:'b',sourcePortId:'5',targetPortId:'6',speedBps:null,inBps:null,outBps:null,sampledAt:null,status:'up'},
-  ]} satisfies Topology;
+  ],deviceGroups:[{id:'7',name:'Site 1 devices',deviceIds:['1','3','4']}]} satisfies Topology;
   const hidden=visibleNodes(scoped,{rootId:'1',site:'site1',search:'',backbone:false,showOther:false});
   assert.deepEqual([...hidden],['1','2']);
   const revealed=visibleNodes(scoped,{rootId:'1',site:'site1',search:'',backbone:false,showOther:true});
   assert.deepEqual([...revealed],['1','2','3']);
+});
+test('device group focus intersects branch, site, role visibility and search filters',()=>{
+  const scoped={nodes:[
+    {id:'1',hostname:'site1agg1',status:'up',role:'AGG',site:'site1',tier:0,reachable:true},
+    {id:'2',hostname:'site1er1',status:'up',role:'ER',site:'site1',tier:1,reachable:true},
+    {id:'3',hostname:'site1-switch',status:'up',role:'OTHER',site:'site1',tier:2,reachable:true},
+    {id:'4',hostname:'site2agg1',status:'up',role:'AGG',site:'site2',tier:0,reachable:true},
+  ],links:[
+    {id:'1-2',source:'1',target:'2',sourcePort:'a',targetPort:'b',sourcePortId:'1',targetPortId:'2',speedBps:null,inBps:null,outBps:null,sampledAt:null,status:'up'},
+    {id:'2-3',source:'2',target:'3',sourcePort:'a',targetPort:'b',sourcePortId:'3',targetPortId:'4',speedBps:null,inBps:null,outBps:null,sampledAt:null,status:'up'},
+    {id:'1-4',source:'1',target:'4',sourcePort:'a',targetPort:'b',sourcePortId:'5',targetPortId:'6',speedBps:null,inBps:null,outBps:null,sampledAt:null,status:'up'},
+  ],deviceGroups:[{id:'7',name:'Selected',deviceIds:['1','3','4']}]} satisfies Topology;
+  assert.deepEqual([...visibleNodes(scoped,{rootId:'1',deviceGroupId:'7',site:'site1',search:'',backbone:false,showOther:false})],['1']);
+  assert.deepEqual([...visibleNodes(scoped,{rootId:'1',deviceGroupId:'7',site:'site1',search:'',backbone:false,showOther:true})],['1','3']);
+  assert.deepEqual([...visibleNodes(scoped,{rootId:null,deviceGroupId:'7',site:'site1',search:'agg',backbone:false,showOther:true})],['1']);
+  assert.deepEqual([...visibleNodes(scoped,{rootId:null,deviceGroupId:'999',site:'',search:'',backbone:false,showOther:true})],[]);
+  assert.equal(normalizeView({deviceGroupId:'7'},scoped).deviceGroupId,'7');
+  assert.equal(normalizeView({deviceGroupId:'999'},scoped).deviceGroupId,null);
 });
 test('saved state redacts removed devices and rejects corrupt coordinates and roots',()=>{
   const result=normalizeView({rootId:'999',positions:{'0':{x:42,y:90},'999':{x:4,y:5},'1':{x:Infinity,y:3}},pinned:['0','1','999'],zoom:100,pan:{x:NaN,y:4},site:'private-site',search:'x'.repeat(200)},graph);
@@ -69,7 +87,7 @@ test('dense placement keeps every automatic node clear of the others',()=>{
   // node. This guards the cell-bucketed overlap test against regressions.
   const nodes:MapNode[]=Array.from({length:400},(_,i)=>({id:String(i+1),hostname:`n${i}`,status:'up',role:'ER',site:'s1',tier:i%8,reachable:true}));
   const automatic=Object.fromEntries(nodes.map(n=>[n.id,{x:0,y:0}]));
-  const result=arrangePositions({nodes,links:[]},automatic,{},new Set());
+  const result=arrangePositions({nodes,links:[],deviceGroups:[]},automatic,{},new Set());
   const points=Object.values(result);
   assert.equal(points.length,nodes.length);
   for(let i=0;i<points.length;i++) for(let j=i+1;j<points.length;j++)
@@ -80,7 +98,7 @@ test('saved positions are bounded by the loaded map, not a fixed 2,000',()=>{
   // libremap.max_devices may exceed 2,000; the server's limit follows it.
   const nodes:MapNode[]=Array.from({length:2500},(_,i)=>({id:String(i+1),hostname:`n${i}`,status:'up',role:'ER',site:'s1',tier:1,reachable:true}));
   const positions=Object.fromEntries(nodes.map(n=>[n.id,{x:1,y:2}]));
-  const result=normalizeView({positions,pinned:nodes.map(n=>n.id)},{nodes,links:[]});
+  const result=normalizeView({positions,pinned:nodes.map(n=>n.id)},{nodes,links:[],deviceGroups:[]});
   assert.equal(Object.keys(result.positions).length,2500);
   assert.equal(result.pinned.length,2500);
   assert.equal(Object.keys(normalizeView({positions}).positions).length,2500);

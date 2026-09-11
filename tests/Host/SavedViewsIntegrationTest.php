@@ -3,6 +3,7 @@
 namespace LibreMap\Tests\Host;
 
 use App\Models\Device;
+use App\Models\DeviceGroup;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +30,7 @@ class SavedViewsIntegrationTest extends TestCase
     private function payload(?string $id = null): array
     {
         return ['name' => 'Rossa operations', 'state' => [
-            'rootId' => $id, 'site' => '', 'search' => '', 'backbone' => false, 'showOther' => false,
+            'rootId' => $id, 'deviceGroupId' => null, 'site' => '', 'search' => '', 'backbone' => false, 'showOther' => false,
             'positions' => $id === null ? (object) [] : (object) [$id => ['x' => 10, 'y' => 20]],
             'pinned' => $id === null ? [] : [$id], 'zoom' => 1, 'pan' => ['x' => 0, 'y' => 0],
         ]];
@@ -92,14 +93,34 @@ class SavedViewsIntegrationTest extends TestCase
         $this->putJson('/libremap/views/'.$view['id'], array_merge($payload, ['revision' => 1]))->assertUnprocessable();
     }
 
+    public function testDeviceGroupFocusIsSavedAndRedactedWhenTheGroupIsRemoved(): void
+    {
+        $user = $this->user();
+        $device = Device::factory()->create();
+        $user->devicesOwned()->attach($device->device_id);
+        $group = DeviceGroup::create(['name' => 'Operations', 'desc' => '', 'type' => 'static']);
+        $group->devices()->attach($device->device_id);
+        $payload = $this->payload();
+        $payload['state']['deviceGroupId'] = (string) $group->id;
+
+        $this->actingAs($user)->postJson('/libremap/views', $payload)->assertCreated()
+            ->assertJsonPath('view.state.deviceGroupId', (string) $group->id);
+        $group->delete();
+        $this->getJson('/libremap/views')->assertOk()
+            ->assertJsonPath('views.0.state.deviceGroupId', null);
+        $this->postJson('/libremap/views', $payload)->assertUnprocessable();
+    }
+
     public function testInputLimitsAndMetadataAreEnforced(): void
     {
         $this->actingAs($this->user(admin: true));
         // A tab opened before this field was introduced can still save a view.
         $legacy = $this->payload();
         unset($legacy['state']['showOther']);
+        unset($legacy['state']['deviceGroupId']);
         $this->postJson('/libremap/views', $legacy)->assertCreated()
-            ->assertJsonPath('view.state.showOther', false);
+            ->assertJsonPath('view.state.showOther', false)
+            ->assertJsonPath('view.state.deviceGroupId', null);
         $payload = $this->payload();
         $payload['state']['showOther'] = 'true';
         $this->postJson('/libremap/views', $payload)->assertUnprocessable();

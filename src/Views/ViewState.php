@@ -3,6 +3,7 @@
 namespace LibreMap\Views;
 
 use App\Models\Device;
+use App\Models\DeviceGroup;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -20,8 +21,9 @@ class ViewState
         };
         $data = Validator::make($input, [
             'name' => ['required', 'string', 'max:100'],
-            'state' => ['required', 'array:rootId,site,search,backbone,showOther,positions,pinned,zoom,pan'],
+            'state' => ['required', 'array:rootId,deviceGroupId,site,search,backbone,showOther,positions,pinned,zoom,pan'],
             'state.rootId' => ['present', 'nullable', 'string', 'regex:/^[1-9][0-9]{0,9}$/'],
+            'state.deviceGroupId' => ['sometimes', 'nullable', 'string', 'regex:/^[1-9][0-9]{0,9}$/'],
             'state.site' => ['present', 'nullable', 'string', 'max:200'],
             'state.search' => ['present', 'nullable', 'string', 'max:200'],
             'state.backbone' => ['required', function ($attribute, $value, $fail): void {
@@ -58,9 +60,14 @@ class ViewState
         $data['state']['site'] ??= '';
         $data['state']['search'] ??= '';
         $data['state']['showOther'] ??= false;
+        $data['state']['deviceGroupId'] ??= null;
         $ids = $this->ids($data['state']);
         if (array_diff($ids, $this->accessible($ids, $user))) {
             throw ValidationException::withMessages(['state' => 'The view contains unavailable devices.']);
+        }
+        $groupId = $data['state']['deviceGroupId'];
+        if (is_string($groupId) && $this->accessibleGroups([$groupId], $user) === []) {
+            throw ValidationException::withMessages(['state.deviceGroupId' => 'The selected device group is unavailable.']);
         }
 
         return $data;
@@ -86,13 +93,16 @@ class ViewState
             $ids = array_merge($ids, $this->ids($state));
         }
         $allowed = array_fill_keys($this->accessible(array_values(array_unique($ids)), $user), true);
+        $groupIds = array_values(array_unique(array_filter(array_column($states, 'deviceGroupId'), 'is_string')));
+        $allowedGroups = array_fill_keys($this->accessibleGroups($groupIds, $user), true);
 
-        return array_map(fn ($state) => $this->redact($state, $allowed), $states);
+        return array_map(fn ($state) => $this->redact($state, $allowed, $allowedGroups), $states);
     }
 
-    private function redact(array $state, array $allowed): array
+    private function redact(array $state, array $allowed, array $allowedGroups): array
     {
         $state['rootId'] = is_string($state['rootId']) && isset($allowed[$state['rootId']]) ? $state['rootId'] : null;
+        $state['deviceGroupId'] = is_string($state['deviceGroupId']) && isset($allowedGroups[$state['deviceGroupId']]) ? $state['deviceGroupId'] : null;
         $state['positions'] = (object) array_intersect_key($state['positions'], $allowed);
         $state['pinned'] = array_values(array_filter($state['pinned'], fn ($id) => is_string($id) && isset($allowed[$id])));
 
@@ -106,7 +116,7 @@ class ViewState
     private function defaults(array $state): array
     {
         $defaults = [
-            'rootId' => null, 'site' => '', 'search' => '', 'backbone' => false, 'showOther' => false,
+            'rootId' => null, 'deviceGroupId' => null, 'site' => '', 'search' => '', 'backbone' => false, 'showOther' => false,
             'positions' => [], 'pinned' => [], 'zoom' => 1, 'pan' => ['x' => 0, 'y' => 0],
         ];
         // Return only the bounded schema; a row edited directly in the database
@@ -143,5 +153,13 @@ class ViewState
 
         return $ids === [] ? [] : Device::hasAccess($user)->whereIntegerInRaw('device_id', $ids)
             ->pluck('device_id')->map(fn ($id) => (string) $id)->all();
+    }
+
+    private function accessibleGroups(array $ids, User $user): array
+    {
+        $ids = array_values(array_filter($ids, fn ($id) => preg_match('/^[1-9][0-9]{0,9}$/', (string) $id)));
+
+        return $ids === [] ? [] : DeviceGroup::hasAccess($user)->whereIntegerInRaw('id', $ids)
+            ->pluck('id')->map(fn ($id) => (string) $id)->all();
     }
 }

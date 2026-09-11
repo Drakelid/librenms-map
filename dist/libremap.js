@@ -18501,6 +18501,33 @@ function vg() {
 			hostname: e,
 			status: t === 14 ? "down" : t === 15 ? "unknown" : "up"
 		})),
+		deviceGroups: [{
+			id: "101",
+			name: "Rossa access",
+			deviceIds: [
+				"0",
+				"1",
+				"4",
+				"5",
+				"6",
+				"7",
+				"10",
+				"11",
+				"12",
+				"15"
+			]
+		}, {
+			id: "102",
+			name: "Heiane access",
+			deviceIds: [
+				"2",
+				"3",
+				"8",
+				"9",
+				"13",
+				"14"
+			]
+		}],
 		links: [
 			[
 				0,
@@ -18644,19 +18671,28 @@ function Cg(e) {
 		...xg(t, e.config),
 		tier: -1,
 		reachable: !1
-	})), n = new Map(t.map((e) => [e.id, e])), r = Sg(e.links, new Set(n.keys())), i = new Map(t.map((e) => [e.id, /* @__PURE__ */ new Set()]));
-	for (let e of r) i.get(e.source).add(e.target), i.get(e.target).add(e.source);
-	let a = t.filter((e) => e.role === "AGG");
-	for (let e of a) e.tier = 0, e.reachable = !0;
-	for (let e = 0; e < a.length; e++) for (let t of i.get(a[e].id)) {
+	})), n = new Map(t.map((e) => [e.id, e])), r = (Array.isArray(e.deviceGroups) ? e.deviceGroups : []).flatMap((e) => {
+		if (!e || typeof e.id != "string" || !/^[1-9]\d{0,9}$/.test(e.id) || typeof e.name != "string" || e.name.trim() === "" || !Array.isArray(e.deviceIds)) return [];
+		let t = [...new Set(e.deviceIds.filter((e) => typeof e == "string" && n.has(e)))];
+		return t.length ? [{
+			id: e.id,
+			name: e.name,
+			deviceIds: t
+		}] : [];
+	}).sort((e, t) => e.name.localeCompare(t.name, void 0, { numeric: !0 }) || e.id.localeCompare(t.id)), i = Sg(e.links, new Set(n.keys())), a = new Map(t.map((e) => [e.id, /* @__PURE__ */ new Set()]));
+	for (let e of i) a.get(e.source).add(e.target), a.get(e.target).add(e.source);
+	let o = t.filter((e) => e.role === "AGG");
+	for (let e of o) e.tier = 0, e.reachable = !0;
+	for (let e = 0; e < o.length; e++) for (let t of a.get(o[e].id)) {
 		let r = n.get(t);
-		r.tier < 0 && (r.tier = a[e].tier + 1, r.reachable = !0, a.push(r));
+		r.tier < 0 && (r.tier = o[e].tier + 1, r.reachable = !0, o.push(r));
 	}
-	let o = Math.max(0, ...t.map((e) => e.tier)) + 1;
-	for (let e of t) e.tier < 0 && (e.tier = o);
+	let s = Math.max(0, ...t.map((e) => e.tier)) + 1;
+	for (let e of t) e.tier < 0 && (e.tier = s);
 	return t.sort((e, t) => e.tier - t.tier || e.site.localeCompare(t.site) || e.hostname.localeCompare(t.hostname, void 0, { numeric: !0 })), {
 		nodes: t,
-		links: r
+		links: i,
+		deviceGroups: r
 	};
 }
 function wg(e) {
@@ -18711,6 +18747,7 @@ function Tg(e, t, n) {
 }
 var Eg = 1e5, Dg = (e) => Array.from(e).length, Og = (e) => Array.from(e).slice(0, 200).join(""), kg = () => ({
 	rootId: null,
+	deviceGroupId: null,
 	site: "",
 	search: "",
 	backbone: !1,
@@ -18727,7 +18764,7 @@ function Ng(e, t) {
 	let n = kg();
 	if (!Ag(e)) return n;
 	let r = t ? new Set(t.nodes.map((e) => e.id)) : void 0, i = (e) => /^\d+$/.test(e) && (!r || r.has(e));
-	typeof e.rootId == "string" && i(e.rootId) && (!t || t.nodes.some((t) => t.id === e.rootId && t.role === "AGG")) && (n.rootId = e.rootId), typeof e.site == "string" && Dg(e.site) <= 200 && (!t || t.nodes.some((t) => t.site === e.site)) && (n.site = e.site), typeof e.search == "string" && (n.search = Og(e.search)), n.backbone = e.backbone === !0, n.showOther = e.showOther === !0;
+	typeof e.rootId == "string" && i(e.rootId) && (!t || t.nodes.some((t) => t.id === e.rootId && t.role === "AGG")) && (n.rootId = e.rootId), typeof e.deviceGroupId == "string" && /^[1-9]\d{0,9}$/.test(e.deviceGroupId) && (!t || t.deviceGroups.some((t) => t.id === e.deviceGroupId)) && (n.deviceGroupId = e.deviceGroupId), typeof e.site == "string" && Dg(e.site) <= 200 && (!t || t.nodes.some((t) => t.site === e.site)) && (n.site = e.site), typeof e.search == "string" && (n.search = Og(e.search)), n.backbone = e.backbone === !0, n.showOther = e.showOther === !0;
 	let a = t ? t.nodes.length : Eg, o = 0;
 	if (Ag(e.positions)) for (let [t, r] of Object.entries(e.positions)) {
 		if (o >= a) break;
@@ -18756,12 +18793,14 @@ function Pg(e, t) {
 	return o;
 }
 function Fg(e, t) {
-	let n = Pg(e, t.rootId), r = new Set(e.nodes.filter((e) => {
+	let n = Pg(e, t.rootId), r = t.deviceGroupId ? e.deviceGroups.find((e) => e.id === t.deviceGroupId) : void 0;
+	if (t.deviceGroupId && !r) return /* @__PURE__ */ new Set();
+	let i = r ? new Set(r.deviceIds) : void 0, a = new Set(e.nodes.filter((e) => {
 		let r = t.backbone ? e.role === "AGG" : t.showOther || e.role === "AGG" || e.role === "ER";
-		return n.has(e.id) && (!t.site || e.site === t.site) && r;
-	}).map((e) => e.id)), i = new Set(e.nodes.filter((e) => r.has(e.id) && e.hostname.toLowerCase().includes(t.search.toLowerCase())).map((e) => e.id)), a = new Set(i);
-	if (t.search) for (let t of e.links) i.has(t.source) && r.has(t.target) && a.add(t.target), i.has(t.target) && r.has(t.source) && a.add(t.source);
-	return a;
+		return n.has(e.id) && (!i || i.has(e.id)) && (!t.site || e.site === t.site) && r;
+	}).map((e) => e.id)), o = new Set(e.nodes.filter((e) => a.has(e.id) && e.hostname.toLowerCase().includes(t.search.toLowerCase())).map((e) => e.id)), s = new Set(o);
+	if (t.search) for (let t of e.links) o.has(t.source) && a.has(t.target) && s.add(t.target), o.has(t.target) && a.has(t.source) && s.add(t.source);
+	return s;
 }
 var Ig = 246, Lg = 105;
 function Rg(e, t, n, r) {
@@ -19003,78 +19042,80 @@ function qg(e) {
       <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>NETWORK TOPOLOGY</span></div></div><div class="lm-header-right"><span class="lm-source">${t ? "DEMO DATA" : "LIBRENMS"}</span><button data-action="theme" title="Toggle color theme">◐ <span>Theme</span></button><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
       <section class="lm-heading"><div><div class="lm-eyebrow">INFRASTRUCTURE / TOPOLOGY</div></div><div class="lm-summary" aria-label="Network summary"></div></section>
       <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device…"></label><label class="lm-select">Site <select aria-label="Site"><option value="">All sites</option></select></label><button data-action="overview">AGG backbone</button><button data-action="other-devices" aria-pressed="false">Show other devices</button><span class="lm-spacer"></span><button data-action="refresh">↻ Refresh</button><button data-action="layout">Re-layout</button><button data-action="fullscreen" title="Fullscreen">⛶</button></div>
-      <div class="lm-viewbar"><label class="lm-select">AGG root <select aria-label="AGG root"><option value="">All AGG groups</option></select></label><span class="lm-pin-count">0 pinned</span><button data-action="unpin-all">Unpin all</button><div class="lm-views"></div></div>
+      <div class="lm-viewbar"><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><label class="lm-select">AGG root <select aria-label="AGG root"><option value="">All AGG groups</option></select></label><span class="lm-pin-count">0 pinned</span><button data-action="unpin-all">Unpin all</button><div class="lm-views"></div></div>
       <div class="lm-notice" role="status" aria-live="polite">Loading topology…</div>
       <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong>Physical topology</strong><span>AGG → ER · discovered links</span></div><div class="lm-canvas" aria-label="Interactive network topology"></div><div class="lm-empty" hidden></div><div class="lm-map-controls"><button data-action="zoom-in" aria-label="Zoom in">+</button><button data-action="zoom-out" aria-label="Zoom out">−</button><button data-action="fit">Fit</button></div><div class="lm-legend"><span><i style="background:#6485b6"></i>&lt;50%</span><span><i style="background:#299e9b"></i>50–75%</span><span><i style="background:#cb9a28"></i>75–90%</span><span><i style="background:#e78636"></i>≥90%</span><span><i style="background:#e05b65"></i>Down</span><span><i style="background:#8a96a9"></i>Unknown / stale</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
       <footer><span class="lm-updated">Waiting for data</span><span>Drag to arrange · Scroll to zoom · Hover links for traffic · Click to inspect</span></footer>
     </div>`, t && e.querySelector(".lm-back")?.remove();
 	let n = e.dataset.hostTheme === "true";
 	n ? e.querySelector("[data-action=\"theme\"]")?.remove() : e.dataset.homeUrl && (e.querySelector(".lm-back").href = e.dataset.homeUrl);
-	let r = (t) => e.querySelector(t), i = r(".lm-notice"), a = r("[aria-label=\"Find device\"]"), o = r("[aria-label=\"Site\"]"), s = r("[aria-label=\"AGG root\"]"), c = sg({
+	let r = (t) => e.querySelector(t), i = r(".lm-notice"), a = r("[aria-label=\"Find device\"]"), o = r("[aria-label=\"Site\"]"), s = r("[aria-label=\"Device group\"]"), c = r("[aria-label=\"AGG root\"]"), l = sg({
 		container: r(".lm-canvas"),
 		minZoom: .15,
 		maxZoom: 2.5,
 		selectionType: "single",
 		style: Xg(e)
-	}), l = window.matchMedia("(prefers-color-scheme: dark)"), u, d = "";
-	function f() {
-		let t = n ? document.documentElement.classList.contains("dark") : u ?? l.matches, r = n ? getComputedStyle(document.body).backgroundColor : "", i = `${t}|${r}`;
-		i !== d && (d = i, e.classList.toggle("lm-dark", t), /^rgb\(/.test(r) ? e.style.setProperty("--bg", r) : e.style.removeProperty("--bg"), c.style(Xg(e)));
+	}), u = window.matchMedia("(prefers-color-scheme: dark)"), d, f = "";
+	function p() {
+		let t = n ? document.documentElement.classList.contains("dark") : d ?? u.matches, r = n ? getComputedStyle(document.body).backgroundColor : "", i = `${t}|${r}`;
+		i !== f && (f = i, e.classList.toggle("lm-dark", t), /^rgb\(/.test(r) ? e.style.setProperty("--bg", r) : e.style.removeProperty("--bg"), l.style(Xg(e)));
 	}
-	f(), n ? new MutationObserver(f).observe(document.documentElement, {
+	p(), n ? new MutationObserver(p).observe(document.documentElement, {
 		attributes: !0,
 		attributeFilter: ["class"]
-	}) : l.addEventListener("change", f);
-	let p, m = t ? void 0 : _g(e, c, () => p?.generatedAt), h = {
+	}) : u.addEventListener("change", p);
+	let m, h = t ? void 0 : _g(e, l, () => m?.generatedAt), g = {
 		nodes: [],
-		links: []
-	}, g = !1, _ = !1, v = !1, y, b = 0, x, S = {}, C, w = !1, T, E, D = 0, O = () => Date.now() / 1e3 + D, k = `libremap:v1:${e.dataset.storageKey ?? "local"}`, A = `libremap:v2:${e.dataset.storageKey ?? "local"}`;
-	function j() {
+		links: [],
+		deviceGroups: []
+	}, _ = !1, v = !1, y = !1, b, x = 0, S, C = {}, w, T = !1, E, D, O = 0, k = () => Date.now() / 1e3 + O, A = `libremap:v1:${e.dataset.storageKey ?? "local"}`, j = `libremap:v2:${e.dataset.storageKey ?? "local"}`;
+	function M() {
 		try {
-			let e = localStorage.getItem(A);
-			return Ng(e ? JSON.parse(e) : { positions: JSON.parse(localStorage.getItem(k) ?? "{}") });
+			let e = localStorage.getItem(j);
+			return Ng(e ? JSON.parse(e) : { positions: JSON.parse(localStorage.getItem(A) ?? "{}") });
 		} catch {
 			return kg();
 		}
 	}
-	let M = j(), N = M.positions, P = new Set(M.pinned), F = !1;
-	function I() {
+	let N = M(), P = N.positions, F = new Set(N.pinned), I = !1;
+	function L() {
 		return Ng({
-			rootId: s.value || null,
+			rootId: c.value || null,
+			deviceGroupId: s.value || null,
 			site: o.value,
 			search: a.value,
-			backbone: g,
-			showOther: _,
-			positions: Object.fromEntries(c.nodes().map((e) => [e.id(), e.position()])),
-			pinned: [...P],
-			zoom: c.zoom(),
-			pan: c.pan()
-		}, h);
+			backbone: _,
+			showOther: v,
+			positions: Object.fromEntries(l.nodes().map((e) => [e.id(), e.position()])),
+			pinned: [...F],
+			zoom: l.zoom(),
+			pan: l.pan()
+		}, g);
 	}
-	let L = () => {
-		if (p) {
-			N = Object.fromEntries(c.nodes().map((e) => [e.id(), e.position()]));
+	let R = () => {
+		if (m) {
+			P = Object.fromEntries(l.nodes().map((e) => [e.id(), e.position()]));
 			try {
-				localStorage.setItem(A, JSON.stringify(I()));
+				localStorage.setItem(j, JSON.stringify(L()));
 			} catch {
 				i.textContent = "Workspace could not be saved in this browser.";
 			}
 		}
-	}, R = (e, t = !1) => {
+	}, z = (e, t = !1) => {
 		i.textContent = e, i.classList.toggle("lm-error", t);
-	}, z;
+	}, B;
 	try {
-		z = t ? Wg(`${A}:views`) : e.dataset.viewsEndpoint ? Vg(e.dataset.viewsEndpoint, e.dataset.csrf ?? "") : void 0;
+		B = t ? Wg(`${j}:views`) : e.dataset.viewsEndpoint ? Vg(e.dataset.viewsEndpoint, e.dataset.csrf ?? "") : void 0;
 	} catch {}
-	let B = Gg(r(".lm-views"), {
-		store: z,
+	let V = Gg(r(".lm-views"), {
+		store: B,
 		demo: t,
-		capture: I,
-		restore: W
+		capture: L,
+		restore: G
 	});
-	function V() {
-		let t = w || !p;
-		a.disabled = t, o.disabled = t, s.disabled = t;
+	function H() {
+		let t = T || !m;
+		a.disabled = t, o.disabled = t, s.disabled = t, c.disabled = t;
 		for (let e of [
 			"layout",
 			"zoom-in",
@@ -19085,34 +19126,34 @@ function qg(e) {
 		]) r(`[data-action="${e}"]`).disabled = t;
 		e.querySelectorAll(".lm-pin-device,.lm-focus-device").forEach((e) => {
 			e.disabled = t;
-		}), r("[data-action=\"unpin-all\"]").disabled = t || P.size === 0;
+		}), r("[data-action=\"unpin-all\"]").disabled = t || F.size === 0;
 	}
-	function H(e) {
-		w = e, B.setLayoutPending(e), c.autoungrabify(e), c.userPanningEnabled(!e), c.userZoomingEnabled(!e), V();
+	function U(e) {
+		T = e, V.setLayoutPending(e), l.autoungrabify(e), l.userPanningEnabled(!e), l.userZoomingEnabled(!e), H();
 	}
-	function U() {
-		c.nodes().forEach((e) => {
-			let t = P.has(e.id());
+	function W() {
+		l.nodes().forEach((e) => {
+			let t = F.has(e.id());
 			e.data({
 				pinned: +!!t,
 				label: `${e.data("hostname")}\n${e.data("role")}  ·  ${String(e.data("status")).toUpperCase()}${t ? "  ·  PIN" : ""}`
 			}), t ? e.lock() : e.unlock();
-		}), r(".lm-pin-count").textContent = `${P.size} pinned`, V();
+		}), r(".lm-pin-count").textContent = `${F.size} pinned`, H();
 	}
-	function W(e) {
-		if (!p) return;
-		let t = Ng(e, h);
-		s.value = t.rootId ?? "", o.value = t.site, a.value = t.search, g = t.backbone, _ = t.showOther, P = new Set(t.pinned), y = void 0, c.elements().unselect().removeClass("lm-dim"), U(), J(), G(), K(), te(t.positions, t);
-	}
-	function G() {
-		let e = r("[data-action=\"overview\"]");
-		e.classList.toggle("lm-active", g), e.setAttribute("aria-pressed", String(g));
+	function G(e) {
+		if (!m) return;
+		let t = Ng(e, g);
+		c.value = t.rootId ?? "", s.value = t.deviceGroupId ?? "", o.value = t.site, a.value = t.search, _ = t.backbone, v = t.showOther, F = new Set(t.pinned), b = void 0, l.elements().unselect().removeClass("lm-dim"), W(), Y(), K(), q(), ne(t.positions, t);
 	}
 	function K() {
-		let e = r("[data-action=\"other-devices\"]");
-		e.classList.toggle("lm-active", _), e.setAttribute("aria-pressed", String(_)), e.textContent = _ ? "Hide other devices" : "Show other devices";
+		let e = r("[data-action=\"overview\"]");
+		e.classList.toggle("lm-active", _), e.setAttribute("aria-pressed", String(_));
 	}
-	let q = () => {
+	function q() {
+		let e = r("[data-action=\"other-devices\"]");
+		e.classList.toggle("lm-active", v), e.setAttribute("aria-pressed", String(v)), e.textContent = v ? "Hide other devices" : "Show other devices";
+	}
+	let J = () => {
 		let e = r(".lm-details");
 		e.replaceChildren();
 		let t = document.createElement("div");
@@ -19123,36 +19164,36 @@ function qg(e) {
 		i.textContent = "Hover a link to preview both interface traffic graphs. Select a device or link to inspect its status and traffic.", e.append(i);
 		let a = document.createElement("div");
 		a.className = "lm-device-list";
-		for (let e of h.nodes.filter((e) => e.role === "AGG")) {
+		for (let e of g.nodes.filter((e) => e.role === "AGG")) {
 			let t = document.createElement("button");
-			t.textContent = `◈  ${e.hostname}`, t.addEventListener("click", () => Y(e.id)), a.append(t);
+			t.textContent = `◈  ${e.hostname}`, t.addEventListener("click", () => ee(e.id)), a.append(t);
 		}
 		e.append(a);
 		let o = document.createElement("p");
-		o.className = "lm-hint", o.textContent = "Choose an AGG root to focus its group and ER branches. Pin devices to keep their positions during Re-layout. Save a named view to return to this workspace.", e.append(o);
+		o.className = "lm-hint", o.textContent = "Choose a LibreNMS device group or an AGG root to focus the map. Filters combine, and Show other devices reveals non-AGG/ER members inside that scope. Save a named view to return to this workspace.", e.append(o);
 	};
-	function J() {
-		if (!y) return q();
-		let e = y.type === "node" ? h.nodes.find((e) => e.id === y.id) : void 0, t = y.type === "link" ? h.links.find((e) => e.id === y.id) : void 0;
-		if (!e && !t) return y = void 0, q();
+	function Y() {
+		if (!b) return J();
+		let e = b.type === "node" ? g.nodes.find((e) => e.id === b.id) : void 0, t = b.type === "link" ? g.links.find((e) => e.id === b.id) : void 0;
+		if (!e && !t) return b = void 0, J();
 		let n = r(".lm-details");
 		n.replaceChildren();
 		let i = document.createElement("button");
 		i.className = "lm-close", i.textContent = "×", i.setAttribute("aria-label", "Close details"), i.onclick = () => {
-			y = void 0, c.elements().removeClass("lm-dim"), c.elements().unselect(), q();
+			b = void 0, l.elements().removeClass("lm-dim"), l.elements().unselect(), J();
 		}, n.append(i);
 		let a = document.createElement("div");
 		a.className = "lm-eyebrow", a.textContent = e ? `${e.role} / DEVICE` : "PHYSICAL LINK", n.append(a);
 		let o = document.createElement("h2");
-		o.textContent = e?.hostname ?? `${h.nodes.find((e) => e.id === t.source)?.hostname} ↔ ${h.nodes.find((e) => e.id === t.target)?.hostname}`, n.append(o);
-		let l = e ? [
+		o.textContent = e?.hostname ?? `${g.nodes.find((e) => e.id === t.source)?.hostname} ↔ ${g.nodes.find((e) => e.id === t.target)?.hostname}`, n.append(o);
+		let s = e ? [
 			["Status", e.status],
 			["Role", e.role],
 			["Site", e.site],
 			["Placement", e.reachable ? e.tier === 0 ? "Root tier" : `Hop ${e.tier} from AGG` : "No discovered AGG path"],
-			["Connections", String(h.links.filter((t) => t.source === e.id || t.target === e.id).length)]
+			["Connections", String(g.links.filter((t) => t.source === e.id || t.target === e.id).length)]
 		] : [
-			["Status", Tg(t, O(), p.config.staleAfter).label],
+			["Status", Tg(t, k(), m.config.staleAfter).label],
 			["Source interface", t.sourcePort],
 			["Remote interface", t.targetPort],
 			["Capacity", Yg(t.speedBps)],
@@ -19160,7 +19201,7 @@ function qg(e) {
 			["Outbound at source", Yg(t.outBps)],
 			["Sample time", t.sampledAt ? (/* @__PURE__ */ new Date(t.sampledAt * 1e3)).toLocaleString() : "Unavailable"]
 		], u = document.createElement("dl");
-		for (let [e, n] of l) {
+		for (let [e, n] of s) {
 			let r = document.createElement("dt");
 			r.textContent = e;
 			let i = document.createElement("dd");
@@ -19168,12 +19209,12 @@ function qg(e) {
 		}
 		if (n.append(u), e) {
 			let t = document.createElement("button");
-			if (t.className = "lm-pin-device", t.disabled = w, t.textContent = P.has(e.id) ? "Unpin device" : "Pin position", t.setAttribute("aria-pressed", String(P.has(e.id))), t.onclick = () => {
-				P.has(e.id) ? P.delete(e.id) : P.add(e.id), U(), L(), J();
+			if (t.className = "lm-pin-device", t.disabled = T, t.textContent = F.has(e.id) ? "Unpin device" : "Pin position", t.setAttribute("aria-pressed", String(F.has(e.id))), t.onclick = () => {
+				F.has(e.id) ? F.delete(e.id) : F.add(e.id), W(), R(), Y();
 			}, n.append(t), e.role === "AGG") {
 				let t = document.createElement("button");
-				t.className = "lm-focus-device", t.disabled = w, t.textContent = "Focus AGG group", t.onclick = () => {
-					s.value = e.id, ee(), L();
+				t.className = "lm-focus-device", t.disabled = T, t.textContent = "Focus AGG group", t.onclick = () => {
+					c.value = e.id, te(), R();
 				}, n.append(t);
 			}
 		}
@@ -19185,82 +19226,85 @@ function qg(e) {
 			}
 		}
 	}
-	function Y(e) {
-		let t = c.getElementById(e);
-		t.length && (y = {
+	function ee(e) {
+		let t = l.getElementById(e);
+		t.length && (b = {
 			type: "node",
 			id: e
-		}, c.elements().unselect(), t.select(), c.elements().addClass("lm-dim"), t.closedNeighborhood().removeClass("lm-dim"), J());
+		}, l.elements().unselect(), t.select(), l.elements().addClass("lm-dim"), t.closedNeighborhood().removeClass("lm-dim"), Y());
 	}
-	function ee(e = !0) {
-		let t = Fg(h, {
-			rootId: s.value || null,
+	function te(e = !0) {
+		let t = Fg(g, {
+			rootId: c.value || null,
+			deviceGroupId: s.value || null,
 			site: o.value,
 			search: a.value,
-			backbone: g,
-			showOther: _
+			backbone: _,
+			showOther: v
 		});
-		c.batch(() => {
-			c.nodes().forEach((e) => {
+		l.batch(() => {
+			l.nodes().forEach((e) => {
 				e.style("display", t.has(e.id()) ? "element" : "none");
-			}), c.edges().forEach((e) => {
+			}), l.edges().forEach((e) => {
 				e.style("display", t.has(e.source().id()) && t.has(e.target().id()) ? "element" : "none");
 			});
-		}), r(".lm-empty").hidden = t.size > 0, r(".lm-empty").textContent = h.nodes.length ? "No devices match these filters." : "No authorized devices are available.", e && t.size && c.fit(c.elements(":visible"), 70);
+		}), r(".lm-empty").hidden = t.size > 0, r(".lm-empty").textContent = g.nodes.length ? "No devices match these filters." : "No authorized devices are available.", e && t.size && l.fit(l.elements(":visible"), 70);
 	}
-	function te(e = {}, t) {
-		S = e, C = t, b++, H(!0), clearTimeout(x), x = setTimeout(() => {
-			b++, fg(), H(!1), R("Layout timed out. Existing positions are retained; retry Re-layout.", !0);
+	function ne(e = {}, t) {
+		C = e, w = t, x++, U(!0), clearTimeout(S), S = setTimeout(() => {
+			x++, fg(), U(!1), z("Layout timed out. Existing positions are retained; retry Re-layout.", !0);
 		}, 2e4);
-		let n = b;
-		pg(h).then((e) => ne(n, e)).catch(() => {
-			n === b && (clearTimeout(x), H(!1), R("Automatic layout failed. Check the published worker asset and retry Re-layout.", !0));
+		let n = x;
+		pg(g).then((e) => re(n, e)).catch(() => {
+			n === x && (clearTimeout(S), U(!1), z("Automatic layout failed. Check the published worker asset and retry Re-layout.", !0));
 		});
 	}
-	function ne(e, n) {
-		if (e !== b) return;
-		clearTimeout(x);
-		let r = Rg(h, n, S, P);
-		c.batch(() => c.nodes().forEach((e) => {
+	function re(e, n) {
+		if (e !== x) return;
+		clearTimeout(S);
+		let r = Rg(g, n, C, F);
+		l.batch(() => l.nodes().forEach((e) => {
 			e.unlock(), e.position(r[e.id()]);
-		})), U(), ee(!C), C && c.viewport(C), C = void 0, H(!1), L(), R(t ? "Demo topology · illustrative devices and traffic" : "Topology loaded · positions saved in this browser");
+		})), W(), te(!w), w && l.viewport(w), w = void 0, U(!1), R(), z(t ? "Demo topology · illustrative devices and traffic" : "Topology loaded · positions saved in this browser");
 	}
-	function re(e) {
-		m?.hide();
-		let n = w ? S : void 0, i = w ? C : void 0, l = JSON.stringify([h.nodes.map((e) => [
+	function ie(e) {
+		h?.hide();
+		let n = T ? C : void 0, i = T ? w : void 0, u = JSON.stringify([g.nodes.map((e) => [
 			e.id,
 			e.role,
 			e.site,
 			e.tier
-		]), h.links.map((e) => e.id)]);
-		p = e, h = Cg(e), D = Number.isFinite(e.generatedAt) ? e.generatedAt - Date.now() / 1e3 : 0;
-		let u = JSON.stringify([h.nodes.map((e) => [
+		]), g.links.map((e) => e.id)]);
+		m = e, g = Cg(e), O = Number.isFinite(e.generatedAt) ? e.generatedAt - Date.now() / 1e3 : 0;
+		let d = JSON.stringify([g.nodes.map((e) => [
 			e.id,
 			e.role,
 			e.site,
 			e.tier
-		]), h.links.map((e) => e.id)]), d = Object.fromEntries(c.nodes().map((e) => [e.id(), e.position()])), f = o.value;
-		o.replaceChildren(new Option("All sites", ""), ...Array.from(new Set(h.nodes.map((e) => e.site))).sort().map((e) => new Option(e, e))), [...o.options].some((e) => e.value === f) && (o.value = f);
-		let v = s.value;
-		if (s.replaceChildren(new Option("All AGG groups", ""), ...h.nodes.filter((e) => e.role === "AGG").map((e) => new Option(e.hostname, e.id))), [...s.options].some((e) => e.value === v) && (s.value = v), P = new Set([...P].filter((e) => h.nodes.some((t) => t.id === e))), !F) {
-			let e = Ng(M, h);
-			s.value = e.rootId ?? "", o.value = e.site, a.value = e.search, g = e.backbone, _ = e.showOther, P = new Set(e.pinned), G(), K();
+		]), g.links.map((e) => e.id)]), f = Object.fromEntries(l.nodes().map((e) => [e.id(), e.position()])), p = o.value;
+		o.replaceChildren(new Option("All sites", ""), ...Array.from(new Set(g.nodes.map((e) => e.site))).sort().map((e) => new Option(e, e))), [...o.options].some((e) => e.value === p) && (o.value = p);
+		let y = c.value;
+		c.replaceChildren(new Option("All AGG groups", ""), ...g.nodes.filter((e) => e.role === "AGG").map((e) => new Option(e.hostname, e.id))), [...c.options].some((e) => e.value === y) && (c.value = y);
+		let b = s.value;
+		if (s.replaceChildren(new Option("All device groups", ""), ...g.deviceGroups.map((e) => new Option(e.name, e.id))), [...s.options].some((e) => e.value === b) && (s.value = b), F = new Set([...F].filter((e) => g.nodes.some((t) => t.id === e))), !I) {
+			let e = Ng(N, g);
+			c.value = e.rootId ?? "", s.value = e.deviceGroupId ?? "", o.value = e.site, a.value = e.search, _ = e.backbone, v = e.showOther, F = new Set(e.pinned), K(), q();
 		}
-		c.batch(() => {
-			let t = new Set(h.nodes.map((e) => e.id)), n = new Set(h.links.map((e) => `edge:${e.id}`));
-			c.edges().filter((e) => !n.has(e.id())).remove(), c.nodes().filter((e) => !t.has(e.id())).remove();
-			for (let e of h.nodes) {
+		l.batch(() => {
+			let t = new Set(g.nodes.map((e) => e.id)), n = new Set(g.links.map((e) => `edge:${e.id}`));
+			l.edges().filter((e) => !n.has(e.id())).remove(), l.nodes().filter((e) => !t.has(e.id())).remove();
+			for (let e of g.nodes) {
 				let t = {
 					...e,
 					label: `${e.hostname}\n${e.role}  ·  ${e.status.toUpperCase()}`,
 					color: e.status === "down" ? "#e05b65" : e.status === "up" ? "#36b89a" : "#8a96a9",
 					width: e.role === "AGG" ? 220 : 206
-				}, n = c.getElementById(e.id);
-				n.length ? n.data(t) : c.add({ data: t });
+				}, n = l.getElementById(e.id);
+				n.length ? n.data(t) : l.add({ data: t });
 			}
-			let r = wg(h);
-			for (let t of h.links) {
-				let n = Tg(t, O(), e.config.staleAfter), i = {
+			let r = wg(g);
+			for (let t of g.links) {
+				let n = Tg(t, k(), e.config.staleAfter), i = {
 					...t,
 					id: `edge:${t.id}`,
 					linkId: t.id,
@@ -19269,36 +19313,36 @@ function qg(e) {
 					state: n.state,
 					lateral: +!!r.has(t.id),
 					curveDistance: r.get(t.id) ?? 0
-				}, a = c.getElementById(i.id);
-				a.length ? a.data(i) : c.add({ data: i });
+				}, a = l.getElementById(i.id);
+				a.length ? a.data(i) : l.add({ data: i });
 			}
-		}), U();
-		let y = r(".lm-summary");
-		y.replaceChildren();
+		}), W();
+		let x = r(".lm-summary");
+		x.replaceChildren();
 		for (let [e, t] of [
-			[h.nodes.length, "Devices"],
-			[h.links.length, "Links"],
-			[h.nodes.filter((e) => e.role === "AGG").length, "AGG roots"],
-			[h.nodes.filter((e) => e.status === "down").length, "Down"]
+			[g.nodes.length, "Devices"],
+			[g.links.length, "Links"],
+			[g.nodes.filter((e) => e.role === "AGG").length, "AGG roots"],
+			[g.nodes.filter((e) => e.status === "down").length, "Down"]
 		]) {
 			let n = document.createElement("div"), r = document.createElement("strong");
 			r.textContent = String(e);
 			let i = document.createElement("span");
-			i.textContent = String(t), n.append(r, i), y.append(n);
+			i.textContent = String(t), n.append(r, i), x.append(n);
 		}
-		r(".lm-updated").textContent = `${t ? "Demo snapshot" : "Snapshot fetched"} · ${(/* @__PURE__ */ new Date(e.generatedAt * 1e3)).toLocaleTimeString()}`, ee(!1), J(), B.setAvailable(!0), F || B.reload(), u !== l || w ? te(n ?? {
-			...N,
-			...d
-		}, i ?? (!F && Object.keys(N).length ? M : F ? {
-			zoom: c.zoom(),
-			pan: c.pan()
-		} : void 0)) : R(t ? "Demo topology · illustrative devices and traffic" : "Updated · layout unchanged"), F = !0;
+		r(".lm-updated").textContent = `${t ? "Demo snapshot" : "Snapshot fetched"} · ${(/* @__PURE__ */ new Date(e.generatedAt * 1e3)).toLocaleTimeString()}`, te(!1), Y(), V.setAvailable(!0), I || V.reload(), d !== u || T ? ne(n ?? {
+			...P,
+			...f
+		}, i ?? (!I && Object.keys(P).length ? N : I ? {
+			zoom: l.zoom(),
+			pan: l.pan()
+		} : void 0)) : z(t ? "Demo topology · illustrative devices and traffic" : "Updated · layout unchanged"), I = !0;
 	}
-	async function ie() {
-		if (!v) {
-			v = !0;
+	async function ae() {
+		if (!y) {
+			y = !0;
 			try {
-				if (t) re(vg());
+				if (t) ie(vg());
 				else {
 					if (!e.dataset.endpoint) throw Error("Missing topology endpoint");
 					let t = new URL(e.dataset.endpoint, location.href);
@@ -19312,113 +19356,116 @@ function qg(e) {
 					if (!n.ok) throw Error(await Jg(n));
 					let r = await n.json();
 					if (!Array.isArray(r.devices) || !Array.isArray(r.links) || !r.config) throw Error("Unexpected topology response");
-					re(r);
+					ie(r);
 				}
 			} catch (e) {
-				m?.hide(), c.elements().remove(), h = {
+				h?.hide(), l.elements().remove(), g = {
 					nodes: [],
-					links: []
-				}, y = void 0, p = void 0, b++, clearTimeout(x), q(), H(!1), clearTimeout(T), clearTimeout(E), P.clear(), M = j(), N = M.positions, F = !1, o.replaceChildren(new Option("All sites", "")), s.replaceChildren(new Option("All AGG groups", "")), B.setAvailable(!1), U(), r(".lm-summary").replaceChildren(), r(".lm-empty").hidden = !1, r(".lm-empty").textContent = "Topology unavailable. Use Refresh to retry.", R(e instanceof Error ? e.message : "Unable to load topology", !0);
+					links: [],
+					deviceGroups: []
+				}, b = void 0, m = void 0, x++, clearTimeout(S), J(), U(!1), clearTimeout(E), clearTimeout(D), F.clear(), N = M(), P = N.positions, I = !1, o.replaceChildren(new Option("All sites", "")), s.replaceChildren(new Option("All device groups", "")), c.replaceChildren(new Option("All AGG groups", "")), V.setAvailable(!1), W(), r(".lm-summary").replaceChildren(), r(".lm-empty").hidden = !1, r(".lm-empty").textContent = "Topology unavailable. Use Refresh to retry.", z(e instanceof Error ? e.message : "Unable to load topology", !0);
 			} finally {
-				v = !1;
+				y = !1;
 			}
 		}
 	}
-	c.on("tap", "node", (e) => Y(e.target.id())), c.on("tap", "edge", (e) => {
-		y = {
+	l.on("tap", "node", (e) => ee(e.target.id())), l.on("tap", "edge", (e) => {
+		b = {
 			type: "link",
 			id: e.target.data("linkId")
-		}, c.elements().removeClass("lm-dim"), J();
-	}), c.on("tap", (e) => {
-		e.target === c && (y = void 0, c.elements().removeClass("lm-dim"), q());
-	}), c.on("dragfree", "node", L), c.on("zoom", () => c.edges().toggleClass("lm-no-label", c.zoom() < .45)), c.on("pan zoom", () => {
-		p && !w && (clearTimeout(T), T = setTimeout(() => {
-			p && !w && L();
+		}, l.elements().removeClass("lm-dim"), Y();
+	}), l.on("tap", (e) => {
+		e.target === l && (b = void 0, l.elements().removeClass("lm-dim"), J());
+	}), l.on("dragfree", "node", R), l.on("zoom", () => l.edges().toggleClass("lm-no-label", l.zoom() < .45)), l.on("pan zoom", () => {
+		m && !T && (clearTimeout(E), E = setTimeout(() => {
+			m && !T && R();
 		}, 200));
 	}), a.addEventListener("input", () => {
-		a.value = Og(a.value), ee(!1), clearTimeout(E), E = setTimeout(() => {
-			if (!p) return;
-			let e = c.elements(":visible");
-			e.length && c.fit(e, 70), L();
+		a.value = Og(a.value), te(!1), clearTimeout(D), D = setTimeout(() => {
+			if (!m) return;
+			let e = l.elements(":visible");
+			e.length && l.fit(e, 70), R();
 		}, 300);
 	}), o.addEventListener("change", () => {
-		ee(), L();
+		te(), R();
 	}), s.addEventListener("change", () => {
-		ee(), L();
+		te(), R();
+	}), c.addEventListener("change", () => {
+		te(), R();
 	}), e.addEventListener("click", (t) => {
 		let n = t.target.closest("button[data-action]");
 		if (n) switch (n.dataset.action) {
 			case "refresh":
-				ie();
+				ae();
 				break;
 			case "fit":
-				c.fit(c.elements(":visible"), 70);
+				l.fit(l.elements(":visible"), 70);
 				break;
 			case "layout":
-				te(Object.fromEntries(c.nodes().map((e) => ({
+				ne(Object.fromEntries(l.nodes().map((e) => ({
 					id: e.id(),
 					position: e.position()
-				})).filter((e) => P.has(e.id)).map((e) => [e.id, e.position])));
+				})).filter((e) => F.has(e.id)).map((e) => [e.id, e.position])));
 				break;
 			case "unpin-all":
-				P.clear(), U(), L(), J();
+				F.clear(), W(), R(), Y();
 				break;
 			case "zoom-in":
-				c.zoom({
-					level: c.zoom() * 1.2,
+				l.zoom({
+					level: l.zoom() * 1.2,
 					renderedPosition: {
-						x: c.width() / 2,
-						y: c.height() / 2
+						x: l.width() / 2,
+						y: l.height() / 2
 					}
 				});
 				break;
 			case "zoom-out":
-				c.zoom({
-					level: c.zoom() / 1.2,
+				l.zoom({
+					level: l.zoom() / 1.2,
 					renderedPosition: {
-						x: c.width() / 2,
-						y: c.height() / 2
+						x: l.width() / 2,
+						y: l.height() / 2
 					}
 				});
 				break;
 			case "overview":
-				g = !g, G(), ee(), L();
+				_ = !_, K(), te(), R();
 				break;
 			case "other-devices":
-				_ = !_, K(), ee(), L();
+				v = !v, q(), te(), R();
 				break;
 			case "theme":
-				u = !e.classList.contains("lm-dark"), f();
+				d = !e.classList.contains("lm-dark"), p();
 				break;
-			case "fullscreen": (document.fullscreenElement ? document.exitFullscreen() : e.requestFullscreen()).catch(() => R("Fullscreen is unavailable in this browser."));
+			case "fullscreen": (document.fullscreenElement ? document.exitFullscreen() : e.requestFullscreen()).catch(() => z("Fullscreen is unavailable in this browser."));
 		}
-	}), new ResizeObserver(() => c.resize()).observe(r(".lm-canvas")), V(), q(), ie(), setInterval(() => {
-		document.hidden || ie();
+	}), new ResizeObserver(() => l.resize()).observe(r(".lm-canvas")), H(), J(), ae(), setInterval(() => {
+		document.hidden || ae();
 	}, 6e4), setInterval(() => {
-		if (!p) return;
-		let t = O();
-		c.batch(() => h.links.forEach((n) => {
-			let r = Tg(n, t, p.config.staleAfter);
-			if (c.getElementById(`edge:${n.id}`).data({
+		if (!m) return;
+		let t = k();
+		l.batch(() => g.links.forEach((n) => {
+			let r = Tg(n, t, m.config.staleAfter);
+			if (l.getElementById(`edge:${n.id}`).data({
 				label: r.label,
 				color: r.color,
 				state: r.state
-			}), y?.type === "link" && y.id === n.id) {
+			}), b?.type === "link" && b.id === n.id) {
 				let t = e.querySelector("[data-link-status]");
 				t && (t.textContent = r.label);
 			}
 		}));
 	}, 1e4), (t || e.dataset.debug === "true") && Object.defineProperty(window, "libremapDebug", {
 		value: () => ({
-			nodes: c.nodes().map((e) => ({
+			nodes: l.nodes().map((e) => ({
 				id: e.id(),
 				tier: e.data("tier"),
 				position: e.position(),
 				renderedPosition: e.renderedPosition(),
 				visible: e.visible()
 			})),
-			edges: c.edges().length,
-			links: c.edges().map((e) => ({
+			edges: l.edges().length,
+			links: l.edges().map((e) => ({
 				port: e.data("sourcePort"),
 				midpoint: e.renderedMidpoint(),
 				label: e.data("label")

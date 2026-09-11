@@ -6,12 +6,14 @@ export interface Link {
   inBps: number | null; outBps: number | null; sampledAt: number | null; status: Status;
 }
 export interface Config { prefixes: string[]; staleAfter: number; overrides: Record<string, { role?: string; site?: string }> }
-export interface Snapshot { devices: Device[]; links: Link[]; generatedAt: number; config: Config }
+export interface DeviceGroup { id: string; name: string; deviceIds: string[] }
+export interface Snapshot { devices: Device[]; links: Link[]; deviceGroups?: DeviceGroup[]; generatedAt: number; config: Config }
 export interface MapNode extends Device { role: string; site: string; tier: number; reachable: boolean }
-export interface Topology { nodes: MapNode[]; links: Link[] }
+export interface Topology { nodes: MapNode[]; links: Link[]; deviceGroups: DeviceGroup[] }
 export type Position = { x: number; y: number };
 export interface ViewState {
   rootId: string | null;
+  deviceGroupId: string | null;
   site: string;
   search: string;
   backbone: boolean;
