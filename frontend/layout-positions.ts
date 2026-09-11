@@ -7,15 +7,45 @@ const FOCUSED_ROW_GAP = 112;
 const MIN_COLUMNS = 8;
 const FOCUSED_MIN_COLUMNS = 4;
 const LEGACY_WIDE_RATIO = 4;
+const LEGACY_COLUMN_GAP = 260;
+const LEGACY_ROW_GAP = 210;
+const LEGACY_GRID_TOLERANCE = 2;
 
-/** Preserve ordinary manual layouts, but migrate the old single-row output. */
+function nearLegacyMultiple(distance:number,gap:number):boolean {
+  if(distance<=0)return false;
+  const multiple=Math.max(1,Math.round(distance/gap));
+  return Math.abs(distance-multiple*gap)<=LEGACY_GRID_TOLERANCE;
+}
+
+/** Match the former automatic 260x210 grid without treating arbitrary manual layouts as stale. */
+function looksLikeLegacyGrid(entries:[string,Position][]):boolean {
+  if(entries.length<=MIN_COLUMNS)return false;
+  const rows=new Map<number,number[]>();
+  for(const [,position] of entries){
+    const row=Math.round(position.y);
+    rows.set(row,[...(rows.get(row) ?? []),position.x]);
+  }
+  const rowYs=[...rows.keys()].sort((a,b)=>a-b);
+  const verticalGaps=rowYs.slice(1).map((y,index)=>y-rowYs[index]).filter(gap=>gap>0);
+  const horizontalGaps=[...rows.values()].flatMap(xs=>{
+    const sorted=[...xs].sort((a,b)=>a-b);
+    return sorted.slice(1).map((x,index)=>x-sorted[index]).filter(gap=>gap>0);
+  });
+  if(verticalGaps.length===0 || horizontalGaps.length<2)return false;
+  const verticalMatches=verticalGaps.filter(gap=>nearLegacyMultiple(gap,LEGACY_ROW_GAP)).length;
+  const horizontalMatches=horizontalGaps.filter(gap=>nearLegacyMultiple(gap,LEGACY_COLUMN_GAP)).length;
+  return verticalMatches/verticalGaps.length>=.75 && horizontalMatches/horizontalGaps.length>=.75;
+}
+
+/** Preserve ordinary manual layouts, but migrate former automatic layouts. */
 export function compactWideRestore(positions:Record<string,Position>, pinned:ReadonlySet<string>):Record<string,Position> {
   const entries=Object.entries(positions);
   if(entries.length<=MIN_COLUMNS)return positions;
   const xs=entries.map(([,position])=>position.x),ys=entries.map(([,position])=>position.y);
   const width=Math.max(...xs)-Math.min(...xs)+210;
   const height=Math.max(...ys)-Math.min(...ys)+76;
-  if(width/height<=LEGACY_WIDE_RATIO)return positions;
+  const automaticEntries=entries.filter(([id])=>!pinned.has(id));
+  if(width/height<=LEGACY_WIDE_RATIO && !looksLikeLegacyGrid(automaticEntries))return positions;
   return Object.fromEntries(entries.filter(([id])=>pinned.has(id)));
 }
 

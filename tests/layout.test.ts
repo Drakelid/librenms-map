@@ -44,9 +44,11 @@ test('focused tiers use tighter spacing and fewer columns',()=>{
   assert.equal(ys.length,5);
 });
 
-test('old extremely wide restores are repacked without moving pinned devices',()=>{
+test('old automatic restores are repacked without moving pinned devices',()=>{
   const wide=Object.fromEntries(Array.from({length:20},(_,index)=>[String(index+1),{x:index*260,y:0}]));
   assert.deepEqual(compactWideRestore(wide,new Set(['4'])),{'4':wide['4']});
-  const compact=Object.fromEntries(Array.from({length:20},(_,index)=>[String(index+1),{x:(index%5)*260,y:Math.floor(index/5)*210}]));
-  assert.equal(compactWideRestore(compact,new Set()),compact);
+  const legacyGrid=Object.fromEntries(Array.from({length:20},(_,index)=>[String(index+1),{x:(index%5)*260,y:Math.floor(index/5)*210}]));
+  assert.deepEqual(compactWideRestore(legacyGrid,new Set(['4'])),{'4':legacyGrid['4']});
+  const currentGrid=Object.fromEntries(Array.from({length:20},(_,index)=>[String(index+1),{x:(index%5)*238,y:Math.floor(index/5)*135}]));
+  assert.equal(compactWideRestore(currentGrid,new Set()),currentGrid);
 });

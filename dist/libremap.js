@@ -18360,14 +18360,34 @@ function lg(e) {
 }
 //#endregion
 //#region frontend/layout-positions.ts
-var ug = 238, dg = 135, fg = 228, pg = 112, mg = 8, hg = 4, gg = 4;
-function _g(e, t) {
+var ug = 238, dg = 135, fg = 228, pg = 112, mg = 8, hg = 4, gg = 4, _g = 260, vg = 210, yg = 2;
+function bg(e, t) {
+	if (e <= 0) return !1;
+	let n = Math.max(1, Math.round(e / t));
+	return Math.abs(e - n * t) <= yg;
+}
+function xg(e) {
+	if (e.length <= mg) return !1;
+	let t = /* @__PURE__ */ new Map();
+	for (let [, n] of e) {
+		let e = Math.round(n.y);
+		t.set(e, [...t.get(e) ?? [], n.x]);
+	}
+	let n = [...t.keys()].sort((e, t) => e - t), r = n.slice(1).map((e, t) => e - n[t]).filter((e) => e > 0), i = [...t.values()].flatMap((e) => {
+		let t = [...e].sort((e, t) => e - t);
+		return t.slice(1).map((e, n) => e - t[n]).filter((e) => e > 0);
+	});
+	if (r.length === 0 || i.length < 2) return !1;
+	let a = r.filter((e) => bg(e, vg)).length, o = i.filter((e) => bg(e, _g)).length;
+	return a / r.length >= .75 && o / i.length >= .75;
+}
+function Sg(e, t) {
 	let n = Object.entries(e);
 	if (n.length <= mg) return e;
-	let r = n.map(([, e]) => e.x), i = n.map(([, e]) => e.y);
-	return (Math.max(...r) - Math.min(...r) + 210) / (Math.max(...i) - Math.min(...i) + 76) <= gg ? e : Object.fromEntries(n.filter(([e]) => t.has(e)));
+	let r = n.map(([, e]) => e.x), i = n.map(([, e]) => e.y), a = Math.max(...r) - Math.min(...r) + 210, o = Math.max(...i) - Math.min(...i) + 76, s = n.filter(([e]) => !t.has(e));
+	return a / o <= gg && !xg(s) ? e : Object.fromEntries(n.filter(([e]) => t.has(e)));
 }
-function vg(e, t, n = !1) {
+function Cg(e, t, n = !1) {
 	let r = /* @__PURE__ */ new Map();
 	for (let t of e.nodes) r.set(t.tier, [...r.get(t.tier) ?? [], t]);
 	let i = n ? fg : ug, a = n ? pg : dg, o = n ? 1.2 : 1.4, s = Math.max(n ? hg : mg, Math.ceil(Math.sqrt(e.nodes.length * o * a / i))), c = {}, l = 0;
@@ -18388,11 +18408,11 @@ function vg(e, t, n = !1) {
 }
 //#endregion
 //#region frontend/layout.ts
-var yg = () => new cg.default({ workerFactory: () => new lg() }), bg = yg();
-function xg() {
-	bg.terminateWorker(), bg = yg();
+var wg = () => new cg.default({ workerFactory: () => new lg() }), Tg = wg();
+function Eg() {
+	Tg.terminateWorker(), Tg = wg();
 }
-async function Sg(e) {
+async function Dg(e) {
 	let t = new Map(e.nodes.map((e) => [e.id, e])), n = e.links.filter((e) => t.get(e.source).tier !== t.get(e.target).tier).map((e, n) => {
 		let r = t.get(e.source).tier < t.get(e.target).tier;
 		return {
@@ -18400,7 +18420,7 @@ async function Sg(e) {
 			sources: [r ? e.source : e.target],
 			targets: [r ? e.target : e.source]
 		};
-	}), r = await bg.layout({
+	}), r = await Tg.layout({
 		id: "root",
 		layoutOptions: {
 			"elk.algorithm": "layered",
@@ -18416,12 +18436,12 @@ async function Sg(e) {
 		})),
 		edges: n
 	});
-	return vg(e, new Map(r.children.map((e) => [e.id, e.x ?? 0])));
+	return Cg(e, new Map(r.children.map((e) => [e.id, e.x ?? 0])));
 }
 //#endregion
 //#region frontend/link-preview.ts
-var Cg = 300, wg = 150, Tg = 180;
-function Eg(e, t, n) {
+var Og = 300, kg = 150, Ag = 180;
+function jg(e, t, n) {
 	let r = e.querySelector(".lm-canvas-wrap"), i = e.querySelector(".lm-canvas"), a = document.createElement("div");
 	a.className = "lm-link-preview", a.hidden = !0, a.setAttribute("role", "tooltip"), r.append(a);
 	let o = "", s, c = () => {
@@ -18436,8 +18456,8 @@ function Eg(e, t, n) {
 			id: t,
 			from: "-1d",
 			legend: "no",
-			width: String(Cg),
-			height: String(wg),
+			width: String(Og),
+			height: String(kg),
 			refreshnum: String(n() ?? 0)
 		};
 		for (let [e, t] of Object.entries(i)) r.searchParams.set(e, t);
@@ -18469,7 +18489,7 @@ function Eg(e, t, n) {
 			let o = l(e.portId);
 			if (o) {
 				let n = document.createElement("img");
-				n.src = o, n.width = Cg, n.height = wg, n.alt = `Traffic graph for ${e.hostname} ${e.port}`, n.decoding = "async", t.append(n);
+				n.src = o, n.width = Og, n.height = kg, n.alt = `Traffic graph for ${e.hostname} ${e.port}`, n.decoding = "async", t.append(n);
 			} else {
 				let e = document.createElement("div");
 				e.className = "lm-link-preview-unavailable", e.textContent = "Traffic graph unavailable", t.append(e);
@@ -18483,14 +18503,14 @@ function Eg(e, t, n) {
 		let t = e.target, n = e.renderedPosition ?? t.renderedMidpoint();
 		s = setTimeout(() => {
 			o === t.id() && t.visible() && d(t, n);
-		}, Tg);
+		}, Ag);
 	}), t.on("mouseout", "edge", (e) => {
 		o === e.target.id() && c();
 	}), t.on("pan zoom", c), i.addEventListener("mouseleave", c), { hide: c };
 }
 //#endregion
 //#region frontend/demo.ts
-function Dg() {
+function Mg() {
 	let e = Math.floor(Date.now() / 1e3);
 	return {
 		generatedAt: e,
@@ -18657,23 +18677,23 @@ function Dg() {
 }
 //#endregion
 //#region frontend/topology.ts
-var Og = /^(?<site>.+?\d)(?<role>agg|er)(?<number>\d+)$/;
-function kg(e, t) {
+var Ng = /^(?<site>.+?\d)(?<role>agg|er)(?<number>\d+)$/;
+function Pg(e, t) {
 	let n = e.toLowerCase().split(".")[0];
 	for (let e of t) if (n.startsWith(e)) {
 		n = n.slice(e.length);
 		break;
 	}
-	return Og.exec(n)?.groups;
+	return Ng.exec(n)?.groups;
 }
-function Ag(e, t) {
-	let n = t.prefixes.filter((e) => typeof e == "string" && e !== "").map((e) => e.toLowerCase()).sort((e, t) => t.length - e.length), r = kg(e.hostname, n) ?? (typeof e.sysName == "string" ? kg(e.sysName, n) : void 0), i = t.overrides[e.id], a = typeof i?.role == "string" ? i.role : r?.role ?? "other", o = typeof i?.site == "string" ? i.site : r?.site ?? "Unclassified";
+function Fg(e, t) {
+	let n = t.prefixes.filter((e) => typeof e == "string" && e !== "").map((e) => e.toLowerCase()).sort((e, t) => t.length - e.length), r = Pg(e.hostname, n) ?? (typeof e.sysName == "string" ? Pg(e.sysName, n) : void 0), i = t.overrides[e.id], a = typeof i?.role == "string" ? i.role : r?.role ?? "other", o = typeof i?.site == "string" ? i.site : r?.site ?? "Unclassified";
 	return {
 		role: a.toUpperCase(),
 		site: o
 	};
 }
-function jg(e, t) {
+function Ig(e, t) {
 	let n = /* @__PURE__ */ new Map();
 	for (let r of e) {
 		if (!t.has(r.source) || !t.has(r.target)) continue;
@@ -18685,10 +18705,10 @@ function jg(e, t) {
 	}
 	return [...n.values()].sort((e, t) => e.id.localeCompare(t.id));
 }
-function Mg(e) {
+function Lg(e) {
 	let t = e.devices.map((t) => ({
 		...t,
-		...Ag(t, e.config),
+		...Fg(t, e.config),
 		tier: -1,
 		reachable: !1
 	})), n = new Map(t.map((e) => [e.id, e])), r = (Array.isArray(e.deviceGroups) ? e.deviceGroups : []).flatMap((e) => {
@@ -18699,7 +18719,7 @@ function Mg(e) {
 			name: e.name,
 			deviceIds: t
 		}] : [];
-	}).sort((e, t) => e.name.localeCompare(t.name, void 0, { numeric: !0 }) || e.id.localeCompare(t.id)), i = jg(e.links, new Set(n.keys())), a = new Map(t.map((e) => [e.id, /* @__PURE__ */ new Set()]));
+	}).sort((e, t) => e.name.localeCompare(t.name, void 0, { numeric: !0 }) || e.id.localeCompare(t.id)), i = Ig(e.links, new Set(n.keys())), a = new Map(t.map((e) => [e.id, /* @__PURE__ */ new Set()]));
 	for (let e of i) a.get(e.source).add(e.target), a.get(e.target).add(e.source);
 	let o = t.filter((e) => e.role === "AGG");
 	for (let e of o) e.tier = 0, e.reachable = !0;
@@ -18715,7 +18735,7 @@ function Mg(e) {
 		deviceGroups: r
 	};
 }
-function Ng(e) {
+function Rg(e) {
 	let t = new Map(e.nodes.map((e) => [e.id, e.tier])), n = /* @__PURE__ */ new Map();
 	for (let r of e.links) {
 		if (t.get(r.source) !== t.get(r.target)) continue;
@@ -18728,7 +18748,7 @@ function Ng(e) {
 	});
 	return r;
 }
-function Pg(e, t, n) {
+function zg(e, t, n) {
 	if (e.status === "down") return {
 		label: "DOWN",
 		color: "#e05b65",
@@ -18765,7 +18785,7 @@ function Pg(e, t, n) {
 		utilization: r
 	};
 }
-var Fg = 1e5, Ig = (e) => Array.from(e).length, Lg = (e) => Array.from(e).slice(0, 200).join(""), Rg = () => ({
+var Bg = 1e5, Vg = (e) => Array.from(e).length, Hg = (e) => Array.from(e).slice(0, 200).join(""), Ug = () => ({
 	rootId: null,
 	deviceGroupId: null,
 	site: "",
@@ -18779,26 +18799,26 @@ var Fg = 1e5, Ig = (e) => Array.from(e).length, Lg = (e) => Array.from(e).slice(
 		x: 0,
 		y: 0
 	}
-}), zg = (e) => !!e && typeof e == "object" && !Array.isArray(e), Bg = (e) => typeof e == "number" && Number.isFinite(e) && Math.abs(e) <= 1e6, Vg = (e) => zg(e) && Bg(e.x) && Bg(e.y);
-function Hg(e, t) {
-	let n = Rg();
-	if (!zg(e)) return n;
+}), Wg = (e) => !!e && typeof e == "object" && !Array.isArray(e), Gg = (e) => typeof e == "number" && Number.isFinite(e) && Math.abs(e) <= 1e6, Kg = (e) => Wg(e) && Gg(e.x) && Gg(e.y);
+function qg(e, t) {
+	let n = Ug();
+	if (!Wg(e)) return n;
 	let r = t ? new Set(t.nodes.map((e) => e.id)) : void 0, i = (e) => /^\d+$/.test(e) && (!r || r.has(e));
-	typeof e.rootId == "string" && i(e.rootId) && (!t || t.nodes.some((t) => t.id === e.rootId && t.role === "AGG")) && (n.rootId = e.rootId), typeof e.deviceGroupId == "string" && /^[1-9]\d{0,9}$/.test(e.deviceGroupId) && (!t || t.deviceGroups.some((t) => t.id === e.deviceGroupId)) && (n.deviceGroupId = e.deviceGroupId), typeof e.site == "string" && Ig(e.site) <= 200 && (!t || t.nodes.some((t) => t.site === e.site)) && (n.site = e.site), typeof e.search == "string" && (n.search = Lg(e.search)), n.backbone = e.backbone === !0, n.showOther = e.showOther === !0;
-	let a = t ? t.nodes.length : Fg, o = 0;
-	if (zg(e.positions)) for (let [t, r] of Object.entries(e.positions)) {
+	typeof e.rootId == "string" && i(e.rootId) && (!t || t.nodes.some((t) => t.id === e.rootId && t.role === "AGG")) && (n.rootId = e.rootId), typeof e.deviceGroupId == "string" && /^[1-9]\d{0,9}$/.test(e.deviceGroupId) && (!t || t.deviceGroups.some((t) => t.id === e.deviceGroupId)) && (n.deviceGroupId = e.deviceGroupId), typeof e.site == "string" && Vg(e.site) <= 200 && (!t || t.nodes.some((t) => t.site === e.site)) && (n.site = e.site), typeof e.search == "string" && (n.search = Hg(e.search)), n.backbone = e.backbone === !0, n.showOther = e.showOther === !0;
+	let a = t ? t.nodes.length : Bg, o = 0;
+	if (Wg(e.positions)) for (let [t, r] of Object.entries(e.positions)) {
 		if (o >= a) break;
-		i(t) && Vg(r) && (n.positions[t] = {
+		i(t) && Kg(r) && (n.positions[t] = {
 			x: r.x,
 			y: r.y
 		}, o++);
 	}
-	return Array.isArray(e.pinned) && (n.pinned = [...new Set(e.pinned.filter((e) => typeof e == "string" && i(e) && Object.hasOwn(n.positions, e)))].slice(0, a)), typeof e.zoom == "number" && Number.isFinite(e.zoom) && (n.zoom = Math.min(2.5, Math.max(.15, e.zoom))), Vg(e.pan) && (n.pan = {
+	return Array.isArray(e.pinned) && (n.pinned = [...new Set(e.pinned.filter((e) => typeof e == "string" && i(e) && Object.hasOwn(n.positions, e)))].slice(0, a)), typeof e.zoom == "number" && Number.isFinite(e.zoom) && (n.zoom = Math.min(2.5, Math.max(.15, e.zoom))), Kg(e.pan) && (n.pan = {
 		x: e.pan.x,
 		y: e.pan.y
 	}), n;
 }
-function Ug(e, t) {
+function Jg(e, t) {
 	let n = e.nodes.find((e) => e.id === t && e.role === "AGG");
 	if (!n) return new Set(e.nodes.map((e) => e.id));
 	let r = new Map(e.nodes.map((e) => [e.id, e])), i = new Map(e.nodes.map((e) => [e.id, []]));
@@ -18812,8 +18832,8 @@ function Ug(e, t) {
 	}
 	return o;
 }
-function Wg(e, t) {
-	let n = Ug(e, t.rootId), r = t.deviceGroupId ? e.deviceGroups.find((e) => e.id === t.deviceGroupId) : void 0;
+function Yg(e, t) {
+	let n = Jg(e, t.rootId), r = t.deviceGroupId ? e.deviceGroups.find((e) => e.id === t.deviceGroupId) : void 0;
 	if (t.deviceGroupId && !r) return /* @__PURE__ */ new Set();
 	let i = r ? new Set(r.deviceIds) : void 0, a = new Set(e.nodes.filter((e) => {
 		let r = t.backbone ? e.role === "AGG" : t.showOther || e.role === "AGG" || e.role === "ER";
@@ -18822,40 +18842,40 @@ function Wg(e, t) {
 	if (t.search) for (let t of e.links) o.has(t.source) && a.has(t.target) && s.add(t.target), o.has(t.target) && a.has(t.source) && s.add(t.source);
 	return s;
 }
-var Gg = 228, Kg = 94;
-function qg(e, t, n, r) {
+var Xg = 228, Zg = 94;
+function Qg(e, t, n, r) {
 	let i = {}, a = /* @__PURE__ */ new Map(), o = (e, t) => `${e}:${t}`, s = (e) => {
-		let t = o(Math.floor(e.x / Gg), Math.floor(e.y / Kg)), n = a.get(t);
+		let t = o(Math.floor(e.x / Xg), Math.floor(e.y / Zg)), n = a.get(t);
 		n ? n.push(e) : a.set(t, [e]);
 	}, c = (e) => {
-		let t = Math.floor(e.x / Gg), n = Math.floor(e.y / Kg);
-		for (let r = -1; r <= 1; r++) for (let i = -1; i <= 1; i++) for (let s of a.get(o(t + r, n + i)) ?? []) if (Math.abs(s.x - e.x) < Gg && Math.abs(s.y - e.y) < Kg) return !0;
+		let t = Math.floor(e.x / Xg), n = Math.floor(e.y / Zg);
+		for (let r = -1; r <= 1; r++) for (let i = -1; i <= 1; i++) for (let s of a.get(o(t + r, n + i)) ?? []) if (Math.abs(s.x - e.x) < Xg && Math.abs(s.y - e.y) < Zg) return !0;
 		return !1;
 	};
-	for (let t of e.nodes) Vg(n[t.id]) && (i[t.id] = { ...n[t.id] }, s(i[t.id]));
+	for (let t of e.nodes) Kg(n[t.id]) && (i[t.id] = { ...n[t.id] }, s(i[t.id]));
 	for (let n of e.nodes) if (!i[n.id]) {
 		let r = { ...t[n.id] ?? {
 			x: 0,
 			y: n.tier * 135
 		} }, a = r.x;
-		for (let t = 1; c(r) && t <= e.nodes.length * 2 + 1; t++) r.x = a + Math.ceil(t / 2) * Gg * (t % 2 ? 1 : -1);
+		for (let t = 1; c(r) && t <= e.nodes.length * 2 + 1; t++) r.x = a + Math.ceil(t / 2) * Xg * (t % 2 ? 1 : -1);
 		i[n.id] = r, s(r);
 	}
-	for (let e of r) i[e] && Vg(n[e]) && (i[e] = { ...n[e] });
+	for (let e of r) i[e] && Kg(n[e]) && (i[e] = { ...n[e] });
 	return i;
 }
 //#endregion
 //#region frontend/view-store.ts
-var Jg = class extends Error {
+var $g = class extends Error {
 	status;
 	constructor(e, t = 0) {
 		super(e), this.status = t;
 	}
-}, Yg = {
+}, e_ = {
 	PUT: "This view changed in another tab. Reload views before saving again.",
 	DELETE: "This view changed in another tab. Reload views before deleting it."
 };
-function Xg(e, t) {
+function t_(e, t) {
 	let n = new URL(e, location.href);
 	if (n.origin !== location.origin) throw Error("Saved views must use the same origin.");
 	async function r(e, r, i, a = {}) {
@@ -18873,7 +18893,7 @@ function Xg(e, t) {
 			body: i === void 0 ? void 0 : JSON.stringify(i),
 			signal: AbortSignal.timeout(2e4)
 		});
-		if (!c.ok) throw new Jg(await Zg(c, e), c.status);
+		if (!c.ok) throw new $g(await n_(c, e), c.status);
 		return c.status === 204 ? void 0 : c.json();
 	}
 	return {
@@ -18892,7 +18912,7 @@ function Xg(e, t) {
 		}
 	};
 }
-async function Zg(e, t) {
+async function n_(e, t) {
 	if (e.status === 422) {
 		let t = await e.json().catch(() => void 0), n = t && typeof t == "object" && "message" in t && typeof t.message == "string" ? t.message.trim() : "";
 		if (n && n.length <= 300) return n;
@@ -18901,21 +18921,21 @@ async function Zg(e, t) {
 		401: "Your session has expired. Sign in and reload.",
 		403: "You no longer have access to saved views.",
 		404: "This view is no longer available. Reload views.",
-		409: Yg[t] ?? Yg.PUT,
+		409: e_[t] ?? e_.PUT,
 		419: "Your session has expired. Reload the page before saving.",
 		422: "The view could not be saved. Check its name, device access and size.",
 		429: "Too many requests. Wait a moment before saving again.",
 		503: "Saved views are unavailable. The plugin database migration may be pending."
 	}[e.status] ?? `Saved views request failed (HTTP ${e.status}).`;
 }
-function Qg() {
+function r_() {
 	if (typeof crypto.randomUUID == "function") return crypto.randomUUID();
 	let e = crypto.getRandomValues(/* @__PURE__ */ new Uint8Array(16));
 	e[6] = e[6] & 15 | 64, e[8] = e[8] & 63 | 128;
 	let t = [...e].map((e) => e.toString(16).padStart(2, "0")).join("");
 	return `${t.slice(0, 8)}-${t.slice(8, 12)}-${t.slice(12, 16)}-${t.slice(16, 20)}-${t.slice(20)}`;
 }
-function $g(e) {
+function i_(e) {
 	function t() {
 		let t;
 		try {
@@ -18934,7 +18954,7 @@ function $g(e) {
 		}
 		return Array.isArray(n) ? n.filter((e) => e && typeof e.id == "string" && typeof e.name == "string" && Number.isInteger(e.revision)).slice(0, 50).map((e) => ({
 			...e,
-			state: Hg(e.state)
+			state: qg(e.state)
 		})) : [];
 	}
 	function n(t) {
@@ -18944,12 +18964,12 @@ function $g(e) {
 		list: async () => t(),
 		save: async (e, r, i) => {
 			let a = t(), o = a.findIndex((e) => e.id === i?.id);
-			if (i && (o < 0 || a[o].revision !== i.revision)) throw new Jg(Yg.PUT, 409);
-			if (!i && a.length >= 50) throw new Jg("You can save up to 50 views. Delete a view before creating another.", 422);
+			if (i && (o < 0 || a[o].revision !== i.revision)) throw new $g(e_.PUT, 409);
+			if (!i && a.length >= 50) throw new $g("You can save up to 50 views. Delete a view before creating another.", 422);
 			let s = {
-				id: i?.id ?? Qg(),
+				id: i?.id ?? r_(),
 				name: e,
-				state: Hg(r),
+				state: qg(r),
 				revision: (i?.revision ?? 0) + 1,
 				updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 			};
@@ -18957,14 +18977,14 @@ function $g(e) {
 		},
 		remove: async (e) => {
 			let r = t(), i = r.find((t) => t.id === e.id);
-			if (!i || i.revision !== e.revision) throw new Jg(Yg.DELETE, 409);
+			if (!i || i.revision !== e.revision) throw new $g(e_.DELETE, 409);
 			n(r.filter((t) => t.id !== e.id));
 		}
 	};
 }
 //#endregion
 //#region frontend/views-panel.ts
-function e_(e, t) {
+function a_(e, t) {
 	e.innerHTML = "<label class=\"lm-select\">Saved view <select aria-label=\"Saved view\"><option value=\"\">Current workspace</option></select></label><button data-view-action=\"save\" disabled>Save view</button><button data-view-action=\"delete\" disabled>Delete view</button><button data-view-action=\"reload\">Reload views</button><span class=\"lm-view-status\" aria-live=\"polite\"></span><dialog class=\"lm-view-dialog\" aria-labelledby=\"lm-view-title\"><form><h2 id=\"lm-view-title\">Save current view</h2><p>Remember filters, positions, pins and zoom.</p><label>View name<input name=\"name\" aria-label=\"View name\" required autocomplete=\"off\"></label><div class=\"lm-dialog-actions\"><button type=\"button\" data-view-action=\"cancel\">Cancel</button><button type=\"submit\" value=\"new\">Save as new</button><button type=\"submit\" value=\"update\">Save changes</button></div></form></dialog><dialog class=\"lm-delete-dialog\" aria-labelledby=\"lm-delete-title\"><h2 id=\"lm-delete-title\">Delete saved view?</h2><p></p><div class=\"lm-dialog-actions\"><button data-view-action=\"cancel-delete\">Cancel</button><button data-view-action=\"confirm-delete\">Delete saved view</button></div></dialog>";
 	let n = e.querySelector("select"), r = e.querySelector(".lm-view-status"), i = e.querySelector(".lm-view-dialog"), a = e.querySelector(".lm-delete-dialog"), o = e.querySelector("input"), s = [], c, l = !1, u = !1, d = !1, f = 0;
 	function p(e, t = !1) {
@@ -18981,7 +19001,7 @@ function e_(e, t) {
 		n.replaceChildren(new Option("Current workspace", ""), ...s.map((e) => new Option(e.name, e.id))), n.value = c?.id ?? "", m();
 	}
 	function g(e) {
-		e instanceof Jg && [
+		e instanceof $g && [
 			401,
 			403,
 			404,
@@ -19010,7 +19030,7 @@ function e_(e, t) {
 	}), i.querySelector("form").onsubmit = async (e) => {
 		if (e.preventDefault(), !t.store || l || d || !u) return;
 		let n = o.value.trim();
-		if (!n || Ig(n) > 100) {
+		if (!n || Vg(n) > 100) {
 			o.setCustomValidity(n ? "Use at most 100 characters." : "Enter a view name."), o.reportValidity();
 			return;
 		}
@@ -19027,7 +19047,7 @@ function e_(e, t) {
 		} finally {
 			l = !1, m();
 		}
-	}, o.oninput = () => o.setCustomValidity(Ig(o.value.trim()) > 100 ? "Use at most 100 characters." : "");
+	}, o.oninput = () => o.setCustomValidity(Vg(o.value.trim()) > 100 ? "Use at most 100 characters." : "");
 	async function v() {
 		if (!t.store || !c || l) return;
 		l = !0, m();
@@ -19053,9 +19073,9 @@ function e_(e, t) {
 }
 //#endregion
 //#region frontend/main.ts
-var t_ = document.querySelector("#libremap");
-t_ && n_(t_);
-function n_(e) {
+var o_ = document.querySelector("#libremap");
+o_ && s_(o_);
+function s_(e) {
 	let t = e.dataset.demo === "true";
 	e.innerHTML = `
     <div class="lm-shell">
@@ -19074,17 +19094,17 @@ function n_(e) {
 		minZoom: .15,
 		maxZoom: 2.5,
 		selectionType: "single",
-		style: a_(e)
+		style: u_(e)
 	}), u = window.matchMedia("(prefers-color-scheme: dark)"), d, f = "";
 	function p() {
 		let t = n ? document.documentElement.classList.contains("dark") : d ?? u.matches, r = n ? getComputedStyle(document.body).backgroundColor : "", i = `${t}|${r}`;
-		i !== f && (f = i, e.classList.toggle("lm-dark", t), /^rgb\(/.test(r) ? e.style.setProperty("--bg", r) : e.style.removeProperty("--bg"), l.style(a_(e)));
+		i !== f && (f = i, e.classList.toggle("lm-dark", t), /^rgb\(/.test(r) ? e.style.setProperty("--bg", r) : e.style.removeProperty("--bg"), l.style(u_(e)));
 	}
 	p(), n ? new MutationObserver(p).observe(document.documentElement, {
 		attributes: !0,
 		attributeFilter: ["class"]
 	}) : u.addEventListener("change", p);
-	let m, h = t ? void 0 : Eg(e, l, () => m?.generatedAt), g = {
+	let m, h = t ? void 0 : jg(e, l, () => m?.generatedAt), g = {
 		nodes: [],
 		links: [],
 		deviceGroups: []
@@ -19092,9 +19112,9 @@ function n_(e) {
 	function M() {
 		try {
 			let e = localStorage.getItem(j);
-			return Hg(e ? JSON.parse(e) : { positions: JSON.parse(localStorage.getItem(A) ?? "{}") });
+			return qg(e ? JSON.parse(e) : { positions: JSON.parse(localStorage.getItem(A) ?? "{}") });
 		} catch {
-			return Rg();
+			return Ug();
 		}
 	}
 	let N = M(), P = N.positions, F = new Set(N.pinned), I = !1, L = {}, R = !1, z = () => Object.fromEntries(l.nodes().map((e) => [e.id(), e.position()])), B = () => {
@@ -19105,7 +19125,7 @@ function n_(e) {
 		return t;
 	};
 	function V() {
-		return Hg({
+		return qg({
 			rootId: c.value || null,
 			deviceGroupId: s.value || null,
 			site: o.value,
@@ -19131,9 +19151,9 @@ function n_(e) {
 		i.textContent = e, i.classList.toggle("lm-error", t);
 	}, W;
 	try {
-		W = t ? $g(`${j}:views`) : e.dataset.viewsEndpoint ? Xg(e.dataset.viewsEndpoint, e.dataset.csrf ?? "") : void 0;
+		W = t ? i_(`${j}:views`) : e.dataset.viewsEndpoint ? t_(e.dataset.viewsEndpoint, e.dataset.csrf ?? "") : void 0;
 	} catch {}
-	let G = e_(r(".lm-views"), {
+	let G = a_(r(".lm-views"), {
 		store: W,
 		demo: t,
 		capture: V,
@@ -19168,7 +19188,7 @@ function n_(e) {
 	}
 	function Y(e) {
 		if (!m) return;
-		let t = Hg(e, g);
+		let t = qg(e, g);
 		c.value = t.rootId ?? "", s.value = t.deviceGroupId ?? "", o.value = t.site, a.value = t.search, _ = t.backbone, v = t.showOther, F = new Set(t.pinned), b = void 0, l.elements().unselect().removeClass("lm-dim"), J(), re(), ee(), te(), oe(t.positions, t);
 	}
 	function ee() {
@@ -19219,12 +19239,12 @@ function n_(e) {
 			["Placement", e.reachable ? e.tier === 0 ? "Root tier" : `Hop ${e.tier} from AGG` : "No discovered AGG path"],
 			["Connections", String(g.links.filter((t) => t.source === e.id || t.target === e.id).length)]
 		] : [
-			["Status", Pg(t, k(), m.config.staleAfter).label],
+			["Status", zg(t, k(), m.config.staleAfter).label],
 			["Source interface", t.sourcePort],
 			["Remote interface", t.targetPort],
-			["Capacity", i_(t.speedBps)],
-			["Inbound at source", i_(t.inBps)],
-			["Outbound at source", i_(t.outBps)],
+			["Capacity", l_(t.speedBps)],
+			["Inbound at source", l_(t.inBps)],
+			["Outbound at source", l_(t.outBps)],
 			["Sample time", t.sampledAt ? (/* @__PURE__ */ new Date(t.sampledAt * 1e3)).toLocaleString() : "Unavailable"]
 		], u = document.createElement("dl");
 		for (let [e, n] of s) {
@@ -19260,7 +19280,7 @@ function n_(e) {
 		}, l.elements().unselect(), t.select(), l.elements().addClass("lm-dim"), t.closedNeighborhood().removeClass("lm-dim"), re());
 	}
 	function ae(e = !0) {
-		let t = Wg(g, {
+		let t = Yg(g, {
 			rootId: c.value || null,
 			deviceGroupId: s.value || null,
 			site: o.value,
@@ -19278,7 +19298,7 @@ function n_(e) {
 					nodes: g.nodes.filter((e) => t.has(e.id)),
 					links: g.links.filter((e) => t.has(e.source) && t.has(e.target)),
 					deviceGroups: []
-				}, n = vg(e, new Map(e.nodes.map((e) => [e.id, L[e.id]?.x ?? 0])), !0), r = new Set([...F].filter((e) => t.has(e))), i = qg(e, n, Object.fromEntries([...r].filter((e) => L[e]).map((e) => [e, L[e]])), r);
+				}, n = Cg(e, new Map(e.nodes.map((e) => [e.id, L[e.id]?.x ?? 0])), !0), r = new Set([...F].filter((e) => t.has(e))), i = Qg(e, n, Object.fromEntries([...r].filter((e) => L[e]).map((e) => [e, L[e]])), r);
 				l.nodes().filter((e) => t.has(e.id()) && !F.has(e.id())).forEach((e) => {
 					e.position(i[e.id()]);
 				}), R = !0;
@@ -19288,19 +19308,19 @@ function n_(e) {
 		}), r(".lm-empty").hidden = t.size > 0, r(".lm-empty").textContent = g.nodes.length ? "No devices match these filters." : "No authorized devices are available.", e && t.size && l.fit(l.elements(":visible"), 70);
 	}
 	function oe(e = {}, t) {
-		let n = _g(e, F);
+		let n = Sg(e, F);
 		C = n, w = n === e ? t : void 0, x++, q(!0), clearTimeout(S), S = setTimeout(() => {
-			x++, xg(), q(!1), U("Layout timed out. Existing positions are retained; retry Re-layout.", !0);
+			x++, Eg(), q(!1), U("Layout timed out. Existing positions are retained; retry Re-layout.", !0);
 		}, 2e4);
 		let r = x;
-		Sg(g).then((e) => se(r, e)).catch(() => {
+		Dg(g).then((e) => se(r, e)).catch(() => {
 			r === x && (clearTimeout(S), q(!1), U("Automatic layout failed. Check the published worker asset and retry Re-layout.", !0));
 		});
 	}
 	function se(e, n) {
 		if (e !== x) return;
 		clearTimeout(S);
-		let r = qg(g, n, C, F);
+		let r = Qg(g, n, C, F);
 		L = r, R = !1, l.batch(() => l.nodes().forEach((e) => {
 			e.unlock(), e.position(r[e.id()]);
 		})), J(), ae(!w), w && l.viewport(w), w = void 0, q(!1), H(), U(t ? "Demo topology · illustrative devices and traffic" : "Topology loaded · positions saved in this browser");
@@ -19313,7 +19333,7 @@ function n_(e) {
 			e.site,
 			e.tier
 		]), g.links.map((e) => e.id)]);
-		m = e, g = Mg(e), O = Number.isFinite(e.generatedAt) ? e.generatedAt - Date.now() / 1e3 : 0;
+		m = e, g = Lg(e), O = Number.isFinite(e.generatedAt) ? e.generatedAt - Date.now() / 1e3 : 0;
 		let d = JSON.stringify([g.nodes.map((e) => [
 			e.id,
 			e.role,
@@ -19325,7 +19345,7 @@ function n_(e) {
 		c.replaceChildren(new Option("All AGG groups", ""), ...g.nodes.filter((e) => e.role === "AGG").map((e) => new Option(e.hostname, e.id))), [...c.options].some((e) => e.value === y) && (c.value = y);
 		let b = s.value;
 		if (s.replaceChildren(new Option("All device groups", ""), ...g.deviceGroups.map((e) => new Option(e.name, e.id))), [...s.options].some((e) => e.value === b) && (s.value = b), F = new Set([...F].filter((e) => g.nodes.some((t) => t.id === e))), !I) {
-			let e = Hg(N, g);
+			let e = qg(N, g);
 			c.value = e.rootId ?? "", s.value = e.deviceGroupId ?? "", o.value = e.site, a.value = e.search, _ = e.backbone, v = e.showOther, F = new Set(e.pinned), ee(), te();
 		}
 		l.batch(() => {
@@ -19340,9 +19360,9 @@ function n_(e) {
 				}, n = l.getElementById(e.id);
 				n.length ? n.data(t) : l.add({ data: t });
 			}
-			let r = Ng(g);
+			let r = Rg(g);
 			for (let t of g.links) {
-				let n = Pg(t, k(), e.config.staleAfter), i = {
+				let n = zg(t, k(), e.config.staleAfter), i = {
 					...t,
 					id: `edge:${t.id}`,
 					linkId: t.id,
@@ -19380,7 +19400,7 @@ function n_(e) {
 		if (!y) {
 			y = !0;
 			try {
-				if (t) ce(Dg());
+				if (t) ce(Mg());
 				else {
 					if (!e.dataset.endpoint) throw Error("Missing topology endpoint");
 					let t = new URL(e.dataset.endpoint, location.href);
@@ -19391,7 +19411,7 @@ function n_(e) {
 						signal: AbortSignal.timeout(2e4)
 					});
 					if (n.status === 429) throw Error("Too many topology requests. The map will retry on the next refresh.");
-					if (!n.ok) throw Error(await r_(n));
+					if (!n.ok) throw Error(await c_(n));
 					let r = await n.json();
 					if (!Array.isArray(r.devices) || !Array.isArray(r.links) || !r.config) throw Error("Unexpected topology response");
 					ce(r);
@@ -19421,7 +19441,7 @@ function n_(e) {
 			m && !T && H();
 		}, 200));
 	}), a.addEventListener("input", () => {
-		a.value = Lg(a.value), ae(!1), clearTimeout(D), D = setTimeout(() => {
+		a.value = Hg(a.value), ae(!1), clearTimeout(D), D = setTimeout(() => {
 			if (!m) return;
 			let e = l.elements(":visible");
 			e.length && l.fit(e, 70), H();
@@ -19485,7 +19505,7 @@ function n_(e) {
 		if (!m) return;
 		let t = k();
 		l.batch(() => g.links.forEach((n) => {
-			let r = Pg(n, t, m.config.staleAfter);
+			let r = zg(n, t, m.config.staleAfter);
 			if (l.getElementById(`edge:${n.id}`).data({
 				label: r.label,
 				color: r.color,
@@ -19514,17 +19534,17 @@ function n_(e) {
 		configurable: !0
 	});
 }
-async function r_(e) {
+async function c_(e) {
 	if (e.status === 422) {
 		let t = await e.json().catch(() => void 0), n = t && typeof t == "object" && "message" in t && typeof t.message == "string" ? t.message.trim() : "";
 		if (n && n.length <= 300) return n;
 	}
 	return `LibreNMS returned HTTP ${e.status}`;
 }
-function i_(e) {
+function l_(e) {
 	return e === null || !Number.isFinite(e) ? "N/A" : e >= 1e9 ? `${(e / 1e9).toFixed(2)} Gbps` : e >= 1e6 ? `${(e / 1e6).toFixed(1)} Mbps` : `${Math.round(e / 1e3)} Kbps`;
 }
-function a_(e) {
+function u_(e) {
 	let t = getComputedStyle(e), n = (e, n) => t.getPropertyValue(e).trim() || n, r = n("--panel", "#ffffff"), i = n("--ink", "#20324b"), a = n("--line", "#e4eaf2");
 	return [
 		{

@@ -30,13 +30,13 @@ test('demo renders AGG roots, details, search, backbone and stable refresh', asy
   expect(errors).toEqual([]);
 });
 
-test('large tiers use a compact multi-row overview',async({page})=>{
+test('all device groups migrates a legacy grid to a compact multi-row overview',async({page})=>{
   const snapshot=demoSnapshot();
   snapshot.devices=Array.from({length:100},(_,index)=>({id:String(index+1),hostname:`site1er${index+1}`,status:'up'}));
   snapshot.links=[];snapshot.deviceGroups=[];
   await page.addInitScript(()=>localStorage.setItem('libremap:v2:vertical-layout',JSON.stringify({
     rootId:null,deviceGroupId:null,site:'',search:'',backbone:false,showOther:false,
-    positions:Object.fromEntries(Array.from({length:100},(_,index)=>[String(index+1),{x:index*260,y:0}])),
+    positions:Object.fromEntries(Array.from({length:100},(_,index)=>[String(index+1),{x:(index%10)*260,y:Math.floor(index/10)*210}])),
     pinned:['1'],zoom:.15,pan:{x:9999,y:9999},
   })));
   await page.route('**/vertical-layout',route=>route.fulfill({contentType:'text/html',body:'<div id="libremap" data-endpoint="/vertical-snapshot" data-storage-key="vertical-layout" data-debug="true"></div><script type="module" src="/frontend/main.ts"></script>'}));
@@ -48,6 +48,8 @@ test('large tiers use a compact multi-row overview',async({page})=>{
   const width=Math.max(...xs)-Math.min(...xs)+210,height=Math.max(...ys)-Math.min(...ys)+76;
   expect(new Set(ys).size).toBeGreaterThan(1);
   expect(width/height).toBeLessThan(1.8);
+  const rowYs=[...new Set(ys)].sort((a,b)=>a-b);
+  expect(Math.max(...rowYs.slice(1).map((y,index)=>y-rowYs[index]))).toBeLessThanOrEqual(135);
   expect(positions[0]).toEqual({x:0,y:0});
 });
 
