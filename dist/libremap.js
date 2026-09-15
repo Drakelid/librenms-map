@@ -19124,7 +19124,7 @@ function l_(e) {
       <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device…"></label><label class="lm-select">Site <select aria-label="Site"><option value="">All sites</option></select></label><button data-action="overview">AGG backbone</button><button data-action="other-devices" aria-pressed="false">Show other devices</button><span class="lm-spacer"></span><button data-action="refresh">↻ Refresh</button><button data-action="layout">Re-layout</button><button data-action="fullscreen" title="Fullscreen">⛶</button></div>
       <div class="lm-viewbar"><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><label class="lm-select">AGG root <select aria-label="AGG root"><option value="">All AGG groups</option></select></label><label class="lm-select">Highlight <select aria-label="Highlight hops">${Array.from({ length: 5 }, (e, t) => `<option value="${t + 1}">${t + 1} hop${t ? "s" : ""}</option>`).join("")}</select></label><span class="lm-pin-count">0 pinned</span><button data-action="unpin-all">Unpin all</button><div class="lm-views"></div></div>
       <div class="lm-notice" role="status" aria-live="polite">Loading topology…</div>
-      <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong>Physical topology</strong><span>AGG → ER · discovered links</span></div><div class="lm-canvas" aria-label="Interactive network topology"></div><div class="lm-empty" hidden></div><div class="lm-map-controls"><button data-action="zoom-in" aria-label="Zoom in">+</button><button data-action="zoom-out" aria-label="Zoom out">−</button><button data-action="fit">Fit</button></div><div class="lm-legend"><span><i style="background:${zg.normal}"></i>&lt;50%</span><span><i style="background:${zg.warning}"></i>50–70%</span><span><i style="background:${zg.high}"></i>&gt;70%</span><span><i style="background:#e05b65"></i>Down</span><span><i style="background:#8a96a9"></i>Unknown / stale</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
+      <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong>Physical topology</strong><span>AGG → ER · discovered links</span></div><div class="lm-canvas" aria-label="Interactive network topology"></div><div class="lm-empty" hidden></div><div class="lm-map-controls"><button data-action="zoom-in" aria-label="Zoom in">+</button><button data-action="zoom-out" aria-label="Zoom out">−</button><button data-action="fit">Fit</button></div><div class="lm-legend"><span><i style="color:${zg.normal}"></i>&lt;50%</span><span><i style="color:${zg.warning}"></i>50–70%</span><span><i style="color:${zg.high}"></i>&gt;70%</span><span><i class="lm-dashed" style="color:#e05b65"></i>Down</span><span><i class="lm-dashed" style="color:#8a96a9"></i>Unknown / stale</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
       <footer><span class="lm-updated">Waiting for data</span><span>Drag to arrange · Scroll to zoom · Hover links for traffic · Click to inspect</span></footer>
     </div>`, t && e.querySelector(".lm-back")?.remove();
 	let n = e.dataset.hostTheme === "true";
@@ -19582,6 +19582,7 @@ function l_(e) {
 				port: e.data("sourcePort"),
 				midpoint: e.renderedMidpoint(),
 				label: e.data("label"),
+				lineStyle: e.style("line-style"),
 				dimmed: e.hasClass("lm-dim"),
 				labelBox: e.renderedBoundingBox({
 					includeNodes: !1,
@@ -19667,7 +19668,7 @@ function f_(e) {
 			}
 		},
 		{
-			selector: "edge[state = \"stale\"], edge[state = \"unknown\"]",
+			selector: "edge[state = \"down\"], edge[state = \"stale\"], edge[state = \"unknown\"]",
 			style: { "line-style": "dashed" }
 		},
 		{
