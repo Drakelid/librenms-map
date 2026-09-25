@@ -25,7 +25,7 @@ class CachedRoutesIntegrationTest extends TestCase
         $this->getJson('/libremap/views')->assertOk()->assertExactJson(['views' => []]);
     }
 
-    public function testMapPageRendersWithTheNavbarButton(): void
+    public function testMapPageRendersWithTheMapsEntry(): void
     {
         $this->actingAs(User::factory()->create(['enabled' => 1]));
         // The real provider, with the plugin enabled, registered the navbar view.

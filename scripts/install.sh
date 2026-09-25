@@ -153,4 +153,4 @@ php artisan optimize:clear
 installed="$(php -r "$INSTALLED_VERSION_PHP" "$PACKAGE")"
 [ -n "$installed" ] || die "$PACKAGE is not installed after composer ran"
 
-printf '\nLibreMap %s is installed. Click "Topology Map" in the LibreNMS navigation bar, or open /libremap under the LibreNMS base URL.\n' "$installed"
+printf '\nLibreMap %s is installed. Click "Maps > Topology Map" in the LibreNMS navigation bar, or open /libremap under the LibreNMS base URL.\n' "$installed"

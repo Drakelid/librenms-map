@@ -8,7 +8,7 @@ use LibreNMS\Interfaces\Plugins\PluginManagerInterface;
 use LibreNMS\Tests\TestCase;
 use Mockery;
 
-/** The "Topology Map" navbar button, rendered through LibreNMS's `menu.custom` include. */
+/** The "Topology Map" Maps submenu entry, rendered through LibreNMS's `menu.custom` include. */
 class NavbarIntegrationTest extends TestCase
 {
     use DatabaseTransactions;
@@ -26,7 +26,7 @@ class NavbarIntegrationTest extends TestCase
         $this->app['router']->getRoutes()->refreshNameLookups();
     }
 
-    public function testNavbarButtonLinksToTheMapWithItsIcon(): void
+    public function testMapsEntryLinksToTheMapWithItsIcon(): void
     {
         $this->actingAs(User::factory()->create(['enabled' => 1]));
 
@@ -37,7 +37,7 @@ class NavbarIntegrationTest extends TestCase
         $this->assertStringContainsString('fa-sitemap', $html);
     }
 
-    public function testGuestsGetNoNavbarButton(): void
+    public function testGuestsGetNoMapsEntry(): void
     {
         $this->assertStringNotContainsString('Topology Map', view()->file(self::VIEW)->render());
     }

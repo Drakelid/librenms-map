@@ -47,7 +47,7 @@ Open <http://127.0.0.1:5173>. The demo is explicitly labeled and uses illustrati
 - Pin/unpin device positions. Pinned devices cannot be dragged and remain fixed during Re-layout; automatic nodes are placed clear of them. Use Unpin all to release them.
 - Browser workspace persistence and private named views stored in LibreNMS. Views capture device-group/root/site/search filters, backbone and other-device visibility, highlight hops, positions, pins, zoom and pan. The explicit demo stores named views in this browser only.
 - Create, update, copy and delete named views. Revision checks prevent stale tabs from overwriting newer saves. Reload views restores the newest saved state before another update.
-- A Composer package integrated with LibreNMS sessions, a **Topology Map** navigation-bar button, the plugin menu and permission scopes. Both devices and both ports must be authorized before a link is serialized. Plugin routes are rate limited to 120 requests per minute per user, on a counter separate from other LibreNMS routes.
+- A Composer package integrated with LibreNMS sessions, a **Maps → Topology Map** navigation entry, the plugin menu and permission scopes. Both devices and both ports must be authorized before a link is serialized. Plugin routes are rate limited to 120 requests per minute per user, on a counter separate from other LibreNMS routes.
 
 ## Build assets
 
@@ -97,11 +97,11 @@ These alter the host Composer configuration and lockfile; retain those changes t
 php artisan optimize:clear
 ```
 
-**4. Open the map.** Click **Topology Map** in the LibreNMS navigation bar (also listed under **Plugins**), or go to `/libremap` under the instance's base URL.
+**4. Open the map.** Click **Maps → Topology Map** in the LibreNMS navigation bar (also listed under **Plugins**), or go to `/libremap` under the instance's base URL.
 
 ### Navigation bar
 
-LibreNMS offers plugins no hook for top-level navigation items, but its navigation bar includes one optional `menu.custom` view. While libremap is enabled, the package supplies that view with the **Topology Map** button. A host's own `resources/views/menu/custom.blade.php` keeps working: LibreMap renders it right after the button. As with routes, clear caches after enabling or disabling the plugin.
+LibreNMS offers plugins no hook inside the Maps dropdown, but its navigation bar includes one optional `menu.custom` view. While libremap is enabled, the package supplies that view and uses JavaScript to append **Topology Map** to the existing **Maps** dropdown. A host's own `resources/views/menu/custom.blade.php` keeps working: LibreMap also renders it. As with routes, clear caches after enabling or disabling the plugin.
 
 ### Route cache
 
