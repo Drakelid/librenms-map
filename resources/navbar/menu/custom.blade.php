@@ -21,7 +21,7 @@
                 const menu = maps?.querySelector(':scope > ul.dropdown-menu');
                 if (template && menu) {
                     if (template.content.querySelector('li.active')) maps.classList.add('active');
-                    menu.append(template.content);
+                    menu.prepend(template.content);
                     template.remove();
                 }
             })();
