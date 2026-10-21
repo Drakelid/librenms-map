@@ -62,7 +62,7 @@ class CustomMapsIntegrationTest extends TestCase
         $created = $this->actingAs($owner)->postJson('/libremap/custom-maps', $payload)
             ->assertCreated()->assertJsonPath('map.revision', 1)->assertJsonPath('map.owned', true)
             ->assertJsonPath('map.document.links.0.portId', (string) $port->port_id)
-            ->assertJsonPath('live.ports.'.$port->port_id.'.inBps', 100000000.0)
+            ->assertJsonPath('live.ports.'.$port->port_id.'.inBps', 100000000)
             ->json('map');
         $url = '/libremap/custom-maps/'.$created['id'];
         $this->getJson('/libremap/custom-maps')->assertOk()->assertJsonPath('maps.0.id', $created['id'])

@@ -174,9 +174,11 @@ class TopologyIntegrationTest extends TestCase
 
     public function testLabelsUseTheDisplayNameAndPreferSysNameOverAnIpAddress(): void
     {
-        $named = Device::factory()->create(['hostname' => '192.0.2.10', 'sysName' => 'rossa1agg1', 'display' => 'Core AGG 1']);
-        $byIp = Device::factory()->create(['hostname' => '192.0.2.11', 'sysName' => 'rossa1agg2', 'display' => null]);
-        $bare = Device::factory()->create(['hostname' => '192.0.2.12', 'sysName' => '', 'display' => null]);
+        // LibreNMS regenerates the `display` column from `display_template` on save,
+        // so a custom display name is set through its template.
+        $named = Device::factory()->create(['hostname' => '192.0.2.10', 'sysName' => 'rossa1agg1', 'display_template' => 'Core AGG 1']);
+        $byIp = Device::factory()->create(['hostname' => '192.0.2.11', 'sysName' => 'rossa1agg2']);
+        $bare = Device::factory()->create(['hostname' => '192.0.2.12', 'sysName' => '']);
 
         $devices = collect(app(LibreNmsTopology::class)->forUser(User::factory()->admin()->create())['devices'])->keyBy('id');
 

@@ -298,10 +298,11 @@ export function mountCustomMap(root:HTMLElement) {
       return;
     }
     panel.append(closeButton());
-    const kind=element.data('kind') as string|undefined;
+    // Read before isNode() narrows the type: after both node branches it is `never`.
+    const id=element.id(), kind=element.data('kind') as string|undefined;
     if(element.isNode() && kind==='device')return deviceDetails(element.data('deviceId') as string);
-    if(element.isNode())return shapeDetails(element.id());
-    linkDetails(element.id());
+    if(element.isNode())return shapeDetails(id);
+    linkDetails(id);
   }
   function deviceDetails(deviceId:string){
     const live=devices.get(deviceId);
@@ -526,7 +527,7 @@ export function mountCustomMap(root:HTMLElement) {
   if(root.dataset.debug==='true') Object.defineProperty(window,'libremapCustomDebug',{value:()=>({
     nodes:cy.nodes().map(n=>({key:n.id(),kind:n.data('kind') as string,label:n.data('label') as string,position:n.position(),renderedPosition:n.renderedPosition()})),
     edges:cy.edges().map(e=>({key:e.id(),label:e.data('label') as string,state:e.data('state') as string,lineStyle:e.style('line-style') as string,midpoint:e.renderedMidpoint()})),
-    grabbable:cy.nodes().every(n=>n.grabbable()),
+    grabbable:cy.nodes().map(n=>n.grabbable()).every(Boolean),
   }),configurable:true});
 
   // ---- Start --------------------------------------------------------------
