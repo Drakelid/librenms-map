@@ -191,11 +191,11 @@ var A = E(""), j = E({}), M = E(function() {}), N = typeof HTMLElement > "u" ? "
 	return typeof HTMLElement > "u" ? !1 : e instanceof HTMLElement;
 }, ee = function(e) {
 	return R(e) && B(e.x1) && B(e.x2) && B(e.y1) && B(e.y2);
-}, Z = function(e) {
+}, te = function(e) {
 	return z(e) && I(e.then);
-}, te = function() {
+}, ne = function() {
 	return k && k.userAgent.match(/msie|trident|edge/i);
-}, ne = function(e, t) {
+}, re = function(e, t) {
 	t ||= function() {
 		if (arguments.length === 1) return arguments[0];
 		if (arguments.length === 0) return "undefined";
@@ -207,27 +207,27 @@ var A = E(""), j = E({}), M = E(function() {}), N = typeof HTMLElement > "u" ? "
 		return (a = s[o]) || (a = s[o] = e.apply(r, i)), a;
 	};
 	return n.cache = {}, n;
-}, re = ne(function(e) {
+}, ie = re(function(e) {
 	return e.replace(/([A-Z])/g, function(e) {
 		return "-" + e.toLowerCase();
 	});
-}), ie = ne(function(e) {
+}), ae = re(function(e) {
 	return e.replace(/(-\w)/g, function(e) {
 		return e[1].toUpperCase();
 	});
-}), ae = ne(function(e, t) {
+}), oe = re(function(e, t) {
 	return e + t[0].toUpperCase() + t.substring(1);
 }, function(e, t) {
 	return e + "$" + t;
-}), oe = function(e) {
+}), se = function(e) {
 	return Y(e) ? e : e.charAt(0).toUpperCase() + e.substring(1);
-}, se = function(e, t) {
+}, ce = function(e, t) {
 	return e.slice(-1 * t.length) === t;
-}, ce = "(?:[-+]?(?:(?:\\d+|\\d*\\.\\d+)(?:[Ee][+-]?\\d+)?))", le = "rgb[a]?\\((" + ce + "[%]?)\\s*,\\s*(" + ce + "[%]?)\\s*,\\s*(" + ce + "[%]?)(?:\\s*,\\s*(" + ce + "))?\\)", ue = "rgb[a]?\\((?:" + ce + "[%]?)\\s*,\\s*(?:" + ce + "[%]?)\\s*,\\s*(?:" + ce + "[%]?)(?:\\s*,\\s*(?:" + ce + "))?\\)", de = "hsl[a]?\\((" + ce + ")\\s*,\\s*(" + ce + "[%])\\s*,\\s*(" + ce + "[%])(?:\\s*,\\s*(" + ce + "))?\\)", fe = "hsl[a]?\\((?:" + ce + ")\\s*,\\s*(?:" + ce + "[%])\\s*,\\s*(?:" + ce + "[%])(?:\\s*,\\s*(?:" + ce + "))?\\)", pe = "\\#[0-9a-fA-F]{3}", me = "\\#[0-9a-fA-F]{6}", he = function(e, t) {
+}, le = "(?:[-+]?(?:(?:\\d+|\\d*\\.\\d+)(?:[Ee][+-]?\\d+)?))", ue = "rgb[a]?\\((" + le + "[%]?)\\s*,\\s*(" + le + "[%]?)\\s*,\\s*(" + le + "[%]?)(?:\\s*,\\s*(" + le + "))?\\)", de = "rgb[a]?\\((?:" + le + "[%]?)\\s*,\\s*(?:" + le + "[%]?)\\s*,\\s*(?:" + le + "[%]?)(?:\\s*,\\s*(?:" + le + "))?\\)", fe = "hsl[a]?\\((" + le + ")\\s*,\\s*(" + le + "[%])\\s*,\\s*(" + le + "[%])(?:\\s*,\\s*(" + le + "))?\\)", pe = "hsl[a]?\\((?:" + le + ")\\s*,\\s*(?:" + le + "[%])\\s*,\\s*(?:" + le + "[%])(?:\\s*,\\s*(?:" + le + "))?\\)", me = "\\#[0-9a-fA-F]{3}", he = "\\#[0-9a-fA-F]{6}", ge = function(e, t) {
 	return e < t ? -1 : +(e > t);
-}, ge = function(e, t) {
-	return -1 * he(e, t);
-}, Q = Object.assign == null ? function(e) {
+}, _e = function(e, t) {
+	return -1 * ge(e, t);
+}, Z = Object.assign == null ? function(e) {
 	for (var t = arguments, n = 1; n < t.length; n++) {
 		var r = t[n];
 		if (r != null) for (var i = Object.keys(r), a = 0; a < i.length; a++) {
@@ -236,7 +236,7 @@ var A = E(""), j = E({}), M = E(function() {}), N = typeof HTMLElement > "u" ? "
 		}
 	}
 	return e;
-} : Object.assign.bind(Object), _e = function(e) {
+} : Object.assign.bind(Object), ve = function(e) {
 	if (!(e.length !== 4 && e.length !== 7 || e[0] !== "#")) {
 		var t = e.length === 4, n, r, i, a = 16;
 		return t ? (n = parseInt(e[1] + e[1], a), r = parseInt(e[2] + e[2], a), i = parseInt(e[3] + e[3], a)) : (n = parseInt(e[1] + e[2], a), r = parseInt(e[3] + e[4], a), i = parseInt(e[5] + e[6], a)), [
@@ -245,12 +245,12 @@ var A = E(""), j = E({}), M = E(function() {}), N = typeof HTMLElement > "u" ? "
 			i
 		];
 	}
-}, ve = function(e) {
+}, ye = function(e) {
 	var t, n, r, i, a, o, s, c;
 	function l(e, t, n) {
 		return n < 0 && (n += 1), n > 1 && --n, n < 1 / 6 ? e + (t - e) * 6 * n : n < 1 / 2 ? t : n < 2 / 3 ? e + (t - e) * (2 / 3 - n) * 6 : e;
 	}
-	var u = RegExp("^" + de + "$").exec(e);
+	var u = RegExp("^" + fe + "$").exec(e);
 	if (u) {
 		if (n = parseInt(u[1]), n < 0 ? n = (360 - -1 * n % 360) % 360 : n > 360 && (n %= 360), n /= 360, r = parseFloat(u[2]), r < 0 || r > 100 || (r /= 100, i = parseFloat(u[3]), i < 0 || i > 100) || (i /= 100, a = u[4], a !== void 0 && (a = parseFloat(a), a < 0 || a > 1))) return;
 		if (r === 0) o = s = c = Math.round(i * 255);
@@ -266,8 +266,8 @@ var A = E(""), j = E({}), M = E(function() {}), N = typeof HTMLElement > "u" ? "
 		];
 	}
 	return t;
-}, ye = function(e) {
-	var t, n = RegExp("^" + le + "$").exec(e);
+}, Q = function(e) {
+	var t, n = RegExp("^" + ue + "$").exec(e);
 	if (n) {
 		t = [];
 		for (var r = [], i = 1; i <= 3; i++) {
@@ -287,7 +287,7 @@ var A = E(""), j = E({}), M = E(function() {}), N = typeof HTMLElement > "u" ? "
 }, be = function(e) {
 	return Se[e.toLowerCase()];
 }, xe = function(e) {
-	return (L(e) ? e : null) || be(e) || _e(e) || ye(e) || ve(e);
+	return (L(e) ? e : null) || be(e) || ve(e) || Q(e) || ye(e);
 }, Se = {
 	transparent: [
 		0,
@@ -1326,7 +1326,7 @@ var Lt = !0, Rt = console.warn != null, zt = console.trace != null, Bt = 2 ** 53
 }, qt = function(e) {
 	Kt() && (Rt ? console.warn(e) : (console.log(e), zt && console.trace()));
 }, Jt = function(e) {
-	return Q({}, e);
+	return Z({}, e);
 }, Yt = function(e) {
 	return e == null ? e : L(e) ? e.slice() : R(e) ? Jt(e) : e;
 }, Xt = function(e) {
@@ -1355,9 +1355,9 @@ var Lt = !0, Rt = console.warn != null, zt = console.trace != null, Bt = 2 ** 53
 		e.push(r);
 	}
 }, an = function(e, t, n) {
-	return n && (t = ae(n, t)), e[t];
+	return n && (t = oe(n, t)), e[t];
 }, on = function(e, t, n, r) {
-	n && (t = ae(n, t)), e[t] = r;
+	n && (t = oe(n, t)), e[t] = r;
 }, sn = typeof Map < "u" ? Map : /* @__PURE__ */ function() {
 	function e() {
 		p(this, e), this._obj = {};
@@ -1914,10 +1914,10 @@ var xn = /*@__PURE__*/ Ee(bn()), Sn = en({
 					q = q.slice(q.indexOf(J));
 					for (var Y = q[0].id(), X = 0, ee = 2; ee < q.length; ee += 2) q[ee].id() < Y && (Y = q[ee].id(), X = ee);
 					q = q.slice(X).concat(q.slice(0, X)), q.push(q[0]);
-					var Z = q.map(function(e) {
+					var te = q.map(function(e) {
 						return e.id();
 					}).join(",");
-					P.indexOf(Z) === -1 && (h.push(s.spawn(q)), P.push(Z));
+					P.indexOf(te) === -1 && (h.push(s.spawn(q)), P.push(te));
 				}
 			} else break;
 		}
@@ -3268,7 +3268,7 @@ var wi = en({
 	la,
 	da
 ].forEach(function(e) {
-	Q(fa, e);
+	Z(fa, e);
 });
 var pa = 0, ma = 1, ha = 2, ga = function(e) {
 	if (!(this instanceof ga)) return new ga(e);
@@ -3363,7 +3363,7 @@ ga.all = function(e) {
 	});
 };
 var Sa = typeof Promise < "u" ? Promise : ga, Ca = function(e, t, n) {
-	var r = K(e), i = !r, a = this._private = Q({ duration: 1e3 }, t, n);
+	var r = K(e), i = !r, a = this._private = Z({ duration: 1e3 }, t, n);
 	if (a.target = e, a.style = a.style || a.css, a.started = !1, a.playing = !1, a.hooked = !1, a.applying = !1, a.progress = 0, a.completes = [], a.frames = [], a.complete && I(a.complete) && a.completes.push(a.complete), i) {
 		var o = e.position();
 		a.startPosition = a.startPosition || {
@@ -3380,7 +3380,7 @@ var Sa = typeof Promise < "u" ? Promise : ga, Ca = function(e, t, n) {
 	}
 	this.length = 1, this[0] = this;
 }, wa = Ca.prototype;
-Q(wa, {
+Z(wa, {
 	instanceString: function() {
 		return "animation";
 	},
@@ -3504,7 +3504,7 @@ var Ta = {
 			var n = this, r = n.length !== void 0, i = r ? n : [n], a = this._private.cy || this, o = !r, s = !o;
 			if (!a.styleEnabled()) return this;
 			var c = a.style();
-			if (e = Q({}, e, t), Object.keys(e).length === 0) return new Ca(i[0], e);
+			if (e = Z({}, e, t), Object.keys(e).length === 0) return new Ca(i[0], e);
 			switch (e.duration === void 0 && (e.duration = 400), e.duration) {
 				case "slow":
 					e.duration = 600;
@@ -3542,7 +3542,7 @@ var Ta = {
 		return function(e, t) {
 			var n = this, r = n.length === void 0 ? [n] : n;
 			if (!(this._private.cy || this).styleEnabled()) return this;
-			t && (e = Q({}, e, t));
+			t && (e = Z({}, e, t));
 			for (var i = 0; i < r.length; i++) {
 				var a = r[i], o = a.animated() && (e.queue === void 0 || e.queue);
 				a.animation(e, o ? { queue: !0 } : void 0).play();
@@ -4137,7 +4137,7 @@ function yc() {
 }
 var bc = /*@__PURE__*/ Ee(yc()), xc = {
 	data: function(e) {
-		return e = Q({}, {
+		return e = Z({}, {
 			field: "data",
 			bindingEvent: "data",
 			allowBinding: !1,
@@ -4190,7 +4190,7 @@ var bc = /*@__PURE__*/ Ee(yc()), xc = {
 		};
 	},
 	removeData: function(e) {
-		return e = Q({}, {
+		return e = Z({}, {
 			field: "data",
 			event: "data",
 			triggerFnName: "trigger",
@@ -4231,7 +4231,7 @@ var bc = /*@__PURE__*/ Ee(yc()), xc = {
 	xc,
 	Sc
 ].forEach(function(e) {
-	Q(Cc, e);
+	Z(Cc, e);
 });
 var wc = {
 	animate: Cc.animate(),
@@ -4296,7 +4296,7 @@ var Ec = {
 	comparatorOp: "=|\\!=|>|>=|<|<=|\\$=|\\^=|\\*=",
 	boolOp: "\\?|\\!|\\^",
 	string: "\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'",
-	number: ce,
+	number: le,
 	meta: "degree|indegree|outdegree",
 	separator: "\\s*,\\s*",
 	descendant: "\\s+",
@@ -4510,7 +4510,7 @@ var Dc = function() {
 		}
 	}
 ].sort(function(e, t) {
-	return ge(e.selector, t.selector);
+	return _e(e.selector, t.selector);
 }), kc = function() {
 	for (var e = {}, t, n = 0; n < Oc.length; n++) t = Oc[n], e[t.selector] = t.matches;
 	return e;
@@ -4992,7 +4992,7 @@ var Gc = {
 	}] }) : F(e) ? this.parse(e) || (this.invalid = !0) : Gt("A selector must be created from a string; found "));
 }, qc = Kc.prototype;
 [Lc, Gc].forEach(function(e) {
-	return Q(qc, e);
+	return Z(qc, e);
 }), qc.text = function() {
 	return this.inputText;
 }, qc.size = function() {
@@ -5262,7 +5262,7 @@ function al(e) {
 		}
 	};
 }
-Q(il, {
+Z(il, {
 	degree: al(function(e, t) {
 		return t.source().same(t.target()) ? 2 : 1;
 	}),
@@ -5282,7 +5282,7 @@ function ol(e, t) {
 		return r;
 	};
 }
-Q(il, {
+Z(il, {
 	minDegree: ol("degree", function(e, t) {
 		return e < t;
 	}),
@@ -5301,7 +5301,7 @@ Q(il, {
 	maxOutdegree: ol("outdegree", function(e, t) {
 		return e > t;
 	})
-}), Q(il, { totalDegree: function(e) {
+}), Z(il, { totalDegree: function(e) {
 	for (var t = 0, n = this.nodes(), r = 0; r < n.length; r++) t += n[r].degree(e);
 	return t;
 } });
@@ -5341,7 +5341,7 @@ var sl, cl, ll = function(e, t, n) {
 };
 sl = cl = {
 	position: Cc.data(ul),
-	silentPosition: Cc.data(Q({}, ul, {
+	silentPosition: Cc.data(Z({}, ul, {
 		allowBinding: !1,
 		allowSetting: !0,
 		settingTriggersEvent: !1,
@@ -5674,7 +5674,7 @@ var _l = function(e) {
 						}
 						vl(a, l - T, d - T, u + T, f + T);
 					}
-				} else if (k === "bezier" || k === "unbundled-bezier" || se(k, "segments") || se(k, "taxi")) {
+				} else if (k === "bezier" || k === "unbundled-bezier" || ce(k, "segments") || ce(k, "taxi")) {
 					var N;
 					switch (k) {
 						case "bezier":
@@ -5756,7 +5756,7 @@ var _l = function(e) {
 	useCache: !0
 }, jl = Dl(Al), Ml = en(Al);
 gl.boundingBox = function(e) {
-	var t, n = e === void 0 || e.useCache === void 0 || e.useCache === !0, r = ne(function(e) {
+	var t, n = e === void 0 || e.useCache === void 0 || e.useCache === !0, r = re(function(e) {
 		var t = e._private;
 		return t.bbCache == null || t.styleDirty || t.bbCachePosKey !== Ol(e);
 	}, function(e) {
@@ -5799,7 +5799,7 @@ gl.boundingBox = function(e) {
 	return t.silentPositions(s), r && (i.dirtyCompoundBoundsCache(), i.dirtyBoundingBoxCache(), i.updateCompoundBounds(!0)), n.endBatch(), c;
 }, hl.boundingbox = hl.bb = hl.boundingBox, hl.renderedBoundingbox = hl.renderedBoundingBox;
 var Nl = gl, Pl = Fl = {}, Fl, Il = function(e) {
-	e.uppercaseName = oe(e.name), e.autoName = "auto" + e.uppercaseName, e.labelName = "label" + e.uppercaseName, e.outerName = "outer" + e.uppercaseName, e.uppercaseOuterName = oe(e.outerName), Pl[e.name] = function() {
+	e.uppercaseName = se(e.name), e.autoName = "auto" + e.uppercaseName, e.labelName = "label" + e.uppercaseName, e.outerName = "outer" + e.uppercaseName, e.uppercaseOuterName = se(e.outerName), Pl[e.name] = function() {
 		var t = this[0], n = t._private, r = n.cy._private.styleEnabled;
 		if (t) {
 			if (r) {
@@ -5876,7 +5876,7 @@ var Ll = Fl, Rl = function(e, t) {
 	} }
 }, Hl = function(e) {
 	return "rendered" + e[0].toUpperCase() + e.substr(1);
-}, Ul = Q({}, dl, Nl, Ll, Object.keys(Vl).reduce(function(e, t) {
+}, Ul = Z({}, dl, Nl, Ll, Object.keys(Vl).reduce(function(e, t) {
 	var n = Vl[t], r = Hl(t);
 	return e[t] = function() {
 		return Rl(this, n.get);
@@ -5954,7 +5954,7 @@ function Ql() {
 	this.context = t || this.context, this.listeners = [], this.emitting = 0;
 }
 var $l = Ql.prototype, eu = function(e, t, n, r, i, a, o) {
-	I(r) && (i = r, r = null), o && (a = a == null ? o : Q({}, a, o));
+	I(r) && (i = r, r = null), o && (a = a == null ? o : Z({}, a, o));
 	for (var s = L(n) ? n : n.split(/\s+/), c = 0; c < s.length; c++) {
 		var l = s[c];
 		if (!Y(l)) {
@@ -6440,7 +6440,7 @@ var du = en({ nodeDimensionsIncludeLabels: !1 }), fu = {
 			return !e.isParent();
 		}), i = this.cy(), a = t.eles, o = function(e) {
 			return e.id();
-		}, s = ne(n, o);
+		}, s = re(n, o);
 		e.emit({
 			type: "layoutstart",
 			layout: e
@@ -6464,7 +6464,7 @@ var du = en({ nodeDimensionsIncludeLabels: !1 }), fu = {
 				or(e, i.x, i.y);
 			}
 			return e;
-		}(), d = ne(function(e, n) {
+		}(), d = re(function(e, n) {
 			var r = s(e, n);
 			return l && (r = c(Math.abs(t.spacingFactor), u, r)), t.transform != null && (r = t.transform(e, r)), r;
 		}, o);
@@ -6522,7 +6522,7 @@ var du = en({ nodeDimensionsIncludeLabels: !1 }), fu = {
 		return this;
 	},
 	layout: function(e) {
-		return this.cy().makeLayout(Q({}, e, { eles: this }));
+		return this.cy().makeLayout(Z({}, e, { eles: this }));
 	}
 };
 fu.createLayout = fu.makeLayout = fu.layout;
@@ -6850,14 +6850,14 @@ var Cu = {}, wu = function(e) {
 };
 Cu.clearTraversalCache = function() {
 	for (var e = 0; e < this.length; e++) this[e]._private.traversalCache = null;
-}, Q(Cu, {
+}, Z(Cu, {
 	roots: wu({ noIncomingEdges: !0 }),
 	leaves: wu({ noOutgoingEdges: !0 }),
 	outgoers: Yc(Tu({ outgoing: !0 }), "outgoers"),
 	successors: Eu({ outgoing: !0 }),
 	incomers: Yc(Tu({ incoming: !0 }), "incomers"),
 	predecessors: Eu({})
-}), Q(Cu, {
+}), Z(Cu, {
 	neighborhood: Yc(function(e) {
 		for (var t = [], n = this.nodes(), r = 0; r < n.length; r++) for (var i = n[r], a = i.connectedEdges(), o = 0; o < a.length; o++) {
 			var s = a[o], c = s.source(), l = s.target(), u = i === c ? l : c;
@@ -6871,7 +6871,7 @@ Cu.clearTraversalCache = function() {
 	openNeighborhood: function(e) {
 		return this.neighborhood(e);
 	}
-}), Cu.neighbourhood = Cu.neighborhood, Cu.closedNeighbourhood = Cu.closedNeighborhood, Cu.openNeighbourhood = Cu.openNeighborhood, Q(Cu, {
+}), Cu.neighbourhood = Cu.neighborhood, Cu.closedNeighbourhood = Cu.closedNeighborhood, Cu.openNeighbourhood = Cu.openNeighborhood, Z(Cu, {
 	source: Yc(function(e) {
 		var t = this[0], n;
 		return t && (n = t._private.source || t.cy().collection()), n && e ? n.filter(e) : n;
@@ -6892,7 +6892,7 @@ function Du(e) {
 		return this.spawn(n, !0).filter(t);
 	};
 }
-Q(Cu, {
+Z(Cu, {
 	edgesWith: Yc(Ou(), "edgesWith"),
 	edgesTo: Yc(Ou({ thisIsSrc: !0 }), "edgesTo")
 });
@@ -6907,7 +6907,7 @@ function Ou(e) {
 		return this.spawn(n, !0);
 	};
 }
-Q(Cu, {
+Z(Cu, {
 	connectedEdges: Yc(function(e) {
 		for (var t = [], n = this, r = 0; r < n.length; r++) {
 			var i = n[r];
@@ -6929,7 +6929,7 @@ Q(Cu, {
 	codirectedEdges: Yc(ku({ codirected: !0 }), "codirectedEdges")
 });
 function ku(e) {
-	return e = Q({}, { codirected: !1 }, e), function(t) {
+	return e = Z({}, { codirected: !1 }, e), function(t) {
 		for (var n = [], r = this.edges(), i = e, a = 0; a < r.length; a++) for (var o = r[a]._private, s = o.source, c = s._private.data.id, l = o.data.target, u = s._private.edges, d = 0; d < u.length; d++) {
 			var f = u[d], p = f._private.data, m = p.target, h = p.source, g = m === l && h === c, _ = c === m && l === h;
 			(i.codirected && g || !i.codirected && (g || _)) && n.push(f);
@@ -6937,7 +6937,7 @@ function ku(e) {
 		return this.spawn(n, !0).filter(t);
 	};
 }
-Q(Cu, {
+Z(Cu, {
 	components: function(e) {
 		var t = this, n = t.cy(), r = n.collection(), i = e == null ? t.nodes() : e.nodes(), a = [];
 		e != null && i.empty() && (i = e.sources());
@@ -7294,7 +7294,7 @@ ju.instanceString = function() {
 	bu,
 	Cu
 ].forEach(function(e) {
-	Q(ju, e);
+	Z(ju, e);
 });
 var Mu = {
 	add: function(e) {
@@ -7314,7 +7314,7 @@ var Mu = {
 			for (var s = e, c = [], l = ["nodes", "edges"], u = 0, d = l.length; u < d; u++) {
 				var f = l[u], p = s[f];
 				if (L(p)) for (var m = 0, h = p.length; m < h; m++) {
-					var g = Q({ group: f }, p[m]);
+					var g = Z({ group: f }, p[m]);
 					c.push(g);
 				}
 			}
@@ -7676,7 +7676,7 @@ var Yu = { layout: function(e) {
 		Gt("No such layout `" + n + "` found.  Did you forget to import it and `cytoscape.use()` it?");
 		return;
 	}
-	return new r(Q({}, e, {
+	return new r(Z({}, e, {
 		cy: t,
 		eles: F(e.eles) ? t.$(e.eles) : e.eles == null ? t.$() : e.eles
 	}));
@@ -8111,7 +8111,7 @@ rd.applyBypass = function(e, t, n, r) {
 		r = n;
 		for (var f = Object.keys(d), p = 0; p < f.length; p++) {
 			var m = f[p], h = d[m];
-			if (h === void 0 && (h = d[ie(m)]), h !== void 0) {
+			if (h === void 0 && (h = d[ae(m)]), h !== void 0) {
 				var g = this.parse(m, h, !0);
 				g && a.push(g);
 			}
@@ -8131,7 +8131,7 @@ rd.applyBypass = function(e, t, n, r) {
 	}
 	return _;
 }, rd.overrideBypass = function(e, t, n) {
-	t = re(t);
+	t = ie(t);
 	for (var r = 0; r < e.length; r++) {
 		var i = e[r], a = i._private.style[t], o = this.properties[t].type, s = o.color, c = o.mutiple, l = a ? a.pfValue == null ? a.value : a.pfValue : null;
 		!a || !a.bypass ? this.applyBypass(i, t, n) : (a.value = n, a.pfValue != null && (a.pfValue = n), a.strValue = s ? "rgb(" + n.join(",") + ")" : c ? n.join(" ") : "" + n, this.updateStyleHints(i)), this.checkTriggers(i, t, l, n);
@@ -8166,7 +8166,7 @@ ad.getRenderedStyle = function(e, t) {
 	if (e = e[0], e) {
 		for (var r = {}, i = 0; i < n.properties.length; i++) {
 			var a = n.properties[i], o = n.getStylePropertyValue(e, a.name, t);
-			o != null && (r[a.name] = o, r[ie(a.name)] = o);
+			o != null && (r[a.name] = o, r[ae(a.name)] = o);
 		}
 		return r;
 	}
@@ -8207,7 +8207,7 @@ ad.getRenderedStyle = function(e, t) {
 }, ad.getPropsList = function(e) {
 	var t = this, n = [], r = e, i = t.properties;
 	if (r) for (var a = Object.keys(r), o = 0; o < a.length; o++) {
-		var s = a[o], c = r[s], l = i[s] || i[re(s)], u = this.parse(l.name, c);
+		var s = a[o], c = r[s], l = i[s] || i[ie(s)], u = this.parse(l.name, c);
 		u && n.push(u);
 	}
 	return n;
@@ -8308,7 +8308,7 @@ sd.appendFromString = function(e) {
 };
 var cd = {};
 (function() {
-	var e = ce, t = ue, n = fe, r = pe, i = me, a = function(e) {
+	var e = le, t = de, n = pe, r = me, i = he, a = function(e) {
 		return "^" + e + "\\s*\\(\\s*([\\w\\.]+)\\s*\\)$";
 	}, o = function(a) {
 		var o = e + "|\\w+|" + t + "|" + n + "|" + r + "|" + i;
@@ -9722,7 +9722,7 @@ var cd = {};
 }, cd.getDefaultProperties = function() {
 	var e = this._private;
 	if (e.defaultProperties != null) return e.defaultProperties;
-	for (var t = Q({
+	for (var t = Z({
 		"selection-box-color": "#ddd",
 		"selection-box-opacity": .65,
 		"selection-box-border-color": "#aaa",
@@ -10000,7 +10000,7 @@ ld.parse = function(e, t, n, r) {
 	return !i && t != null && qt(`The style property \`${e}: ${t}\` is invalid`), i && (i.name === "width" || i.name === "height") && t === "label" && qt("The style value of `label` is deprecated for `" + i.name + "`"), i;
 }, ld.parseImpl = function(e, t, n, r) {
 	var i = this;
-	e = re(e);
+	e = ie(e);
 	var a = i.properties[e], o = t, s = i.types;
 	if (!a || t === void 0) return null;
 	a.alias && (a = a.pointsTo, e = a.name);
@@ -10098,7 +10098,7 @@ ld.parse = function(e, t, n, r) {
 			if (c) {
 				var k = "px|em" + (l.allowPercent ? "|\\%" : "");
 				D && (k = D);
-				var A = t.match("^(" + ce + ")(" + k + ")?$");
+				var A = t.match("^(" + le + ")(" + k + ")?$");
 				A && (t = A[1], D = A[2] || O);
 			} else (!D || l.implicitUnits) && (D = O);
 		}
@@ -10198,7 +10198,7 @@ dd.instanceString = function() {
 	var e = this, t = arguments;
 	if (t.length === 1) for (var n = t[0], r = 0; r < e.properties.length; r++) {
 		var i = e.properties[r], a = n[i.name];
-		a === void 0 && (a = n[ie(i.name)]), a !== void 0 && this.cssRule(i.name, a);
+		a === void 0 && (a = n[ae(i.name)]), a !== void 0 && this.cssRule(i.name, a);
 	}
 	else t.length === 2 && this.cssRule(t[0], t[1]);
 	return this;
@@ -10226,7 +10226,7 @@ dd.instanceString = function() {
 	cd,
 	ld
 ].forEach(function(e) {
-	Q(dd, e);
+	Z(dd, e);
 }), ud.types = dd.types, ud.properties = dd.properties, ud.propertyGroups = dd.propertyGroups, ud.propertyGroupNames = dd.propertyGroupNames, ud.propertyGroupKeys = dd.propertyGroupKeys;
 var fd = {
 	style: function(e) {
@@ -10531,7 +10531,7 @@ var hd = {
 hd.attr = hd.data, hd.removeAttr = hd.removeData;
 var gd = function(e) {
 	var t = this;
-	e = Q({}, e);
+	e = Z({}, e);
 	var n = e.container;
 	n && !H(n) && H(n[0]) && (n = n[0]);
 	var r = n ? n._cyreg : null;
@@ -10539,7 +10539,7 @@ var gd = function(e) {
 	var i = r.readies = r.readies || [];
 	n && (n._cyreg = r), r.cy = t;
 	var a = O !== void 0 && n !== void 0 && !e.headless, o = e;
-	o.layout = Q({ name: a ? "grid" : "null" }, o.layout), o.renderer = Q({ name: a ? "canvas" : "null" }, o.renderer);
+	o.layout = Z({ name: a ? "grid" : "null" }, o.layout), o.renderer = Z({ name: a ? "canvas" : "null" }, o.renderer);
 	var s = function(e, t, n) {
 		return t === void 0 ? n === void 0 ? e : n : t;
 	}, c = this._private = {
@@ -10583,11 +10583,11 @@ var gd = function(e) {
 		max: o.maxZoom
 	});
 	var l = function(e, t) {
-		if (e.some(Z)) return Sa.all(e).then(t);
+		if (e.some(te)) return Sa.all(e).then(t);
 		t(e);
 	};
 	c.styleEnabled && t.setStyle([]);
-	var u = Q({}, o, o.renderer);
+	var u = Z({}, o, o.renderer);
 	t.initRenderer(u);
 	var d = function(e, n, r) {
 		t.notifications(!1);
@@ -10597,7 +10597,7 @@ var gd = function(e) {
 		}).one("layoutstop", function() {
 			t.one("done", r), t.emit("done");
 		});
-		var a = Q({}, t._private.options.layout);
+		var a = Z({}, t._private.options.layout);
 		a.eles = t.elements(), t.layout(a).run();
 	};
 	l([o.style, o.elements], function(e) {
@@ -10612,7 +10612,7 @@ var gd = function(e) {
 		}, o.done);
 	});
 }, _d = gd.prototype;
-Q(_d, {
+Z(_d, {
 	instanceString: function() {
 		return "core";
 	},
@@ -10661,7 +10661,7 @@ Q(_d, {
 	mount: function(e) {
 		if (e != null) {
 			var t = this, n = t._private, r = n.options;
-			return !H(e) && H(e[0]) && (e = e[0]), t.stopAnimationLoop(), t.destroyRenderer(), n.container = e, n.styleEnabled = !0, t.invalidateSize(), t.initRenderer(Q({}, r, r.renderer, { name: r.renderer.name === "null" ? "canvas" : r.renderer.name })), t.startAnimationLoop(), t.style(r.style), t.emit("mount"), t;
+			return !H(e) && H(e[0]) && (e = e[0]), t.stopAnimationLoop(), t.destroyRenderer(), n.container = e, n.styleEnabled = !0, t.invalidateSize(), t.initRenderer(Z({}, r, r.renderer, { name: r.renderer.name === "null" ? "canvas" : r.renderer.name })), t.startAnimationLoop(), t.style(r.style), t.emit("mount"), t;
 		}
 	},
 	unmount: function() {
@@ -10754,7 +10754,7 @@ Q(_d, {
 	md,
 	hd
 ].forEach(function(e) {
-	Q(_d, e);
+	Z(_d, e);
 });
 var vd = {
 	fit: !0,
@@ -10789,7 +10789,7 @@ var vd = {
 	return e.scratch("breadthfirst", t);
 };
 function Sd(e) {
-	this.options = Q({}, vd, yd, e);
+	this.options = Z({}, vd, yd, e);
 }
 Sd.prototype.run = function() {
 	var e = this.options, t = e.cy, n = e.eles, r = n.nodes().filter(function(e) {
@@ -10905,7 +10905,7 @@ Sd.prototype.run = function() {
 		return a = Math.max(1, a), i /= a, a === 0 && (i = 0), z[e.id()] = i, i;
 	}, V = function(e, t) {
 		var n = B(e) - B(t);
-		return n === 0 ? he(e.id(), t.id()) : n;
+		return n === 0 ? ge(e.id(), t.id()) : n;
 	};
 	e.depthSort !== void 0 && (V = e.depthSort);
 	for (var H = _.length, W = 0; W < H; W++) _[W].sort(V), w(W);
@@ -10927,9 +10927,9 @@ Sd.prototype.run = function() {
 	}, {
 		w: -1,
 		h: -1
-	}), ee = Math.max(H === 1 ? 0 : s ? (c.h - e.padding * 2 - X.h) / (H - 1) : (c.h - e.padding * 2 - X.h) / (H + 1), M), Z = _.reduce(function(e, t) {
+	}), ee = Math.max(H === 1 ? 0 : s ? (c.h - e.padding * 2 - X.h) / (H - 1) : (c.h - e.padding * 2 - X.h) / (H + 1), M), te = _.reduce(function(e, t) {
 		return Math.max(e, t.length);
-	}, 0), te = function(t) {
+	}, 0), ne = function(t) {
 		var n = bd(t), r = n.depth, i = n.index;
 		if (e.circle) {
 			var a = Math.min(c.w / 2 / H, c.h / 2 / H);
@@ -10940,19 +10940,19 @@ Sd.prototype.run = function() {
 				y: Y.y + o * Math.sin(l)
 			};
 		}
-		var u = _[r].length, d = Math.max(u === 1 ? 0 : s ? (c.w - e.padding * 2 - X.w) / ((e.grid ? Z : u) - 1) : (c.w - e.padding * 2 - X.w) / ((e.grid ? Z : u) + 1), M);
+		var u = _[r].length, d = Math.max(u === 1 ? 0 : s ? (c.w - e.padding * 2 - X.w) / ((e.grid ? te : u) - 1) : (c.w - e.padding * 2 - X.w) / ((e.grid ? te : u) + 1), M);
 		return {
 			x: Y.x + (i + 1 - (u + 1) / 2) * d,
 			y: Y.y + (r + 1 - (H + 1) / 2) * ee
 		};
-	}, ne = {
+	}, re = {
 		downward: 0,
 		leftward: 90,
 		upward: 180,
 		rightward: -90
 	};
-	return Object.keys(ne).indexOf(e.direction) === -1 && Gt(`Invalid direction '${e.direction}' specified for breadthfirst layout. Valid values are: ${Object.keys(ne).join(", ")}`), n.nodes().layoutPositions(this, e, function(t) {
-		return It(te(t), c, ne[e.direction]);
+	return Object.keys(re).indexOf(e.direction) === -1 && Gt(`Invalid direction '${e.direction}' specified for breadthfirst layout. Valid values are: ${Object.keys(re).join(", ")}`), n.nodes().layoutPositions(this, e, function(t) {
+		return It(ne(t), c, re[e.direction]);
 	}), this;
 };
 var Cd = {
@@ -10980,7 +10980,7 @@ var Cd = {
 	}
 };
 function wd(e) {
-	this.options = Q({}, Cd, e);
+	this.options = Z({}, Cd, e);
 }
 wd.prototype.run = function() {
 	var e = this.options, t = e, n = e.cy, r = t.eles, i = t.counterclockwise === void 0 ? t.clockwise : !t.counterclockwise, a = r.nodes().not(":parent");
@@ -11043,7 +11043,7 @@ var Td = {
 	}
 };
 function Ed(e) {
-	this.options = Q({}, Td, e);
+	this.options = Z({}, Td, e);
 }
 Ed.prototype.run = function() {
 	for (var e = this.options, t = e, n = t.counterclockwise === void 0 ? t.clockwise : !t.counterclockwise, r = e.cy, i = t.eles, a = i.nodes().not(":parent"), o = nr(t.boundingBox ? t.boundingBox : {
@@ -11143,7 +11143,7 @@ var Dd, Od = {
 	minTemp: 1
 };
 function kd(e) {
-	this.options = Q({}, Od, e), this.options.layout = this;
+	this.options = Z({}, Od, e), this.options.layout = this;
 	var t = this.options.eles.nodes(), n = this.options.eles.edges().filter(function(e) {
 		var n = e.source().data("id"), r = e.target().data("id"), i = t.some(function(e) {
 			return e.data("id") === n;
@@ -11458,7 +11458,7 @@ var Ad = function(e, t, n) {
 	}
 };
 function Zd(e) {
-	this.options = Q({}, Xd, e);
+	this.options = Z({}, Xd, e);
 }
 Zd.prototype.run = function() {
 	var e = this.options, t = e, n = e.cy, r = t.eles, i = r.nodes().not(":parent");
@@ -11540,7 +11540,7 @@ var Qd = {
 	stop: function() {}
 };
 function $d(e) {
-	this.options = Q({}, Qd, e);
+	this.options = Z({}, Qd, e);
 }
 $d.prototype.run = function() {
 	var e = this.options, t = e.eles, n = this;
@@ -11573,7 +11573,7 @@ var ef = {
 	}
 };
 function tf(e) {
-	this.options = Q({}, ef, e);
+	this.options = Z({}, ef, e);
 }
 tf.prototype.run = function() {
 	var e = this.options, t = e.eles.nodes(), n = I(e.positions);
@@ -11602,7 +11602,7 @@ var nf = {
 	}
 };
 function rf(e) {
-	this.options = Q({}, nf, e);
+	this.options = Z({}, nf, e);
 }
 rf.prototype.run = function() {
 	var e = this.options, t = e.cy, n = e.eles, r = nr(e.boundingBox ? e.boundingBox : {
@@ -11696,7 +11696,7 @@ lf.arrowShapeWidth = .3, lf.registerArrowShapes = function() {
 	}, o = function(e) {
 		return e.pstyle("width").pfValue * e.pstyle("arrow-scale").pfValue * 2;
 	}, s = function(r, s) {
-		F(s) && (s = e[s]), e[r] = Q({
+		F(s) && (s = e[s]), e[r] = Z({
 			name: r,
 			points: [
 				-.15,
@@ -12610,7 +12610,7 @@ Rf.findMidptPtsEtc = function(e, t) {
 					s.push(l);
 					continue;
 				}
-				var f = d === "unbundled-bezier" || se(d, "segments") || d === "straight" || d === "straight-triangle" || se(d, "taxi"), p = d === "unbundled-bezier" || d === "bezier", m = u.source, h = u.target, g = [m.poolIndex(), h.poolIndex()].sort(), _ = a(g, f), v = i.get(_);
+				var f = d === "unbundled-bezier" || ce(d, "segments") || d === "straight" || d === "straight-triangle" || ce(d, "taxi"), p = d === "unbundled-bezier" || d === "bezier", m = u.source, h = u.target, g = [m.poolIndex(), h.poolIndex()].sort(), _ = a(g, f), v = i.get(_);
 				v ?? (v = { eles: [] }, o.push({
 					pairId: g,
 					edgeIsUnbundled: f
@@ -12646,7 +12646,7 @@ Rf.findMidptPtsEtc = function(e, t) {
 				southeast: 0
 			};
 			for (var A = 0; A < u.eles.length; A++) {
-				var j = u.eles[A], M = j[0]._private.rscratch, N = j.pstyle("curve-style").value, P = N === "unbundled-bezier" || se(N, "segments") || se(N, "taxi"), F = !m.same(j.source());
+				var j = u.eles[A], M = j[0]._private.rscratch, N = j.pstyle("curve-style").value, P = N === "unbundled-bezier" || ce(N, "segments") || ce(N, "taxi"), F = !m.same(j.source());
 				if (!u.calculatedIntersection && m !== h && (u.hasBezier || u.hasUnbundled)) {
 					u.calculatedIntersection = !0;
 					var I = w.intersectLine(_.x, _.y, y, x, v.x, v.y, 0, E, k), L = u.srcIntn = I, R = T.intersectLine(v.x, v.y, S, C, _.x, _.y, 0, D, O), z = u.tgtIntn = R, V = u.intersectionPts = {
@@ -12763,7 +12763,7 @@ Bf.manualEndptToPx = function(e, t) {
 	var l = 2 * Math.max(i, a), u = [r.x + Math.cos(c) * l, r.y + Math.sin(c) * l];
 	return n.nodeShapes[this.getNodeShape(e)].intersectLine(r.x, r.y, i, a, u[0], u[1], 0, e.pstyle("corner-radius").value === "auto" ? "auto" : e.pstyle("corner-radius").pfValue, o);
 }, Bf.findEndpoints = function(e) {
-	var t, n, r = this, i, a = e.source()[0], o = e.target()[0], s = a.position(), c = o.position(), l = e.pstyle("target-arrow-shape").value, u = e.pstyle("source-arrow-shape").value, d = e.pstyle("target-distance-from-node").pfValue, f = e.pstyle("source-distance-from-node").pfValue, p = a._private.rscratch, m = o._private.rscratch, h = e.pstyle("curve-style").value, g = e._private.rscratch, _ = g.edgeType, v = se(h, "taxi"), y = _ === "self" || _ === "compound", b = _ === "bezier" || _ === "multibezier" || y, x = _ !== "bezier", S = _ === "straight" || _ === "segments", C = _ === "segments", w = b || x || S, T = y || v, E = e.pstyle("source-endpoint"), D = T ? "outside-to-node" : E.value, O = a.pstyle("corner-radius").value === "auto" ? "auto" : a.pstyle("corner-radius").pfValue, k = e.pstyle("target-endpoint"), A = T ? "outside-to-node" : k.value, j = o.pstyle("corner-radius").value === "auto" ? "auto" : o.pstyle("corner-radius").pfValue;
+	var t, n, r = this, i, a = e.source()[0], o = e.target()[0], s = a.position(), c = o.position(), l = e.pstyle("target-arrow-shape").value, u = e.pstyle("source-arrow-shape").value, d = e.pstyle("target-distance-from-node").pfValue, f = e.pstyle("source-distance-from-node").pfValue, p = a._private.rscratch, m = o._private.rscratch, h = e.pstyle("curve-style").value, g = e._private.rscratch, _ = g.edgeType, v = ce(h, "taxi"), y = _ === "self" || _ === "compound", b = _ === "bezier" || _ === "multibezier" || y, x = _ !== "bezier", S = _ === "straight" || _ === "segments", C = _ === "segments", w = b || x || S, T = y || v, E = e.pstyle("source-endpoint"), D = T ? "outside-to-node" : E.value, O = a.pstyle("corner-radius").value === "auto" ? "auto" : a.pstyle("corner-radius").pfValue, k = e.pstyle("target-endpoint"), A = T ? "outside-to-node" : k.value, j = o.pstyle("corner-radius").value === "auto" ? "auto" : o.pstyle("corner-radius").pfValue;
 	g.srcManEndpt = E, g.tgtManEndpt = k;
 	var M, N, P, F, I = ((k == null || (t = k.pfValue) == null ? void 0 : t.length) === 2 ? k.pfValue : null) ?? [0, 0], L = ((E == null || (n = E.pfValue) == null ? void 0 : n.length) === 2 ? E.pfValue : null) ?? [0, 0];
 	if (b) {
@@ -12792,42 +12792,42 @@ Bf.manualEndptToPx = function(e, t) {
 			G + q
 		], c.x, c.y);
 		if (X.length > 0) {
-			var ee = s, Z = Xn(ee, Rn(i)), te = Xn(ee, Rn(X)), ne = Z;
-			te < Z && (i = X, ne = te), X.length > 2 && Xn(ee, {
+			var ee = s, te = Xn(ee, Rn(i)), ne = Xn(ee, Rn(X)), re = te;
+			ne < te && (i = X, re = ne), X.length > 2 && Xn(ee, {
 				x: X[2],
 				y: X[3]
-			}) < ne && (i = [X[2], X[3]]);
+			}) < re && (i = [X[2], X[3]]);
 		}
 	}
-	var re = Lr(i, M, r.arrowShapes[l].spacing(e) + d), ie = Lr(i, M, r.arrowShapes[l].gap(e) + d);
-	if (g.endX = ie[0], g.endY = ie[1], g.arrowEndX = re[0], g.arrowEndY = re[1], D === "inside-to-node") i = [s.x, s.y];
+	var ie = Lr(i, M, r.arrowShapes[l].spacing(e) + d), ae = Lr(i, M, r.arrowShapes[l].gap(e) + d);
+	if (g.endX = ae[0], g.endY = ae[1], g.arrowEndX = ie[0], g.arrowEndY = ie[1], D === "inside-to-node") i = [s.x, s.y];
 	else if (E.units) i = this.manualEndptToPx(a, E);
 	else if (D === "outside-to-line") i = g.srcIntn;
 	else if (D === "outside-to-node" || D === "outside-to-node-or-label" ? F = N : (D === "outside-to-line" || D === "outside-to-line-or-label") && (F = [c.x, c.y]), i = r.nodeShapes[this.getNodeShape(a)].intersectLine(s.x, s.y, a.outerWidth(), a.outerHeight(), F[0], F[1], 0, O, p), D === "outside-to-node-or-label" || D === "outside-to-line-or-label") {
-		var ae = a._private.rscratch, oe = ae.labelWidth, ce = ae.labelHeight, le = ae.labelX, ue = ae.labelY, de = oe / 2, fe = ce / 2, pe = a.pstyle("text-valign").value;
-		pe = pl(pe), pe === "top" ? ue -= fe : pe === "bottom" && (ue += fe);
-		var me = a.pstyle("text-halign").value;
-		me = fl(me), me === "left" ? le -= de : me === "right" && (le += de);
-		var he = Fr(F[0], F[1], [
-			le - de,
+		var oe = a._private.rscratch, se = oe.labelWidth, le = oe.labelHeight, ue = oe.labelX, de = oe.labelY, fe = se / 2, pe = le / 2, me = a.pstyle("text-valign").value;
+		me = pl(me), me === "top" ? de -= pe : me === "bottom" && (de += pe);
+		var he = a.pstyle("text-halign").value;
+		he = fl(he), he === "left" ? ue -= fe : he === "right" && (ue += fe);
+		var ge = Fr(F[0], F[1], [
 			ue - fe,
-			le + de,
-			ue - fe,
-			le + de,
+			de - pe,
 			ue + fe,
-			le - de,
-			ue + fe
+			de - pe,
+			ue + fe,
+			de + pe,
+			ue - fe,
+			de + pe
 		], s.x, s.y);
-		if (he.length > 0) {
-			var ge = c, Q = Xn(ge, Rn(i)), _e = Xn(ge, Rn(he)), ve = Q;
-			_e < Q && (i = [he[0], he[1]], ve = _e), he.length > 2 && Xn(ge, {
-				x: he[2],
-				y: he[3]
-			}) < ve && (i = [he[2], he[3]]);
+		if (ge.length > 0) {
+			var _e = c, Z = Xn(_e, Rn(i)), ve = Xn(_e, Rn(ge)), ye = Z;
+			ve < Z && (i = [ge[0], ge[1]], ye = ve), ge.length > 2 && Xn(_e, {
+				x: ge[2],
+				y: ge[3]
+			}) < ye && (i = [ge[2], ge[3]]);
 		}
 	}
-	var ye = Lr(i, N, r.arrowShapes[u].spacing(e) + f), be = Lr(i, N, r.arrowShapes[u].gap(e) + f);
-	g.startX = be[0], g.startY = be[1], g.arrowStartX = ye[0], g.arrowStartY = ye[1], w && (g.badLine = !B(g.startX) || !B(g.startY) || !B(g.endX) || !B(g.endY));
+	var Q = Lr(i, N, r.arrowShapes[u].spacing(e) + f), be = Lr(i, N, r.arrowShapes[u].gap(e) + f);
+	g.startX = be[0], g.startY = be[1], g.arrowStartX = Q[0], g.arrowStartY = Q[1], w && (g.badLine = !B(g.startX) || !B(g.startY) || !B(g.endX) || !B(g.endY));
 }, Bf.getSourceEndpoint = function(e) {
 	var t = e[0]._private.rscratch;
 	switch (this.recalculateRenderedStyle(e), t.edgeType) {
@@ -13224,7 +13224,7 @@ var Qf = {};
 	Xf,
 	Zf
 ].forEach(function(e) {
-	Q(Qf, e);
+	Z(Qf, e);
 });
 var $f = {};
 $f.getCachedImage = function(e, t, n) {
@@ -13792,8 +13792,8 @@ rp.registerBinding = function(e, t, n, r) {
 			}
 		}
 	}, !1);
-	var Z;
-	e.registerBinding(t, "touchmove", Z = function(t) {
+	var te;
+	e.registerBinding(t, "touchmove", te = function(t) {
 		var n = e.touchData.capture;
 		if (n || w(t)) {
 			var r = e.selection, a = e.cy, s = e.touchData.now, c = e.touchData.earlier, l = a.zoom();
@@ -13851,17 +13851,17 @@ rp.registerBinding = function(e, t, n, r) {
 				}
 				var K = e.touchData.start, x = t.touches[0].clientX - W, S = t.touches[0].clientY - G, C = t.touches[1].clientX - W, T = t.touches[1].clientY - G, q = Y(x, S, C, T), ee = q / z;
 				if (J) {
-					var Z = x - F, te = S - I, ne = C - L, re = T - R, ie = (Z + ne) / 2, ae = (te + re) / 2, oe = a.zoom(), se = oe * ee, ce = a.pan(), le = U[0] * oe + ce.x, ue = U[1] * oe + ce.y, de = {
-						x: -se / oe * (le - ce.x - ie) + le,
-						y: -se / oe * (ue - ce.y - ae) + ue
+					var te = x - F, ne = S - I, re = C - L, ie = T - R, ae = (te + re) / 2, oe = (ne + ie) / 2, se = a.zoom(), ce = se * ee, le = a.pan(), ue = U[0] * se + le.x, de = U[1] * se + le.y, fe = {
+						x: -ce / se * (ue - le.x - ae) + ue,
+						y: -ce / se * (de - le.y - oe) + de
 					};
 					if (K && K.active()) {
 						var N = e.dragData.touchDragEles;
 						h(N), e.redrawHint("drag", !0), e.redrawHint("eles", !0), K.unactivate().emit(d("freeon")), N && N.emit(d("free")), e.dragData.didDrag && (K.emit(d("dragfreeon")), N && N.emit(d("dragfree")));
 					}
 					a.viewport({
-						zoom: se,
-						pan: de,
+						zoom: ce,
+						pan: fe,
 						cancelOnFailedZoom: !0
 					}), a.emit(d("pinchzoom")), z = q, F = x, I = S, L = C, R = T, e.pinching = !0;
 				}
@@ -13878,42 +13878,42 @@ rp.registerBinding = function(e, t, n, r) {
 					s[4] = u[0], s[5] = u[1];
 				}
 			} else if (t.touches[0] && !e.touchData.didSelect) {
-				var fe = e.touchData.start, pe = e.touchData.last, M;
-				if (!e.hoverData.draggingEles && !e.swipePanning && (M = e.findNearestElement(s[0], s[1], !0, !0)), n && fe != null && t.preventDefault(), n && fe != null && e.nodeIsDraggable(fe)) {
+				var pe = e.touchData.start, me = e.touchData.last, M;
+				if (!e.hoverData.draggingEles && !e.swipePanning && (M = e.findNearestElement(s[0], s[1], !0, !0)), n && pe != null && t.preventDefault(), n && pe != null && e.nodeIsDraggable(pe)) {
 					if (m) {
-						var N = e.dragData.touchDragEles, me = !e.dragData.didDrag;
-						me && p(N, { inDragLayer: !0 }), e.dragData.didDrag = !0;
-						var he = {
+						var N = e.dragData.touchDragEles, he = !e.dragData.didDrag;
+						he && p(N, { inDragLayer: !0 }), e.dragData.didDrag = !0;
+						var ge = {
 							x: 0,
 							y: 0
 						};
-						if (B(g[0]) && B(g[1]) && (he.x += g[0], he.y += g[1], me)) {
+						if (B(g[0]) && B(g[1]) && (ge.x += g[0], ge.y += g[1], he)) {
 							e.redrawHint("eles", !0);
-							var ge = e.touchData.dragDelta;
-							ge && B(ge[0]) && B(ge[1]) && (he.x += ge[0], he.y += ge[1]);
+							var _e = e.touchData.dragDelta;
+							_e && B(_e[0]) && B(_e[1]) && (ge.x += _e[0], ge.y += _e[1]);
 						}
-						e.hoverData.draggingEles = !0, N.silentShift(he).emit(d("position")).emit(d("drag")), e.redrawHint("drag", !0), e.touchData.startPosition[0] == c[0] && e.touchData.startPosition[1] == c[1] && e.redrawHint("eles", !0), e.redraw();
+						e.hoverData.draggingEles = !0, N.silentShift(ge).emit(d("position")).emit(d("drag")), e.redrawHint("drag", !0), e.touchData.startPosition[0] == c[0] && e.touchData.startPosition[1] == c[1] && e.redrawHint("eles", !0), e.redraw();
 					} else {
-						var ge = e.touchData.dragDelta = e.touchData.dragDelta || [];
-						ge.length === 0 ? (ge.push(g[0]), ge.push(g[1])) : (ge[0] += g[0], ge[1] += g[1]);
+						var _e = e.touchData.dragDelta = e.touchData.dragDelta || [];
+						_e.length === 0 ? (_e.push(g[0]), _e.push(g[1])) : (_e[0] += g[0], _e[1] += g[1]);
 					}
 				}
-				if (i(fe || M, [
+				if (i(pe || M, [
 					"touchmove",
 					"tapdrag",
 					"vmousemove"
 				], t, {
 					x: s[0],
 					y: s[1]
-				}), (!fe || !fe.grabbed()) && M != pe && (pe && pe.emit(d("tapdragout")), M && M.emit(d("tapdragover"))), e.touchData.last = M, n) for (var P = 0; P < s.length; P++) s[P] && e.touchData.startPosition[P] && m && (e.touchData.singleTouchMoved = !0);
-				if (n && (fe == null || fe.pannable()) && a.panningEnabled() && a.userPanningEnabled()) {
-					o(fe, e.touchData.starts) && (t.preventDefault(), e.data.bgActivePosistion || (e.data.bgActivePosistion = Rn(e.touchData.startPosition)), e.swipePanning ? (a.panBy({
+				}), (!pe || !pe.grabbed()) && M != me && (me && me.emit(d("tapdragout")), M && M.emit(d("tapdragover"))), e.touchData.last = M, n) for (var P = 0; P < s.length; P++) s[P] && e.touchData.startPosition[P] && m && (e.touchData.singleTouchMoved = !0);
+				if (n && (pe == null || pe.pannable()) && a.panningEnabled() && a.userPanningEnabled()) {
+					o(pe, e.touchData.starts) && (t.preventDefault(), e.data.bgActivePosistion || (e.data.bgActivePosistion = Rn(e.touchData.startPosition)), e.swipePanning ? (a.panBy({
 						x: g[0] * l,
 						y: g[1] * l
 					}), a.emit(d("dragpan"))) : m && (e.swipePanning = !0, a.panBy({
 						x: v * l,
 						y: b * l
-					}), a.emit(d("dragpan")), fe && (fe.unactivate(), e.redrawHint("select", !0), e.touchData.start = null)));
+					}), a.emit(d("dragpan")), pe && (pe.unactivate(), e.redrawHint("select", !0), e.touchData.start = null)));
 					var u = e.projectIntoViewport(t.touches[0].clientX, t.touches[0].clientY);
 					s[0] = u[0], s[1] = u[1];
 				}
@@ -13922,13 +13922,13 @@ rp.registerBinding = function(e, t, n, r) {
 			n && t.touches.length > 0 && !e.hoverData.draggingEles && !e.swipePanning && e.data.bgActivePosistion != null && (e.data.bgActivePosistion = void 0, e.redrawHint("select", !0), e.redraw());
 		}
 	}, !1);
-	var te;
-	e.registerBinding(t, "touchcancel", te = function(t) {
+	var ne;
+	e.registerBinding(t, "touchcancel", ne = function(t) {
 		var n = e.touchData.start;
 		e.touchData.capture = !1, n && n.unactivate();
 	});
-	var ne, re, ie, ae;
-	if (e.registerBinding(t, "touchend", ne = function(t) {
+	var re, ie, ae, oe;
+	if (e.registerBinding(t, "touchend", re = function(t) {
 		var r = e.touchData.start;
 		if (e.touchData.capture) t.touches.length === 0 && (e.touchData.capture = !1), t.preventDefault();
 		else return;
@@ -14002,15 +14002,15 @@ rp.registerBinding = function(e, t, n, r) {
 			e.touchData.singleTouchMoved || (r || o.$(":selected").unselect(["tapunselect"]), i(r, ["tap", "vclick"], t, {
 				x: c[0],
 				y: c[1]
-			}), re = !1, t.timeStamp - ae <= o.multiClickDebounceTime() ? (ie && clearTimeout(ie), re = !0, ae = null, i(r, ["dbltap", "vdblclick"], t, {
+			}), ie = !1, t.timeStamp - oe <= o.multiClickDebounceTime() ? (ae && clearTimeout(ae), ie = !0, oe = null, i(r, ["dbltap", "vdblclick"], t, {
 				x: c[0],
 				y: c[1]
-			})) : (ie = setTimeout(function() {
-				re || i(r, ["onetap", "voneclick"], t, {
+			})) : (ae = setTimeout(function() {
+				ie || i(r, ["onetap", "voneclick"], t, {
 					x: c[0],
 					y: c[1]
 				});
-			}, o.multiClickDebounceTime()), ae = t.timeStamp)), r != null && !e.dragData.didDrag && r._private.selectable && x < e.touchTapThreshold2 && !e.pinching && (o.selectionType() === "single" ? (o.$(n).unmerge(r).unselect(["tapunselect"]), r.select(["tapselect"])) : r.selected() ? r.unselect(["tapunselect"]) : r.select(["tapselect"]), e.redrawHint("eles", !0)), e.touchData.singleTouchMoved = !0;
+			}, o.multiClickDebounceTime()), oe = t.timeStamp)), r != null && !e.dragData.didDrag && r._private.selectable && x < e.touchTapThreshold2 && !e.pinching && (o.selectionType() === "single" ? (o.$(n).unmerge(r).unselect(["tapunselect"]), r.select(["tapselect"])) : r.selected() ? r.unselect(["tapunselect"]) : r.select(["tapselect"]), e.redrawHint("eles", !0)), e.touchData.singleTouchMoved = !0;
 		}
 		for (var S = 0; S < c.length; S++) l[S] = c[S];
 		e.dragData.didDrag = !1, t.touches.length === 0 && (e.touchData.dragDelta = [], e.touchData.startPosition = [
@@ -14022,7 +14022,7 @@ rp.registerBinding = function(e, t, n, r) {
 			null
 		], e.touchData.startGPosition = null, e.touchData.didSelect = !1), t.touches.length < 2 && (t.touches.length === 1 && (e.touchData.startGPosition = [t.touches[0].clientX, t.touches[0].clientY]), e.pinching = !1, e.redrawHint("eles", !0), e.redraw());
 	}, !1), typeof TouchEvent > "u") {
-		var oe = [], se = function(e) {
+		var se = [], ce = function(e) {
 			return {
 				clientX: e.clientX,
 				clientY: e.clientY,
@@ -14036,38 +14036,38 @@ rp.registerBinding = function(e, t, n, r) {
 				screenY: e.screenY,
 				target: e.target
 			};
-		}, ce = function(e) {
+		}, le = function(e) {
 			return {
 				event: e,
-				touch: se(e)
+				touch: ce(e)
 			};
-		}, le = function(e) {
-			oe.push(ce(e));
 		}, ue = function(e) {
-			for (var t = 0; t < oe.length; t++) if (oe[t].event.pointerId === e.pointerId) {
-				oe.splice(t, 1);
+			se.push(le(e));
+		}, de = function(e) {
+			for (var t = 0; t < se.length; t++) if (se[t].event.pointerId === e.pointerId) {
+				se.splice(t, 1);
 				return;
 			}
-		}, de = function(e) {
-			var t = oe.filter(function(t) {
+		}, fe = function(e) {
+			var t = se.filter(function(t) {
 				return t.event.pointerId === e.pointerId;
 			})[0];
-			t.event = e, t.touch = se(e);
-		}, fe = function(e) {
-			e.touches = oe.map(function(e) {
+			t.event = e, t.touch = ce(e);
+		}, pe = function(e) {
+			e.touches = se.map(function(e) {
 				return e.touch;
 			});
-		}, pe = function(e) {
+		}, me = function(e) {
 			return e.pointerType === "mouse" || e.pointerType === 4;
 		};
 		e.registerBinding(e.container, "pointerdown", function(e) {
-			pe(e) || (e.preventDefault(), le(e), fe(e), ee(e));
+			me(e) || (e.preventDefault(), ue(e), pe(e), ee(e));
 		}), e.registerBinding(e.container, "pointerup", function(e) {
-			pe(e) || (ue(e), fe(e), ne(e));
+			me(e) || (de(e), pe(e), re(e));
 		}), e.registerBinding(e.container, "pointercancel", function(e) {
-			pe(e) || (ue(e), fe(e), te(e));
+			me(e) || (de(e), pe(e), ne(e));
 		}), e.registerBinding(e.container, "pointermove", function(e) {
-			pe(e) || (e.preventDefault(), de(e), fe(e), Z(e));
+			me(e) || (e.preventDefault(), fe(e), pe(e), te(e));
 		});
 	}
 };
@@ -14588,7 +14588,7 @@ cp.clientFunctions = [
 	ip,
 	ap
 ].forEach(function(e) {
-	Q(cp, e);
+	Z(cp, e);
 });
 var lp = 1e3 / 60, up = { setupDequeueing: function(e) {
 	return function() {
@@ -14778,7 +14778,7 @@ var lp = 1e3 / 60, up = { setupDequeueing: function(e) {
 	var n = this;
 	n.renderer = e, n.onDequeues = [];
 	var r = jp(t);
-	Q(n, r), n.lookup = new dp(r.getKey, r.doesEleInvalidateKey), n.setupDequeueing();
+	Z(n, r), n.lookup = new dp(r.getKey, r.doesEleInvalidateKey), n.setupDequeueing();
 }, Np = Mp.prototype;
 Np.reasons = Ap, Np.getTextureQueue = function(e) {
 	var t = this;
@@ -15588,16 +15588,16 @@ ym.drawNode = function(e, t, n) {
 				y[s] && b[s].complete && !b[s].error && (a++, o.drawInscribedImage(e, b[s], t, s, n));
 			}
 			l.backgrounding = a !== x, i !== l.backgrounding && t.updateStyle(!1);
-		}, Z = function() {
-			var n = arguments.length > 0 && arguments[0] !== void 0 && arguments[0], r = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : f;
-			o.hasPie(t) && (o.drawPie(e, t, r), n && (p || o.nodeShapes[o.getNodeShape(t)].draw(e, d.x, d.y, s, c, H, u)));
 		}, te = function() {
 			var n = arguments.length > 0 && arguments[0] !== void 0 && arguments[0], r = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : f;
-			o.hasStripe(t) && (e.save(), p ? e.clip(u.pathCache) : (o.nodeShapes[o.getNodeShape(t)].draw(e, d.x, d.y, s, c, H, u), e.clip()), o.drawStripe(e, t, r), e.restore(), n && (p || o.nodeShapes[o.getNodeShape(t)].draw(e, d.x, d.y, s, c, H, u)));
+			o.hasPie(t) && (o.drawPie(e, t, r), n && (p || o.nodeShapes[o.getNodeShape(t)].draw(e, d.x, d.y, s, c, H, u)));
 		}, ne = function() {
+			var n = arguments.length > 0 && arguments[0] !== void 0 && arguments[0], r = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : f;
+			o.hasStripe(t) && (e.save(), p ? e.clip(u.pathCache) : (o.nodeShapes[o.getNodeShape(t)].draw(e, d.x, d.y, s, c, H, u), e.clip()), o.drawStripe(e, t, r), e.restore(), n && (p || o.nodeShapes[o.getNodeShape(t)].draw(e, d.x, d.y, s, c, H, u)));
+		}, re = function() {
 			var t = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : f, n = (T > 0 ? T : -T) * t, r = T > 0 ? 0 : 255;
 			T !== 0 && (o.colorFillStyle(e, r, r, r, n), p ? e.fill(m) : e.fill());
-		}, re = function() {
+		}, ie = function() {
 			if (E > 0) {
 				if (e.lineWidth = E, e.lineCap = j, e.lineJoin = A, e.setLineDash) switch (k) {
 					case "dotted":
@@ -15624,7 +15624,7 @@ ym.drawNode = function(e, t, n) {
 				}
 				e.setLineDash && e.setLineDash([]);
 			}
-		}, ie = function() {
+		}, ae = function() {
 			if (I > 0) {
 				if (e.lineWidth = I, e.lineCap = "butt", e.setLineDash) switch (R) {
 					case "dotted":
@@ -15688,18 +15688,18 @@ ym.drawNode = function(e, t, n) {
 				}
 				e.setLineDash && e.setLineDash([]);
 			}
-		}, ae = function() {
-			i && o.drawNodeOverlay(e, t, d, s, c);
 		}, oe = function() {
-			i && o.drawNodeUnderlay(e, t, d, s, c);
+			i && o.drawNodeOverlay(e, t, d, s, c);
 		}, se = function() {
+			i && o.drawNodeUnderlay(e, t, d, s, c);
+		}, ce = function() {
 			o.drawElementText(e, t, null, r);
 		};
 		if (t.pstyle("ghost").value === "yes") {
-			var ce = t.pstyle("ghost-offset-x").pfValue, le = t.pstyle("ghost-offset-y").pfValue, ue = t.pstyle("ghost-opacity").value, de = ue * f;
-			e.translate(ce, le), G(), ie(), U(ue * D), X(), ee(de, !0), W(ue * F), re(), Z(T !== 0 || E !== 0), te(T !== 0 || E !== 0), ee(de, !1), ne(de), e.translate(-ce, -le);
+			var le = t.pstyle("ghost-offset-x").pfValue, ue = t.pstyle("ghost-offset-y").pfValue, de = t.pstyle("ghost-opacity").value, fe = de * f;
+			e.translate(le, ue), G(), ae(), U(de * D), X(), ee(fe, !0), W(de * F), ie(), te(T !== 0 || E !== 0), ne(T !== 0 || E !== 0), ee(fe, !1), re(fe), e.translate(-le, -ue);
 		}
-		p && e.translate(-d.x, -d.y), oe(), p && e.translate(d.x, d.y), G(), ie(), U(), X(), ee(f, !0), W(), re(), Z(T !== 0 || E !== 0), te(T !== 0 || E !== 0), ee(f, !1), ne(), p && e.translate(-d.x, -d.y), se(), ae(), n && e.translate(_.x1, _.y1);
+		p && e.translate(-d.x, -d.y), se(), p && e.translate(d.x, d.y), G(), ae(), U(), X(), ee(f, !0), W(), ie(), te(T !== 0 || E !== 0), ne(T !== 0 || E !== 0), ee(f, !1), re(), p && e.translate(-d.x, -d.y), ce(), oe(), n && e.translate(_.x1, _.y1);
 	}
 };
 var bm = function(e) {
@@ -16432,7 +16432,7 @@ var eh = /*#__PURE__*/ function() {
 			value: function(e, t) {
 				var n = t.collection;
 				if (!this.collections.has(n)) throw Error(`invalid atlas collection name '${n}'`);
-				var r = Q({
+				var r = Z({
 					type: e,
 					atlasCollection: this.collections.get(n)
 				}, t);
@@ -17004,7 +17004,7 @@ var eh = /*#__PURE__*/ function() {
 			get: function() {
 				var e = this;
 				return this._buffers ||= Object.keys(this).filter(function(e) {
-					return se(e, "Buffer");
+					return ce(e, "Buffer");
 				}).map(function(t) {
 					return e[t];
 				}), this._buffers;
@@ -17742,7 +17742,7 @@ function Jh(e) {
 		"-webkit-tap-highlight-color": "rgba(0,0,0,0)",
 		"outline-style": "none"
 	};
-	te() && (s["-ms-touch-action"] = "none", s["touch-action"] = "none");
+	ne() && (s["-ms-touch-action"] = "none", s["touch-action"] = "none");
 	for (var c = 0; c < qh.CANVAS_LAYERS; c++) {
 		var l = t.data.canvases[c] = n.createElement("canvas"), u = qh.CANVAS_TYPES[c];
 		t.data.contexts[c] = l.getContext(u), t.data.contexts[c] || Gt("Could not create canvas of type " + u), Object.keys(s).forEach(function(e) {
@@ -17939,7 +17939,7 @@ qh.path2dEnabled = function(e) {
 	Vh,
 	Gh
 ].forEach(function(e) {
-	Q(qh, e);
+	Z(qh, e);
 });
 var Xh = [{
 	type: "layout",
@@ -18011,7 +18011,7 @@ function $h(e, t, n) {
 				return d(e);
 			}
 		};
-		Q(o, {
+		Z(o, {
 			createEmitter: function() {
 				return this._private.emitter = new Ql(f, this), this;
 			},
@@ -18121,7 +18121,7 @@ ag.instanceString = function() {
 	else if (R(e)) for (var r = e, i = Object.keys(r), a = 0; a < i.length; a++) {
 		var o = i[a], s = r[o];
 		if (s != null) {
-			var c = ud.properties[o] || ud.properties[ie(o)];
+			var c = ud.properties[o] || ud.properties[ae(o)];
 			if (c != null) {
 				var l = c.name, u = s;
 				this[n].properties.push({
@@ -18177,19 +18177,55 @@ function dg(e, t) {
 		site: o
 	};
 }
-function fg(e, t) {
-	let n = /* @__PURE__ */ new Map();
-	for (let r of e) {
-		if (!t.has(r.source) || !t.has(r.target)) continue;
-		let e = [[r.source, r.sourcePortId], [r.target, r.targetPortId]], i = JSON.stringify(e[0]) > JSON.stringify(e[1]), a = r.sourcePortId && r.targetPortId ? JSON.stringify(i ? e.reverse() : e) : `unresolved:${r.id}`, o = n.get(a), s = !i, c = o && JSON.stringify([o.source, o.sourcePortId]) <= JSON.stringify([o.target, o.targetPortId]);
-		(!o || s && !c || s === c && (r.sampledAt ?? 0) > (o.sampledAt ?? 0)) && n.set(a, {
-			...r,
-			id: a
+var fg = (e, t) => JSON.stringify([e, t]);
+function pg(e, t) {
+	let n = /* @__PURE__ */ new Map(), r = (e, t, r) => {
+		let i = n.get(e), a = i && fg(i.source, i.sourcePortId) <= fg(i.target, i.targetPortId);
+		(!i || r && !a || r === a && (t.sampledAt ?? 0) > (i.sampledAt ?? 0)) && n.set(e, {
+			...t,
+			id: e
+		});
+	}, i = (e) => {
+		let t = [[e.source, e.sourcePortId], [e.target, e.targetPortId]], n = JSON.stringify(t[0]) > JSON.stringify(t[1]);
+		return {
+			key: JSON.stringify(n ? t.reverse() : t),
+			canonical: !n
+		};
+	}, a = [];
+	for (let n of e) {
+		if (!t.has(n.source) || !t.has(n.target)) continue;
+		if (!n.sourcePortId || !n.targetPortId) {
+			a.push(n);
+			continue;
+		}
+		let { key: e, canonical: o } = i(n);
+		r(e, n, o);
+	}
+	let o = new Set([...n.values()].flatMap((e) => [fg(e.source, e.sourcePortId), fg(e.target, e.targetPortId)])), s = /* @__PURE__ */ new Map();
+	for (let e of a) {
+		if (e.sourcePortId && o.has(fg(e.source, e.sourcePortId))) continue;
+		let t = JSON.stringify([e.source, e.target].sort());
+		s.set(t, [...s.get(t) ?? [], e]);
+	}
+	for (let e of s.values()) {
+		let t = e.filter((e) => e.source < e.target), a = e.filter((e) => e.source > e.target);
+		if (t.length === 1 && a.length === 1 && t[0].sourcePortId && a[0].sourcePortId) {
+			let [e, n] = [t[0], a[0]], o = {
+				...e,
+				targetPortId: n.sourcePortId,
+				targetPort: n.sourcePort
+			}, { key: s, canonical: c } = i(o);
+			r(s, o, c);
+			continue;
+		}
+		for (let t of e) n.set(`unresolved:${t.id}`, {
+			...t,
+			id: `unresolved:${t.id}`
 		});
 	}
 	return [...n.values()].sort((e, t) => e.id.localeCompare(t.id));
 }
-function pg(e) {
+function mg(e) {
 	let t = e.devices.map((t) => ({
 		...t,
 		...dg(t, e.config),
@@ -18203,7 +18239,7 @@ function pg(e) {
 			name: e.name,
 			deviceIds: t
 		}] : [];
-	}).sort((e, t) => e.name.localeCompare(t.name, void 0, { numeric: !0 }) || e.id.localeCompare(t.id)), i = fg(e.links, new Set(n.keys())), a = new Map(t.map((e) => [e.id, /* @__PURE__ */ new Set()]));
+	}).sort((e, t) => e.name.localeCompare(t.name, void 0, { numeric: !0 }) || e.id.localeCompare(t.id)), i = pg(e.links, new Set(n.keys())), a = new Map(t.map((e) => [e.id, /* @__PURE__ */ new Set()]));
 	for (let e of i) a.get(e.source).add(e.target), a.get(e.target).add(e.source);
 	let o = t.filter((e) => e.role === "AGG");
 	for (let e of o) e.tier = 0, e.reachable = !0;
@@ -18219,7 +18255,7 @@ function pg(e) {
 		deviceGroups: r
 	};
 }
-function mg(e) {
+function hg(e) {
 	let t = new Map(e.nodes.map((e) => [e.id, e.tier])), n = /* @__PURE__ */ new Map();
 	for (let r of e.links) {
 		if (t.get(r.source) !== t.get(r.target)) continue;
@@ -18232,12 +18268,12 @@ function mg(e) {
 	});
 	return r;
 }
-var hg = {
+var gg = {
 	normal: "#6485b6",
 	warning: "#cb9a28",
 	high: "#e03131"
 };
-function gg(e, t, n) {
+function _g(e, t, n) {
 	if (e.status === "down") return {
 		label: "DOWN",
 		color: "#e05b65",
@@ -18269,17 +18305,17 @@ function gg(e, t, n) {
 	let r = Math.max(e.inBps, e.outBps) / e.speedBps * 100, i = Math.round(r);
 	return {
 		label: `${i}%`,
-		color: i > 70 ? hg.high : i >= 50 ? hg.warning : hg.normal,
+		color: i > 70 ? gg.high : i >= 50 ? gg.warning : gg.normal,
 		state: "up",
 		utilization: r
 	};
 }
 //#endregion
 //#region frontend/canvas-style.ts
-function _g(e) {
+function vg(e) {
 	return e === null || !Number.isFinite(e) ? "N/A" : e >= 1e9 ? `${(e / 1e9).toFixed(2)} Gbps` : e >= 1e6 ? `${(e / 1e6).toFixed(1)} Mbps` : `${Math.round(e / 1e3)} Kbps`;
 }
-var vg = (e) => e === "down" ? "#e05b65" : e === "up" ? "#36b89a" : "#8a96a9", yg = (e) => {
+var yg = (e) => e === "down" ? "#e05b65" : e === "up" ? "#36b89a" : "#8a96a9", bg = (e) => {
 	let t = getComputedStyle(e), n = (e, n) => t.getPropertyValue(e).trim() || n;
 	return {
 		color: n,
@@ -18290,8 +18326,8 @@ var vg = (e) => e === "down" ? "#e05b65" : e === "up" ? "#36b89a" : "#8a96a9", y
 		accent: n("--accent", "#246b89")
 	};
 };
-function bg(e) {
-	let { color: t, panel: n, ink: r, line: i } = yg(e);
+function xg(e) {
+	let { color: t, panel: n, ink: r, line: i } = bg(e);
 	return [
 		{
 			selector: "node",
@@ -18374,10 +18410,10 @@ function bg(e) {
 		}
 	];
 }
-function xg(e) {
-	let { ink: t, muted: n, accent: r } = yg(e);
+function Sg(e) {
+	let { ink: t, muted: n, accent: r } = bg(e);
 	return [
-		...bg(e),
+		...xg(e),
 		{
 			selector: "node, edge",
 			style: { "z-index-compare": "manual" }
@@ -18440,7 +18476,7 @@ function xg(e) {
 		}
 	];
 }
-function Sg(e, t) {
+function Cg(e, t) {
 	let n = e.dataset.hostTheme === "true", r = window.matchMedia("(prefers-color-scheme: dark)"), i, a = "";
 	function o() {
 		let o = n ? document.documentElement.classList.contains("dark") : i ?? r.matches, s = n ? getComputedStyle(document.body).backgroundColor : "", c = `${o}|${s}`;
@@ -18455,32 +18491,32 @@ function Sg(e, t) {
 }
 //#endregion
 //#region frontend/canvas-tools.ts
-var Cg = 2, wg = 8e3;
-async function Tg(e, t, n) {
+var wg = 2, Tg = 8e3;
+async function Eg(e, t, n) {
 	if (!e.elements(":visible").length) throw Error("There is nothing on the map to export.");
 	let r = getComputedStyle(t).getPropertyValue("--bg").trim() || "#ffffff", i = await e.png({
 		output: "blob-promise",
 		full: !0,
-		scale: Cg,
-		maxWidth: wg,
-		maxHeight: wg,
+		scale: wg,
+		maxWidth: Tg,
+		maxHeight: Tg,
 		bg: r
 	}), a = URL.createObjectURL(i);
 	try {
 		let e = document.createElement("a");
-		e.href = a, e.download = `${Eg(n)}-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.png`, document.body.append(e), e.click(), e.remove();
+		e.href = a, e.download = `${Dg(n)}-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.png`, document.body.append(e), e.click(), e.remove();
 	} finally {
 		setTimeout(() => URL.revokeObjectURL(a), 1e3);
 	}
 }
-function Eg(e) {
+function Dg(e) {
 	return e.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "libremap";
 }
-function Dg(e, t) {
+function Og(e, t) {
 	let n = e.target;
 	return e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented || n && (/^(INPUT|TEXTAREA|SELECT)$/.test(n.tagName) || n.isContentEditable) ? !1 : !t.querySelector("dialog[open]");
 }
-function Og(e, t) {
+function kg(e, t) {
 	e.zoom({
 		level: e.zoom() * t,
 		renderedPosition: {
@@ -18489,7 +18525,7 @@ function Og(e, t) {
 		}
 	});
 }
-function kg(e, t, n, r) {
+function Ag(e, t, n, r) {
 	let i = e.zoom(), a = e.pan(), o = r;
 	for (; o * i < 10;) o *= 5;
 	let s = o * i;
@@ -18497,7 +18533,7 @@ function kg(e, t, n, r) {
 }
 //#endregion
 //#region frontend/page-nav.ts
-var Ag = [
+var jg = [
 	[
 		"topology",
 		"Topology map",
@@ -18514,8 +18550,8 @@ var Ag = [
 		"customUrl"
 	]
 ];
-function jg(e, t, n) {
-	let r = Ag.filter(([e, , r]) => e === n || t.dataset[r]);
+function Mg(e, t, n) {
+	let r = jg.filter(([e, , r]) => e === n || t.dataset[r]);
 	if (e.replaceChildren(), e.hidden = r.length < 2, !e.hidden) for (let [i, a, o] of r) {
 		if (i === n) {
 			let t = document.createElement("span");
@@ -18530,13 +18566,13 @@ function jg(e, t, n) {
 }
 //#endregion
 //#region frontend/custom-map-document.ts
-var Mg = {
+var Ng = {
 	devices: 500,
 	links: 2e3,
 	shapes: 200,
 	text: 200,
 	label: 100
-}, Ng = 5e3, Pg = {
+}, Pg = 5e3, Fg = {
 	text: {
 		width: 220,
 		height: 48
@@ -18545,7 +18581,7 @@ var Mg = {
 		width: 520,
 		height: 320
 	}
-}, Fg = /^[a-z]-[a-z0-9]{1,32}$/, Ig = /^[1-9]\d{0,9}$/, Lg = (e) => !!e && typeof e == "object" && !Array.isArray(e), Rg = (e) => typeof e == "number" && Number.isFinite(e) && Math.abs(e) <= 1e6, zg = (e) => typeof e == "number" && Number.isFinite(e) && e >= 20 && e <= 5e3, Bg = (e, t) => typeof e == "string" ? Array.from(e).slice(0, t).join("") : "", Vg = () => ({
+}, Ig = /^[a-z]-[a-z0-9]{1,32}$/, Lg = /^[1-9]\d{0,9}$/, Rg = (e) => !!e && typeof e == "object" && !Array.isArray(e), zg = (e) => typeof e == "number" && Number.isFinite(e) && Math.abs(e) <= 1e6, Bg = (e) => typeof e == "number" && Number.isFinite(e) && e >= 20 && e <= 5e3, Vg = (e, t) => typeof e == "string" ? Array.from(e).slice(0, t).join("") : "", Hg = () => ({
 	devices: [],
 	shapes: [],
 	links: [],
@@ -18555,13 +18591,13 @@ var Mg = {
 		y: 0
 	}
 });
-function Hg(e) {
-	let t = Vg();
-	if (!Lg(e)) return t;
-	let n = /* @__PURE__ */ new Set(), r = /* @__PURE__ */ new Set(), i = (e) => typeof e == "string" && Fg.test(e) && !n.has(e);
+function Ug(e) {
+	let t = Hg();
+	if (!Rg(e)) return t;
+	let n = /* @__PURE__ */ new Set(), r = /* @__PURE__ */ new Set(), i = (e) => typeof e == "string" && Ig.test(e) && !n.has(e);
 	if (Array.isArray(e.devices)) for (let a of e.devices) {
-		if (t.devices.length >= Mg.devices) break;
-		Lg(a) && i(a.key) && typeof a.deviceId == "string" && Ig.test(a.deviceId) && !r.has(a.deviceId) && Rg(a.x) && Rg(a.y) && (n.add(a.key), r.add(a.deviceId), t.devices.push({
+		if (t.devices.length >= Ng.devices) break;
+		Rg(a) && i(a.key) && typeof a.deviceId == "string" && Lg.test(a.deviceId) && !r.has(a.deviceId) && zg(a.x) && zg(a.y) && (n.add(a.key), r.add(a.deviceId), t.devices.push({
 			key: a.key,
 			deviceId: a.deviceId,
 			x: a.x,
@@ -18569,68 +18605,68 @@ function Hg(e) {
 		}));
 	}
 	if (Array.isArray(e.shapes)) for (let r of e.shapes) {
-		if (t.shapes.length >= Mg.shapes) break;
-		Lg(r) && i(r.key) && (r.kind === "text" || r.kind === "box") && Rg(r.x) && Rg(r.y) && zg(r.width) && zg(r.height) && (n.add(r.key), t.shapes.push({
+		if (t.shapes.length >= Ng.shapes) break;
+		Rg(r) && i(r.key) && (r.kind === "text" || r.kind === "box") && zg(r.x) && zg(r.y) && Bg(r.width) && Bg(r.height) && (n.add(r.key), t.shapes.push({
 			key: r.key,
 			kind: r.kind,
 			x: r.x,
 			y: r.y,
 			width: r.width,
 			height: r.height,
-			text: Bg(r.text, Mg.text)
+			text: Vg(r.text, Ng.text)
 		}));
 	}
 	let a = new Set(t.devices.map((e) => e.key));
 	if (Array.isArray(e.links)) for (let r of e.links) {
-		if (t.links.length >= Mg.links) break;
-		Lg(r) && i(r.key) && typeof r.source == "string" && typeof r.target == "string" && r.source !== r.target && a.has(r.source) && a.has(r.target) && (n.add(r.key), t.links.push({
+		if (t.links.length >= Ng.links) break;
+		Rg(r) && i(r.key) && typeof r.source == "string" && typeof r.target == "string" && r.source !== r.target && a.has(r.source) && a.has(r.target) && (n.add(r.key), t.links.push({
 			key: r.key,
 			source: r.source,
 			target: r.target,
-			label: Bg(r.label, Mg.label),
-			portId: typeof r.portId == "string" && Ig.test(r.portId) ? r.portId : null
+			label: Vg(r.label, Ng.label),
+			portId: typeof r.portId == "string" && Lg.test(r.portId) ? r.portId : null
 		}));
 	}
-	return typeof e.zoom == "number" && Number.isFinite(e.zoom) && (t.zoom = Math.min(2.5, Math.max(.15, e.zoom))), Lg(e.pan) && Rg(e.pan.x) && Rg(e.pan.y) && (t.pan = {
+	return typeof e.zoom == "number" && Number.isFinite(e.zoom) && (t.zoom = Math.min(2.5, Math.max(.15, e.zoom))), Rg(e.pan) && zg(e.pan.x) && zg(e.pan.y) && (t.pan = {
 		x: e.pan.x,
 		y: e.pan.y
 	}), t;
 }
-function Ug(e) {
+function Wg(e) {
 	return `${e}-${[...crypto.getRandomValues(/* @__PURE__ */ new Uint8Array(12))].map((e) => (e % 36).toString(36)).join("")}`;
 }
-var Wg = (e) => ({
+var Gg = (e) => ({
 	x: Math.max(-1e6, Math.min(1e6, e.x)),
 	y: Math.max(-1e6, Math.min(1e6, e.y))
 });
-function Gg(e, t, n) {
-	if (!Ig.test(t)) return "Choose a device from the list.";
+function Kg(e, t, n) {
+	if (!Lg.test(t)) return "Choose a device from the list.";
 	if (e.devices.some((e) => e.deviceId === t)) return "That device is already on this map.";
-	if (e.devices.length >= Mg.devices) return `A map can hold up to ${Mg.devices} devices.`;
+	if (e.devices.length >= Ng.devices) return `A map can hold up to ${Ng.devices} devices.`;
 	let r = {
-		key: Ug("d"),
+		key: Wg("d"),
 		deviceId: t,
-		...Wg(n)
+		...Gg(n)
 	};
 	return e.devices.push(r), r;
 }
-function Kg(e, t, n) {
-	if (e.shapes.length >= Mg.shapes) return `A map can hold up to ${Mg.shapes} text labels and areas.`;
+function qg(e, t, n) {
+	if (e.shapes.length >= Ng.shapes) return `A map can hold up to ${Ng.shapes} text labels and areas.`;
 	let r = {
-		key: Ug("s"),
+		key: Wg("s"),
 		kind: t,
-		...Wg(n),
-		...Pg[t],
+		...Gg(n),
+		...Fg[t],
 		text: t === "text" ? "Label" : "Area"
 	};
 	return e.shapes.push(r), r;
 }
-function qg(e, t, n) {
+function Jg(e, t, n) {
 	let r = new Set(e.devices.map((e) => e.key));
 	if (t === n || !r.has(t) || !r.has(n)) return "A line must join two different devices.";
-	if (e.links.length >= Mg.links) return `A map can hold up to ${Mg.links} lines.`;
+	if (e.links.length >= Ng.links) return `A map can hold up to ${Ng.links} lines.`;
 	let i = {
-		key: Ug("l"),
+		key: Wg("l"),
 		source: t,
 		target: n,
 		label: "",
@@ -18638,17 +18674,17 @@ function qg(e, t, n) {
 	};
 	return e.links.push(i), i;
 }
-function Jg(e, t) {
+function Yg(e, t) {
 	let n = e.devices.length + e.shapes.length + e.links.length;
 	return e.devices = e.devices.filter((e) => e.key !== t), e.shapes = e.shapes.filter((e) => e.key !== t), e.links = e.links.filter((e) => e.key !== t && e.source !== t && e.target !== t), e.devices.length + e.shapes.length + e.links.length !== n;
 }
-var Yg = (e) => Math.round(Math.min(Ng, Math.max(20, Number.isFinite(e) ? e : 20))), Xg = class extends Error {
+var Xg = (e) => Math.round(Math.min(Pg, Math.max(20, Number.isFinite(e) ? e : 20))), Zg = class extends Error {
 	status;
 	constructor(e, t = 0) {
 		super(e), this.status = t;
 	}
-}, Zg = (e) => !!e && typeof e == "object" && !Array.isArray(e);
-function Qg(e, t, n) {
+}, Qg = (e) => !!e && typeof e == "object" && !Array.isArray(e);
+function $g(e, t, n) {
 	let r = new URL(e, location.href), i = new URL(t, location.href);
 	if (r.origin !== location.origin || i.origin !== location.origin) throw Error("Custom maps must use the same origin.");
 	let a = (e, ...t) => new URL(`${e.href.replace(/\/$/, "")}/${t.map(encodeURIComponent).join("/")}`);
@@ -18665,14 +18701,14 @@ function Qg(e, t, n) {
 			body: r === void 0 ? void 0 : JSON.stringify(r),
 			signal: AbortSignal.timeout(2e4)
 		});
-		if (!a.ok) throw new Xg(await $g(a), a.status);
+		if (!a.ok) throw new Zg(await e_(a), a.status);
 		return a.status === 204 ? void 0 : a.json();
 	}
 	let s = (e) => {
-		if (!Zg(e) || !Zg(e.map) || !Zg(e.live) || typeof e.map.id != "string") throw new Xg("Unexpected custom map response.");
+		if (!Qg(e) || !Qg(e.map) || !Qg(e.live) || typeof e.map.id != "string") throw new Zg("Unexpected custom map response.");
 		return e;
 	}, c = (e, t) => {
-		if (!Zg(e) || !Array.isArray(e[t])) throw new Xg("Unexpected custom map response.");
+		if (!Qg(e) || !Array.isArray(e[t])) throw new Zg("Unexpected custom map response.");
 		return e[t];
 	};
 	return {
@@ -18697,9 +18733,9 @@ function Qg(e, t, n) {
 		ports: async (e) => c(await o("GET", a(i, e, "ports")), "ports")
 	};
 }
-async function $g(e) {
+async function e_(e) {
 	if (e.status === 422) {
-		let t = await e.json().catch(() => void 0), n = Zg(t) && typeof t.message == "string" ? t.message.trim() : "";
+		let t = await e.json().catch(() => void 0), n = Qg(t) && typeof t.message == "string" ? t.message.trim() : "";
 		if (n && n.length <= 300) return n;
 	}
 	return {
@@ -18713,8 +18749,8 @@ async function $g(e) {
 		503: "Custom maps are unavailable. The plugin database migration may be pending."
 	}[e.status] ?? `Custom map request failed (HTTP ${e.status}).`;
 }
-var e_ = 1e5, t_ = (e) => Array.from(e).length, n_ = (e) => Array.from(e).slice(0, 200).join(""), r_ = 100, i_ = 20, a_ = 100;
-function o_(e) {
+var t_ = 1e5, n_ = (e) => Array.from(e).length, r_ = (e) => Array.from(e).slice(0, 200).join(""), i_ = 100, a_ = 20, o_ = 100;
+function s_(e) {
 	e.innerHTML = `
     <div class="lm-shell lm-custom">
       <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>CUSTOM MAPS</span></div></div><div class="lm-header-right"><nav class="lm-pages" aria-label="LibreMap pages" hidden></nav><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
@@ -18733,31 +18769,31 @@ function o_(e) {
         <button data-cm="undo" title="Undo (Ctrl+Z)">↶ Undo</button><button data-cm="redo" title="Redo (Ctrl+Shift+Z)">↷ Redo</button>
       </div>
       <div class="lm-notice" role="status" aria-live="polite">Loading custom maps…</div>
-      <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong class="lm-cm-title">Custom maps</strong><span class="lm-cm-meta"></span></div><div class="lm-canvas" aria-label="Custom network map"></div><div class="lm-empty"></div><div class="lm-map-controls"><button data-cm="zoom-in" aria-label="Zoom in">+</button><button data-cm="zoom-out" aria-label="Zoom out">−</button><button data-cm="fit">Fit</button></div><div class="lm-legend"><span><i style="color:${hg.normal}"></i>&lt;50%</span><span><i style="color:${hg.warning}"></i>50–70%</span><span><i style="color:${hg.high}"></i>&gt;70%</span><span><i class="lm-dashed" style="color:#e05b65"></i>Down</span><span><i class="lm-dashed" style="color:#8a96a9"></i>Disabled / unknown / stale</span><span><i class="lm-dotted"></i>Drawn (no interface)</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
+      <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong class="lm-cm-title">Custom maps</strong><span class="lm-cm-meta"></span></div><div class="lm-canvas" aria-label="Custom network map"></div><div class="lm-empty"></div><div class="lm-map-controls"><button data-cm="zoom-in" aria-label="Zoom in">+</button><button data-cm="zoom-out" aria-label="Zoom out">−</button><button data-cm="fit">Fit</button></div><div class="lm-legend"><span><i style="color:${gg.normal}"></i>&lt;50%</span><span><i style="color:${gg.warning}"></i>50–70%</span><span><i style="color:${gg.high}"></i>&gt;70%</span><span><i class="lm-dashed" style="color:#e05b65"></i>Down</span><span><i class="lm-dashed" style="color:#8a96a9"></i>Disabled / unknown / stale</span><span><i class="lm-dotted"></i>Drawn (no interface)</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
       <footer><span class="lm-updated">Waiting for data</span><span>Edit to place devices, areas and text · Draw line joins two devices · Bind a line to an interface for live load · Keys: F fit · + − zoom · Esc clear · Delete remove · Ctrl+Z undo</span></footer>
       <dialog class="lm-cm-name-dialog" aria-labelledby="lm-cm-name-title"><form><h2 id="lm-cm-name-title">New map</h2><label>Map name<input name="name" aria-label="Map name" required autocomplete="off"></label><div class="lm-dialog-actions"><button type="button" data-cm="cancel-name">Cancel</button><button type="submit">Save</button></div></form></dialog>
       <dialog class="lm-cm-delete-dialog" aria-labelledby="lm-cm-delete-title"><h2 id="lm-cm-delete-title">Delete map?</h2><p></p><div class="lm-dialog-actions"><button data-cm="cancel-delete">Cancel</button><button data-cm="confirm-delete">Delete map</button></div></dialog>
     </div>`;
 	let t = (t) => e.querySelector(t), n = (e) => t(`[data-cm="${e}"]`), r = t(".lm-notice"), i = t("[aria-label=\"Custom map\"]"), a = t(".lm-details"), o = t(".lm-cm-device"), s = t("#lm-cm-devices"), c = t(".lm-cm-name-dialog"), l = c.querySelector("input"), u = t(".lm-cm-delete-dialog"), d = t(".lm-back");
-	e.dataset.homeUrl && (d.href = e.dataset.homeUrl), jg(t(".lm-pages"), e, "custom");
+	e.dataset.homeUrl && (d.href = e.dataset.homeUrl), Mg(t(".lm-pages"), e, "custom");
 	let f = sg({
 		container: t(".lm-canvas"),
 		minZoom: .15,
 		maxZoom: 2.5,
 		selectionType: "single",
 		autoungrabify: !0,
-		style: xg(e)
+		style: Sg(e)
 	});
-	Sg(e, () => f.style(xg(e)));
+	Cg(e, () => f.style(Sg(e)));
 	let p;
 	try {
-		e.dataset.mapsEndpoint && e.dataset.devicesEndpoint && (p = Qg(e.dataset.mapsEndpoint, e.dataset.devicesEndpoint, e.dataset.csrf ?? ""));
+		e.dataset.mapsEndpoint && e.dataset.devicesEndpoint && (p = $g(e.dataset.mapsEndpoint, e.dataset.devicesEndpoint, e.dataset.csrf ?? ""));
 	} catch {}
-	let m = [], h, g = Vg(), _ = !1, v = !1, y = !1, b = !1, x, S, C = "new", w, T = /* @__PURE__ */ new Map(), E = /* @__PURE__ */ new Map(), D = /* @__PURE__ */ new Map(), O = 900, k = 0, A = () => Date.now() / 1e3 + k, j = JSON.stringify(g), M = [], N = [], P = () => {
+	let m = [], h, g = Hg(), _ = !1, v = !1, y = !1, b = !1, x, S, C = "new", w, T = /* @__PURE__ */ new Map(), E = /* @__PURE__ */ new Map(), D = /* @__PURE__ */ new Map(), O = 900, k = 0, A = () => Date.now() / 1e3 + k, j = JSON.stringify(g), M = [], N = [], P = () => {
 		M = [], N = [];
 	}, F = "";
 	function I(e) {
-		M.push(e), M.length > a_ && M.shift(), N = [], F = "";
+		M.push(e), M.length > o_ && M.shift(), N = [], F = "";
 	}
 	let L = () => I(JSON.stringify(g));
 	function R(e) {
@@ -18766,11 +18802,11 @@ function o_(e) {
 	function z() {
 		if (!S || !_) return;
 		let e = JSON.stringify(g);
-		Jg(g, S) && (I(e), S = void 0, X(), ve(), re());
+		Yg(g, S) && (I(e), S = void 0, X(), ye(), ie());
 	}
 	function B(e, t, n) {
 		let r = e.pop();
-		r !== void 0 && _ && (t.push(JSON.stringify(g)), F = "", g = Hg(JSON.parse(r)), x = void 0, X(), ve(), re(), U(`${n}.`));
+		r !== void 0 && _ && (t.push(JSON.stringify(g)), F = "", g = Ug(JSON.parse(r)), x = void 0, X(), ye(), ie(), U(`${n}.`));
 	}
 	let V = () => B(M, N, "Undone"), H = () => B(N, M, "Redone"), U = (e, t = !1) => {
 		r.textContent = e, r.classList.toggle("lm-error", t);
@@ -18810,14 +18846,14 @@ function o_(e) {
 			deviceId: t,
 			name: r,
 			label: `${r}\n${i.toUpperCase()}`,
-			color: vg(i),
+			color: yg(i),
 			width: 206
 		};
 	}, J = (e) => {
 		let t = e.portId ? E.get(e.portId) : void 0;
 		if (t) return {
 			port: t,
-			...gg({
+			..._g({
 				...t,
 				id: e.key,
 				source: e.source,
@@ -18883,175 +18919,175 @@ function o_(e) {
 		let e = g.links.find((e) => e.key === S), t = a.querySelector("[data-link-status]");
 		e && t && (t.textContent = J(e)?.label ?? "Drawn only");
 	}
-	function Z(e) {
+	function te(e) {
 		k = Number.isFinite(e.generatedAt) ? e.generatedAt - Date.now() / 1e3 : 0, O = Number.isFinite(e.config?.staleAfter) && e.config.staleAfter > 0 ? e.config.staleAfter : 900;
 		for (let [t, n] of Object.entries(e.live.devices ?? {})) T.set(t, n);
 		for (let [t, n] of Object.entries(e.live.ports ?? {})) E.set(t, n);
 		t(".lm-updated").textContent = `Live data fetched · ${(/* @__PURE__ */ new Date(e.generatedAt * 1e3)).toLocaleTimeString()}`;
 	}
-	function te(e, t) {
+	function ne(e, t) {
 		let { document: n, ...r } = e.map;
-		h?.map.id !== r.id && P(), h = e, g = Hg(n), j = JSON.stringify(g), v = !1, x = void 0, m = [r, ...m.filter((e) => e.id !== r.id)].sort((e, t) => e.name.localeCompare(t.name) || e.id.localeCompare(t.id)), r.owned || (_ = !1), Z(e), X(), t && (g.zoom === 1 && g.pan.x === 0 && g.pan.y === 0 && f.elements().length ? f.fit(f.elements(), 70) : f.viewport({
+		h?.map.id !== r.id && P(), h = e, g = Ug(n), j = JSON.stringify(g), v = !1, x = void 0, m = [r, ...m.filter((e) => e.id !== r.id)].sort((e, t) => e.name.localeCompare(t.name) || e.id.localeCompare(t.id)), r.owned || (_ = !1), te(e), X(), t && (g.zoom === 1 && g.pan.x === 0 && g.pan.y === 0 && f.elements().length ? f.fit(f.elements(), 70) : f.viewport({
 			zoom: g.zoom,
 			pan: g.pan
-		})), K(), ve(), G();
-	}
-	function ne() {
-		h = void 0, g = Vg(), j = JSON.stringify(g), P(), v = !1, _ = !1, b = !1, x = void 0, S = void 0, history.replaceState(null, "", ie()), X(), K(), ve(), G();
+		})), K(), ye(), G();
 	}
 	function re() {
+		h = void 0, g = Hg(), j = JSON.stringify(g), P(), v = !1, _ = !1, b = !1, x = void 0, S = void 0, history.replaceState(null, "", ae()), X(), K(), ye(), G();
+	}
+	function ie() {
 		v = JSON.stringify(g) !== j, G();
 	}
-	function ie(e) {
+	function ae(e) {
 		let t = new URL(location.href);
 		return e ? t.searchParams.set("map", e) : t.searchParams.delete("map"), t.href;
 	}
-	let ae = () => !v || window.confirm("Discard unsaved changes to this map?");
-	function oe(e) {
-		U(e instanceof Error ? e.message : "Custom maps are unavailable.", !0), e instanceof Xg && [
+	let oe = () => !v || window.confirm("Discard unsaved changes to this map?");
+	function se(e) {
+		U(e instanceof Error ? e.message : "Custom maps are unavailable.", !0), e instanceof Zg && [
 			401,
 			403,
 			404,
 			419
-		].includes(e.status) && h && !v && (m = m.filter((e) => e.id !== h.map.id), ne());
+		].includes(e.status) && h && !v && (m = m.filter((e) => e.id !== h.map.id), re());
 	}
-	async function se(e) {
+	async function ce(e) {
 		if (!y) {
 			y = !0, G();
 			try {
 				return await e();
 			} catch (e) {
-				oe(e);
+				se(e);
 				return;
 			} finally {
 				y = !1, G();
 			}
 		}
 	}
-	async function ce(e) {
+	async function le(e) {
 		if (!p) return;
-		if (!ae()) {
+		if (!oe()) {
 			i.value = h?.map.id ?? "";
 			return;
 		}
 		if (!e) {
-			ne(), U("Choose a map, or create a new one.");
+			re(), U("Choose a map, or create a new one.");
 			return;
 		}
 		_ = !1, b = !1, S = void 0;
-		let t = await se(() => p.load(e));
+		let t = await ce(() => p.load(e));
 		if (!t) {
 			i.value = h?.map.id ?? "";
 			return;
 		}
-		te(t, !0), history.replaceState(null, "", ie(e)), U(t.map.owned ? `Opened “${t.map.name}”.` : `Opened “${t.map.name}”, shared read-only by ${t.map.ownerName ?? "another user"}.`);
+		ne(t, !0), history.replaceState(null, "", ae(e)), U(t.map.owned ? `Opened “${t.map.name}”.` : `Opened “${t.map.name}”, shared read-only by ${t.map.ownerName ?? "another user"}.`);
 	}
-	async function le(e = {}) {
+	async function ue(e = {}) {
 		if (!p || !h?.map.owned) return !1;
 		g.zoom = Math.min(2.5, Math.max(.15, f.zoom())), g.pan = { ...f.pan() };
-		let t = h.map, n = await se(() => p.update(t, e.name ?? t.name, e.shared ?? t.shared, g));
-		return n ? (te(n, !1), U(`Saved “${n.map.name}”.`), !0) : !1;
+		let t = h.map, n = await ce(() => p.update(t, e.name ?? t.name, e.shared ?? t.shared, g));
+		return n ? (ne(n, !1), U(`Saved “${n.map.name}”.`), !0) : !1;
 	}
-	async function ue() {
+	async function de() {
 		if (w || !p) return;
-		let e = await se(() => p.devices());
+		let e = await ce(() => p.devices());
 		if (e) {
 			w = [...e].sort((e, t) => ug(e).localeCompare(ug(t), void 0, { numeric: !0 }));
 			for (let e of w) T.has(e.id) || T.set(e.id, e);
 			s.replaceChildren(...w.map((e) => new Option(`${ug(e)} (#${e.id})`)));
 		}
 	}
-	let de = (e) => {
+	let fe = (e) => {
 		let t = D.get(e);
 		return t || (t = p.ports(e), D.set(e, t), t.catch(() => D.delete(e))), t;
 	};
-	function fe(e) {
+	function pe(e) {
 		let t = f.extent(), n = e % 4, r = Math.floor(e / 4) % 6;
 		return {
 			x: (t.x1 + t.x2) / 2 + (n - 1.5) * 240,
 			y: (t.y1 + t.y2) / 2 + (r - 1) * 110
 		};
 	}
-	function pe(e) {
-		S = e, f.elements().unselect(), e && f.getElementById(e).select(), ve(), G();
+	function me(e) {
+		S = e, f.elements().unselect(), e && f.getElementById(e).select(), ye(), G();
 	}
-	let me = (e, t, n) => {
+	let he = (e, t, n) => {
 		let r = document.createElement(e);
 		return t !== void 0 && (r.textContent = t), n && (r.className = n), r;
 	};
-	function he(e) {
-		let t = me("dl");
-		for (let [n, r] of e) t.append(me("dt", n), me("dd", r));
+	function ge(e) {
+		let t = he("dl");
+		for (let [n, r] of e) t.append(he("dt", n), he("dd", r));
 		return t;
 	}
-	function ge(e, t) {
-		let n = me("label", void 0, "lm-cm-field");
-		return n.append(me("span", e), t), n;
+	function _e(e, t) {
+		let n = he("label", void 0, "lm-cm-field");
+		return n.append(he("span", e), t), n;
 	}
-	function Q() {
-		let e = me("button", "×", "lm-close");
-		return e.setAttribute("aria-label", "Close details"), e.onclick = () => pe(void 0), e;
-	}
-	function _e() {
-		let e = me("button", "Remove from map", "lm-cm-remove");
-		return e.onclick = z, e;
+	function Z() {
+		let e = he("button", "×", "lm-close");
+		return e.setAttribute("aria-label", "Close details"), e.onclick = () => me(void 0), e;
 	}
 	function ve() {
+		let e = he("button", "Remove from map", "lm-cm-remove");
+		return e.onclick = z, e;
+	}
+	function ye() {
 		if (a.replaceChildren(), !h) {
-			a.append(me("div", "CUSTOM MAPS", "lm-eyebrow"), me("h2", "Draw your own map"), me("p", "Create a map, place the devices you care about, mark areas and add notes, then draw lines between devices. Bind a line to an interface to show its live load and status."), me("p", "Share a map read-only with every LibreNMS user. Each reader sees only the devices and interfaces they are allowed to see.", "lm-hint"));
+			a.append(he("div", "CUSTOM MAPS", "lm-eyebrow"), he("h2", "Draw your own map"), he("p", "Create a map, place the devices you care about, mark areas and add notes, then draw lines between devices. Bind a line to an interface to show its live load and status."), he("p", "Share a map read-only with every LibreNMS user. Each reader sees only the devices and interfaces they are allowed to see.", "lm-hint"));
 			return;
 		}
 		let e = S ? f.getElementById(S) : void 0;
 		if (!e?.length) {
 			let e = h.map;
-			a.append(me("div", "MAP", "lm-eyebrow"), me("h2", e.name), he([
+			a.append(he("div", "MAP", "lm-eyebrow"), he("h2", e.name), ge([
 				["Owner", e.owned ? "You" : e.ownerName ?? "Another user"],
 				["Visibility", e.shared ? "Shared read-only with all users" : "Private"],
 				["Devices", String(g.devices.length)],
 				["Lines", String(g.links.length)],
 				["Last saved", new Date(e.updatedAt).toLocaleString()]
-			])), e.shared ? a.append(me("p", "Anyone signed in to LibreNMS can open this map from Custom maps, or with this page’s address. Devices they cannot access are hidden from them.", "lm-hint")) : e.owned && !_ && a.append(me("p", "Select Edit to add devices, areas, text and lines. Drag to arrange, then Save.", "lm-hint"));
+			])), e.shared ? a.append(he("p", "Anyone signed in to LibreNMS can open this map from Custom maps, or with this page’s address. Devices they cannot access are hidden from them.", "lm-hint")) : e.owned && !_ && a.append(he("p", "Select Edit to add devices, areas, text and lines. Drag to arrange, then Save.", "lm-hint"));
 			return;
 		}
-		a.append(Q());
+		a.append(Z());
 		let t = e.id(), n = e.data("kind");
-		if (e.isNode() && n === "device") return ye(e.data("deviceId"));
+		if (e.isNode() && n === "device") return Q(e.data("deviceId"));
 		if (e.isNode()) return be(t);
 		xe(t);
 	}
-	function ye(e) {
+	function Q(e) {
 		let t = T.get(e), n = t ? ug(t) : `Device ${e}`;
-		if (a.append(me("div", "DEVICE", "lm-eyebrow"), me("h2", n), he([
+		if (a.append(he("div", "DEVICE", "lm-eyebrow"), he("h2", n), ge([
 			["Status", t?.status ?? "unknown"],
 			...t && t.hostname !== n ? [["Hostname", t.hostname]] : [],
 			["Lines on this map", String(g.links.filter((e) => e.source === S || e.target === S).length)]
 		])), t?.url) {
 			let e = new URL(t.url, location.href);
 			if (e.origin === location.origin) {
-				let t = me("a", "Open in LibreNMS ↗", "lm-device-link");
+				let t = he("a", "Open in LibreNMS ↗", "lm-device-link");
 				t.href = e.href, a.append(t);
 			}
 		}
-		_ && a.append(_e());
+		_ && a.append(ve());
 	}
 	function be(e) {
 		let t = g.shapes.find((t) => t.key === e);
 		if (!t) return;
-		if (a.append(me("div", t.kind === "box" ? "AREA" : "TEXT", "lm-eyebrow")), !_) {
-			a.append(me("h2", t.text || (t.kind === "box" ? "Unnamed area" : "Empty text")));
+		if (a.append(he("div", t.kind === "box" ? "AREA" : "TEXT", "lm-eyebrow")), !_) {
+			a.append(he("h2", t.text || (t.kind === "box" ? "Unnamed area" : "Empty text")));
 			return;
 		}
-		let n = me("textarea");
+		let n = he("textarea");
 		n.value = t.text, n.rows = 3, n.setAttribute("aria-label", t.kind === "box" ? "Area label" : "Text"), n.oninput = () => {
-			R(`text:${e}`), t.text = Bg(n.value, Mg.text), n.value !== t.text && (n.value = t.text), f.getElementById(e).data("label", t.text), re();
-		}, a.append(ge(t.kind === "box" ? "Label" : "Text", n));
+			R(`text:${e}`), t.text = Vg(n.value, Ng.text), n.value !== t.text && (n.value = t.text), f.getElementById(e).data("label", t.text), ie();
+		}, a.append(_e(t.kind === "box" ? "Label" : "Text", n));
 		for (let n of ["width", "height"]) {
-			let r = me("input");
-			r.type = "number", r.min = "20", r.max = String(Ng), r.step = "10", r.value = String(t[n]), r.setAttribute("aria-label", n === "width" ? "Width" : "Height"), r.onchange = () => {
-				L(), t[n] = Yg(Number(r.value)), r.value = String(t[n]), f.getElementById(e).data(n, t[n]), re();
-			}, a.append(ge(n === "width" ? "Width" : "Height", r));
+			let r = he("input");
+			r.type = "number", r.min = "20", r.max = String(Pg), r.step = "10", r.value = String(t[n]), r.setAttribute("aria-label", n === "width" ? "Width" : "Height"), r.onchange = () => {
+				L(), t[n] = Xg(Number(r.value)), r.value = String(t[n]), f.getElementById(e).data(n, t[n]), ie();
+			}, a.append(_e(n === "width" ? "Width" : "Height", r));
 		}
-		a.append(_e());
+		a.append(ve());
 	}
 	function xe(e) {
 		let t = g.links.find((t) => t.key === e);
@@ -19063,26 +19099,26 @@ function o_(e) {
 				name: q(e, t.deviceId).name
 			} : void 0;
 		}, r = n(t.source), i = n(t.target);
-		a.append(me("div", "DRAWN LINE", "lm-eyebrow"), me("h2", `${r?.name ?? "?"} ↔ ${i?.name ?? "?"}`));
-		let o = J(t), s = me("dd", o ? o.label : "Drawn only");
+		a.append(he("div", "DRAWN LINE", "lm-eyebrow"), he("h2", `${r?.name ?? "?"} ↔ ${i?.name ?? "?"}`));
+		let o = J(t), s = he("dd", o ? o.label : "Drawn only");
 		s.dataset.linkStatus = "true";
-		let c = he(o ? [
+		let c = ge(o ? [
 			["Interface", `${T.get(o.port.deviceId) ? ug(T.get(o.port.deviceId)) : ""} ${o.port.name}`.trim()],
-			["Capacity", _g(o.port.speedBps)],
-			["Inbound", _g(o.port.inBps)],
-			["Outbound", _g(o.port.outBps)],
+			["Capacity", vg(o.port.speedBps)],
+			["Inbound", vg(o.port.inBps)],
+			["Outbound", vg(o.port.outBps)],
 			["Sample time", o.port.sampledAt ? (/* @__PURE__ */ new Date(o.port.sampledAt * 1e3)).toLocaleString() : "Unavailable"]
 		] : []);
-		if (c.prepend(me("dt", "Status"), s), !_) {
-			t.label && a.append(me("p", t.label)), a.append(c);
+		if (c.prepend(he("dt", "Status"), s), !_) {
+			t.label && a.append(he("p", t.label)), a.append(c);
 			return;
 		}
-		let l = me("input");
+		let l = he("input");
 		l.value = t.label, l.setAttribute("aria-label", "Line label"), l.autocomplete = "off", l.oninput = () => {
-			R(`label:${e}`), t.label = Bg(l.value, Mg.label), l.value !== t.label && (l.value = t.label), f.getElementById(e).data(Y(t)), re();
-		}, a.append(ge("Label", l));
-		let u = me("select");
-		u.setAttribute("aria-label", "Interface"), u.disabled = !0, u.append(new Option("Loading interfaces…", t.portId ?? "")), a.append(ge("Interface for live load", u), c, _e()), Promise.all([r, i].map((e) => e ? de(e.deviceId).then((t) => ({
+			R(`label:${e}`), t.label = Vg(l.value, Ng.label), l.value !== t.label && (l.value = t.label), f.getElementById(e).data(Y(t)), ie();
+		}, a.append(_e("Label", l));
+		let u = he("select");
+		u.setAttribute("aria-label", "Interface"), u.disabled = !0, u.append(new Option("Loading interfaces…", t.portId ?? "")), a.append(_e("Interface for live load", u), c, ve()), Promise.all([r, i].map((e) => e ? fe(e.deviceId).then((t) => ({
 			e,
 			list: t
 		})) : Promise.resolve(void 0))).then((n) => {
@@ -19098,7 +19134,7 @@ function o_(e) {
 		}).catch((e) => {
 			u.isConnected && u.replaceChildren(new Option("Interfaces unavailable", "")), U(e instanceof Error ? e.message : "Interfaces unavailable.", !0);
 		}), u.onchange = () => {
-			L(), t.portId = u.value || null, f.getElementById(e).data(Y(t)), re(), ve();
+			L(), t.portId = u.value || null, f.getElementById(e).data(Y(t)), ie(), ye();
 		};
 	}
 	f.on("tap", "node", (e) => {
@@ -19113,46 +19149,46 @@ function o_(e) {
 				U("Line cancelled.");
 				return;
 			}
-			let n = JSON.stringify(g), r = qg(g, e, t.id());
+			let n = JSON.stringify(g), r = Jg(g, e, t.id());
 			if (typeof r == "string") {
 				U(r, !0);
 				return;
 			}
-			I(n), X(), pe(r.key), re(), U("Line drawn. Select another device to draw the next line, or bind this one to an interface.");
+			I(n), X(), me(r.key), ie(), U("Line drawn. Select another device to draw the next line, or bind this one to an interface.");
 			return;
 		}
-		pe(t.id());
-	}), f.on("tap", "edge", (e) => pe(e.target.id())), f.on("tap", (e) => {
-		e.target === f && (x && (x = void 0, f.nodes().removeClass("lm-connect-source")), pe(void 0));
+		me(t.id());
+	}), f.on("tap", "edge", (e) => me(e.target.id())), f.on("tap", (e) => {
+		e.target === f && (x && (x = void 0, f.nodes().removeClass("lm-connect-source")), me(void 0));
 	}), f.on("dragfree", "node", (e) => {
 		if (!_) return;
 		let t = e.target.id(), n = g.devices.find((e) => e.key === t) ?? g.shapes.find((e) => e.key === t);
 		if (!n) return;
 		let r = {
-			x: Math.round(e.target.position().x / i_) * i_,
-			y: Math.round(e.target.position().y / i_) * i_
+			x: Math.round(e.target.position().x / a_) * a_,
+			y: Math.round(e.target.position().y / a_) * a_
 		};
-		e.target.position(r), (n.x !== r.x || n.y !== r.y) && (L(), n.x = r.x, n.y = r.y, re());
+		e.target.position(r), (n.x !== r.x || n.y !== r.y) && (L(), n.x = r.x, n.y = r.y, ie());
 	}), f.on("zoom", () => f.edges().toggleClass("lm-no-label", f.zoom() < .45));
 	let Se = t(".lm-canvas-wrap"), Ce = t(".lm-canvas");
-	f.on("pan zoom resize", () => kg(f, Se, Ce, i_)), i.addEventListener("change", () => void ce(i.value));
+	f.on("pan zoom resize", () => Ag(f, Se, Ce, a_)), i.addEventListener("change", () => void le(i.value));
 	function we(e) {
 		C = e, c.querySelector("h2").textContent = e === "new" ? "New map" : "Rename map", l.value = e === "rename" ? h?.map.name ?? "" : "", l.setCustomValidity(""), c.showModal(), l.focus();
 	}
-	l.oninput = () => l.setCustomValidity(t_(l.value.trim()) > r_ ? `Use at most ${r_} characters.` : ""), c.querySelector("form").onsubmit = async (e) => {
+	l.oninput = () => l.setCustomValidity(n_(l.value.trim()) > i_ ? `Use at most ${i_} characters.` : ""), c.querySelector("form").onsubmit = async (e) => {
 		e.preventDefault();
 		let t = l.value.trim();
-		if (!t || t_(t) > r_) {
-			l.setCustomValidity(t ? `Use at most ${r_} characters.` : "Enter a map name."), l.reportValidity();
+		if (!t || n_(t) > i_) {
+			l.setCustomValidity(t ? `Use at most ${i_} characters.` : "Enter a map name."), l.reportValidity();
 			return;
 		}
 		if (c.close(), C === "rename") {
-			await le({ name: t });
+			await ue({ name: t });
 			return;
 		}
-		if (!p || !ae()) return;
-		let n = await se(() => p.create(t, !1, Vg()));
-		n && (S = void 0, _ = !0, te(n, !0), history.replaceState(null, "", ie(n.map.id)), U(`Created “${n.map.name}”. Add devices, areas and text, then Save.`), ue());
+		if (!p || !oe()) return;
+		let n = await ce(() => p.create(t, !1, Hg()));
+		n && (S = void 0, _ = !0, ne(n, !0), history.replaceState(null, "", ae(n.map.id)), U(`Created “${n.map.name}”. Add devices, areas and text, then Save.`), de());
 	}, e.addEventListener("click", (t) => {
 		let n = t.target.closest("[data-cm]")?.dataset.cm;
 		switch (n) {
@@ -19166,7 +19202,7 @@ function o_(e) {
 				c.close();
 				break;
 			case "share":
-				h && le({ shared: !h.map.shared }).then((e) => {
+				h && ue({ shared: !h.map.shared }).then((e) => {
 					e && U(h?.map.shared ? "Shared read-only with all LibreNMS users." : "This map is private again.");
 				});
 				break;
@@ -19183,28 +19219,28 @@ function o_(e) {
 				Ee();
 				break;
 			case "save":
-				le();
+				ue();
 				break;
 			case "discard":
-				h && window.confirm("Discard unsaved changes to this map?") && (g = Hg(h.map.document), P(), v = !1, x = void 0, X(), ve(), G(), U("Changes discarded."));
+				h && window.confirm("Discard unsaved changes to this map?") && (g = Ug(h.map.document), P(), v = !1, x = void 0, X(), ye(), G(), U("Changes discarded."));
 				break;
 			case "add-device": {
-				let e = /#([1-9]\d{0,9})\)$/.exec(o.value.trim())?.[1] ?? (w?.some((e) => e.id === o.value.trim()) ? o.value.trim() : ""), t = JSON.stringify(g), n = Gg(g, e, fe(g.devices.length));
+				let e = /#([1-9]\d{0,9})\)$/.exec(o.value.trim())?.[1] ?? (w?.some((e) => e.id === o.value.trim()) ? o.value.trim() : ""), t = JSON.stringify(g), n = Kg(g, e, pe(g.devices.length));
 				if (typeof n == "string") {
 					U(n, !0);
 					break;
 				}
-				I(t), o.value = "", X(), pe(n.key), re(), U("Device added. Drag it into place.");
+				I(t), o.value = "", X(), me(n.key), ie(), U("Device added. Drag it into place.");
 				break;
 			}
 			case "add-text":
 			case "add-box": {
-				let e = JSON.stringify(g), t = Kg(g, n === "add-text" ? "text" : "box", fe(g.shapes.length));
+				let e = JSON.stringify(g), t = qg(g, n === "add-text" ? "text" : "box", pe(g.shapes.length));
 				if (typeof t == "string") {
 					U(t, !0);
 					break;
 				}
-				I(e), X(), pe(t.key), re();
+				I(e), X(), me(t.key), ie();
 				break;
 			}
 			case "undo":
@@ -19214,7 +19250,7 @@ function o_(e) {
 				H();
 				break;
 			case "export":
-				h && Tg(f, e, h.map.name).then(() => U("Map image downloaded."), (e) => U(e instanceof Error ? e.message : "The map image could not be created.", !0));
+				h && Eg(f, e, h.map.name).then(() => U("Map image downloaded."), (e) => U(e instanceof Error ? e.message : "The map image could not be created.", !0));
 				break;
 			case "connect":
 				b = !b, x = void 0, f.nodes().removeClass("lm-connect-source"), G(), U(b ? "Select the device where the line starts." : "Finished drawing lines.");
@@ -19223,10 +19259,10 @@ function o_(e) {
 				z();
 				break;
 			case "zoom-in":
-				Og(f, 1.2);
+				kg(f, 1.2);
 				break;
 			case "zoom-out":
-				Og(f, 1 / 1.2);
+				kg(f, 1 / 1.2);
 				break;
 			case "fit": f.elements().length && f.fit(f.elements(), 70);
 		}
@@ -19235,14 +19271,14 @@ function o_(e) {
 	});
 	async function Te() {
 		let e = h?.map;
-		e && p && await se(async () => (await p.remove(e), !0)) && (m = m.filter((t) => t.id !== e.id), ne(), U(`Deleted “${e.name}”.`));
+		e && p && await ce(async () => (await p.remove(e), !0)) && (m = m.filter((t) => t.id !== e.id), re(), U(`Deleted “${e.name}”.`));
 	}
 	async function Ee() {
 		if (!_) {
-			_ = !0, G(), ve(), X(), ue();
+			_ = !0, G(), ye(), X(), de();
 			return;
 		}
-		(!v || await le()) && (_ = !1, b = !1, x = void 0, P(), f.nodes().removeClass("lm-connect-source"), X(), ve(), G());
+		(!v || await ue()) && (_ = !1, b = !1, x = void 0, P(), f.nodes().removeClass("lm-connect-source"), X(), ye(), G());
 	}
 	document.addEventListener("keydown", (t) => {
 		let n = t.target, r = !!n && (/^(INPUT|TEXTAREA|SELECT)$/.test(n.tagName) || n.isContentEditable);
@@ -19251,20 +19287,20 @@ function o_(e) {
 			e === "z" && !t.shiftKey ? (t.preventDefault(), V()) : (e === "z" && t.shiftKey || e === "y") && (t.preventDefault(), H());
 			return;
 		}
-		if (Dg(t, e)) switch (t.key) {
+		if (Og(t, e)) switch (t.key) {
 			case "f":
 			case "F":
 				f.elements().length && (t.preventDefault(), f.fit(f.elements(), 70));
 				break;
 			case "+":
 			case "=":
-				t.preventDefault(), Og(f, 1.2);
+				t.preventDefault(), kg(f, 1.2);
 				break;
 			case "-":
-				t.preventDefault(), Og(f, 1 / 1.2);
+				t.preventDefault(), kg(f, 1 / 1.2);
 				break;
 			case "Escape":
-				x || b ? (b = !1, x = void 0, f.nodes().removeClass("lm-connect-source"), G(), U("Finished drawing lines.")) : S && pe(void 0);
+				x || b ? (b = !1, x = void 0, f.nodes().removeClass("lm-connect-source"), G(), U("Finished drawing lines.")) : S && me(void 0);
 				break;
 			case "Delete": _ && S && (t.preventDefault(), z());
 		}
@@ -19278,21 +19314,21 @@ function o_(e) {
 			let t = await p.load(e);
 			if (h?.map.id !== e || y) return;
 			if (_ || v) {
-				Z(t), ee();
+				te(t), ee();
 				return;
 			}
 			let n = {
 				zoom: f.zoom(),
 				pan: { ...f.pan() }
 			};
-			te(t, !1), f.viewport(n);
+			ne(t, !1), f.viewport(n);
 		} catch (t) {
-			h?.map.id === e && t instanceof Xg && [
+			h?.map.id === e && t instanceof Zg && [
 				401,
 				403,
 				404,
 				419
-			].includes(t.status) ? oe(t) : U(`${t instanceof Error ? t.message : "Live data unavailable."} · Showing the last data received.`, !0);
+			].includes(t.status) ? se(t) : U(`${t instanceof Error ? t.message : "Live data unavailable."} · Showing the last data received.`, !0);
 		}
 	}
 	if (setInterval(() => void De(), 6e4), setInterval(() => {
@@ -19316,35 +19352,35 @@ function o_(e) {
 			grabbable: f.nodes().map((e) => e.grabbable()).every(Boolean)
 		}),
 		configurable: !0
-	}), X(), K(), ve(), G(), kg(f, Se, Ce, i_), !p) {
+	}), X(), K(), ye(), G(), Ag(f, Se, Ce, a_), !p) {
 		U("Custom maps are unavailable on this page.", !0);
 		return;
 	}
 	(async () => {
-		let e = await se(() => p.list());
+		let e = await ce(() => p.list());
 		if (!e) return;
 		m = e, K();
 		let t = new URL(location.href).searchParams.get("map");
-		t && /^[0-9a-f-]{36}$/i.test(t) ? await ce(t) : (X(), U(m.length ? "Choose a map, or create a new one." : "No custom maps yet. Create one with New map."));
+		t && /^[0-9a-f-]{36}$/i.test(t) ? await le(t) : (X(), U(m.length ? "Choose a map, or create a new one." : "No custom maps yet. Create one with New map."));
 	})();
 }
-var s_ = 85.05112878, c_ = (e) => 256 * 2 ** e;
-function l_({ lat: e, lng: t }, n) {
-	let r = c_(n), i = Math.max(-85.05112878, Math.min(s_, e)) * Math.PI / 180;
+var c_ = 85.05112878, l_ = (e) => 256 * 2 ** e;
+function u_({ lat: e, lng: t }, n) {
+	let r = l_(n), i = Math.max(-85.05112878, Math.min(c_, e)) * Math.PI / 180;
 	return {
 		x: (t + 180) / 360 * r,
 		y: (1 - Math.log(Math.tan(i) + 1 / Math.cos(i)) / Math.PI) / 2 * r
 	};
 }
-function u_(e, t, n, r, i, a = 10) {
+function d_(e, t, n, r, i, a = 10) {
 	if (!e.length) return {
 		zoom: 1,
 		center: {
-			x: c_(1) / 2,
-			y: c_(1) / 2
+			x: l_(1) / 2,
+			y: l_(1) / 2
 		}
 	};
-	let o = e.map((e) => l_(e, 0)), s = o.map((e) => e.x), c = o.map((e) => e.y), l = Math.min(...s), u = Math.max(...s), d = Math.min(...c), f = Math.max(...c), p = u - l, m = f - d, h = {
+	let o = e.map((e) => u_(e, 0)), s = o.map((e) => e.x), c = o.map((e) => e.y), l = Math.min(...s), u = Math.max(...s), d = Math.min(...c), f = Math.max(...c), p = u - l, m = f - d, h = {
 		x: Math.max(1, t - 2 * r),
 		y: Math.max(1, n - 2 * r)
 	}, g = p === 0 && m === 0 ? a : Math.floor(Math.log2(Math.min(p ? h.x / p : Infinity, m ? h.y / m : Infinity))), _ = Math.max(1, Math.min(i, g)), v = 2 ** _;
@@ -19356,7 +19392,7 @@ function u_(e, t, n, r, i, a = 10) {
 		}
 	};
 }
-function d_(e, t, n, r) {
+function f_(e, t, n, r) {
 	let i = 2 ** t, a = (n % i + i) % i;
 	if (r < 0 || r >= i) return;
 	let o = e.replace(/\{s\}/g, "abc"[(a + r) % 3]).replace(/\{z\}/g, String(t)).replace(/\{x\}/g, String(a)).replace(/\{y\}/g, String(r));
@@ -19367,58 +19403,174 @@ function d_(e, t, n, r) {
 		return;
 	}
 }
-function f_(e, t, n) {
-	let r = c_(t), i = n / 2, a = r <= n ? r / 2 : Math.max(i, Math.min(r - i, e.y));
+function p_({ lat: e, lng: t }, n) {
+	let r = !1;
+	for (let i = 0, a = n.length - 1; i < n.length; a = i++) {
+		let [o, s] = n[i], [c, l] = n[a];
+		s > e != l > e && t < (c - o) * (e - s) / (l - s) + o && (r = !r);
+	}
+	return r;
+}
+function m_(e, t) {
+	return !t.length || !p_(e, t[0]) ? !1 : !t.slice(1).some((t) => p_(e, t));
+}
+function h_(e, t, n) {
+	let r = l_(t), i = n / 2, a = r <= n ? r / 2 : Math.max(i, Math.min(r - i, e.y));
 	return {
 		x: (e.x % r + r) % r,
 		y: a
 	};
 }
 //#endregion
+//#region frontend/weather.ts
+var g_ = {
+	yellow: "#e6b800",
+	orange: "#f08a24",
+	red: "#e03131"
+}, __ = {
+	yellow: 1,
+	orange: 2,
+	red: 3
+}, v_ = {
+	yellow: "Yellow",
+	orange: "Orange",
+	red: "Red"
+}, y_ = (e) => !!e && typeof e == "object" && !Array.isArray(e), b_ = (e, t) => typeof e == "string" ? Array.from(e.trim()).slice(0, t).join("") : "", x_ = (e) => Array.isArray(e) && typeof e[0] == "number" && typeof e[1] == "number" && Math.abs(e[0]) <= 180 && Math.abs(e[1]) <= 90;
+function S_(e) {
+	if (!y_(e) || !Array.isArray(e.warnings)) throw Error("Unexpected weather warning response.");
+	let t = [];
+	for (let n of e.warnings) {
+		if (!y_(n) || typeof n.id != "string" || n.level !== "yellow" && n.level !== "orange" && n.level !== "red" || !Array.isArray(n.polygons)) continue;
+		let e = [];
+		for (let t of n.polygons) {
+			if (!Array.isArray(t)) continue;
+			let n = t.filter((e) => Array.isArray(e) && e.length >= 4 && e.every(x_));
+			n.length && n[0] === t[0] && e.push(n);
+		}
+		if (!e.length) continue;
+		let r = e.flatMap((e) => e[0]), i = r.map((e) => e[0]), a = r.map((e) => e[1]), o = typeof n.web == "string" && /^https:\/\//i.test(n.web) ? n.web : null, s = (e) => typeof e == "string" && !Number.isNaN(Date.parse(e)) ? e : null;
+		t.push({
+			id: n.id,
+			level: n.level,
+			event: b_(n.event, 40),
+			title: b_(n.title, 120) || "Weather warning",
+			area: b_(n.area, 200),
+			description: b_(n.description, 1e3),
+			instruction: b_(n.instruction, 1e3),
+			consequences: b_(n.consequences, 1e3),
+			start: s(n.start),
+			end: s(n.end),
+			web: o,
+			marine: n.marine === !0,
+			polygons: e,
+			bounds: {
+				minLat: Math.min(...a),
+				maxLat: Math.max(...a),
+				minLng: Math.min(...i),
+				maxLng: Math.max(...i)
+			}
+		});
+	}
+	return t.sort((e, t) => __[e.level] - __[t.level]), {
+		warnings: t,
+		attribution: b_(e.attribution, 120) || "Weather warnings © MET Norway",
+		fetchedAt: typeof e.fetchedAt == "number" ? e.fetchedAt : 0,
+		stale: e.stale === !0
+	};
+}
+function C_(e, t) {
+	return t.filter((t) => e.lat >= t.bounds.minLat && e.lat <= t.bounds.maxLat && e.lng >= t.bounds.minLng && e.lng <= t.bounds.maxLng && t.polygons.some((t) => m_(e, t))).sort((e, t) => __[t.level] - __[e.level]);
+}
+var w_ = (e) => e.reduce((e, t) => !e || __[t.level] > __[e] ? t.level : e, void 0);
+function T_(e, t) {
+	return e.polygons.map((e) => e.map((e) => "M" + e.map(([e, n]) => {
+		let r = u_({
+			lat: n,
+			lng: e
+		}, t);
+		return `${r.x.toFixed(1)} ${r.y.toFixed(1)}`;
+	}).join("L") + "Z").join("")).join("");
+}
+function E_(e) {
+	let t = (e) => e ? new Date(e).toLocaleString(void 0, {
+		weekday: "short",
+		day: "numeric",
+		month: "short",
+		hour: "2-digit",
+		minute: "2-digit"
+	}) : "", n = t(e.start), r = t(e.end);
+	return n && r ? `${n} – ${r}` : r ? `Until ${r}` : n ? `From ${n}` : "Time not given";
+}
+//#endregion
 //#region frontend/world-map.ts
-var p_ = "http://www.w3.org/2000/svg", m_ = 7, h_ = 70, g_ = 12, __ = 6, v_ = /* @__PURE__ */ new Set([
+var D_ = "http://www.w3.org/2000/svg", O_ = 7, k_ = 70, A_ = 12, j_ = 6, M_ = 3e5, N_ = /* @__PURE__ */ new Set([
 	401,
 	403,
 	404,
 	419
-]), y_ = class extends Error {
+]), P_ = class extends Error {
 	status;
 	constructor(e, t) {
 		super(e), this.status = t;
 	}
-}, b_ = (e) => !!e && typeof e == "object" && !Array.isArray(e);
-function x_(e) {
+}, F_ = (e) => !!e && typeof e == "object" && !Array.isArray(e);
+function I_(e) {
 	e.innerHTML = `
     <div class="lm-shell lm-world-page">
       <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>WORLD MAP</span></div></div><div class="lm-header-right"><nav class="lm-pages" aria-label="LibreMap pages" hidden></nav><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
       <section class="lm-heading"><div><div class="lm-eyebrow">INFRASTRUCTURE / GEOGRAPHY</div></div><div class="lm-summary" aria-label="Location summary"></div></section>
-      <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device or location…"></label><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><button data-world="problems" aria-pressed="false">Only problems</button><button data-world="links" aria-pressed="true" class="lm-active">Links</button><span class="lm-spacer"></span><button data-world="refresh">↻ Refresh</button><button data-world="fullscreen" title="Fullscreen">⛶</button></div>
+      <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device or location…"></label><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><button data-world="problems" aria-pressed="false">Only problems</button><button data-world="links" aria-pressed="true" class="lm-active">Links</button><button data-world="weather" aria-pressed="false" hidden title="Show MET Norway weather warnings">⚠ Weather warnings</button><button data-world="addresses" aria-pressed="false" title="Show the LibreNMS location text and coordinates">Addresses</button><span class="lm-spacer"></span><button data-world="refresh">↻ Refresh</button><button data-world="fullscreen" title="Fullscreen">⛶</button></div>
       <div class="lm-notice" role="status" aria-live="polite">Loading device locations…</div>
       <main class="lm-workspace"><div class="lm-canvas-wrap lm-world-wrap">
-        <div class="lm-world" tabindex="0" aria-label="World map of device locations. Drag to pan, scroll to zoom."><div class="lm-world-tiles"></div><svg class="lm-world-links"></svg><div class="lm-world-markers"></div></div>
+        <div class="lm-world" tabindex="0" aria-label="World map of device locations. Drag to pan, scroll to zoom."><div class="lm-world-tiles"></div><svg class="lm-world-weather"></svg><svg class="lm-world-links"></svg><div class="lm-world-markers"></div></div>
         <div class="lm-empty" hidden></div>
         <div class="lm-map-controls"><button data-world="zoom-in" aria-label="Zoom in">+</button><button data-world="zoom-out" aria-label="Zoom out">−</button><button data-world="fit">Fit</button></div>
-        <div class="lm-legend"><span><i class="lm-world-key" style="background:${vg("up")}"></i>Up</span><span><i class="lm-world-key" style="background:${vg("down")}"></i>Down</span><span><i class="lm-world-key" style="background:${vg("unknown")}"></i>Unknown</span><span><i style="color:${hg.normal}"></i>&lt;50%</span><span><i style="color:${hg.warning}"></i>50–70%</span><span><i style="color:${hg.high}"></i>&gt;70%</span><span><i class="lm-dashed" style="color:#e05b65"></i>Link down</span></div>
+        <div class="lm-legend"><span><i class="lm-world-key" style="background:${yg("up")}"></i>Up</span><span><i class="lm-world-key" style="background:${yg("down")}"></i>Down</span><span><i class="lm-world-key" style="background:${yg("unknown")}"></i>Unknown</span><span><i style="color:${gg.normal}"></i>&lt;50%</span><span><i style="color:${gg.warning}"></i>50–70%</span><span><i style="color:${gg.high}"></i>&gt;70%</span><span><i class="lm-dashed" style="color:#e05b65"></i>Link down</span>${[
+		"yellow",
+		"orange",
+		"red"
+	].map((e) => `<span class="lm-world-weather-key" hidden><i class="lm-world-area" style="--area:${g_[e]}"></i>${v_[e]} warning</span>`).join("")}</div>
         <div class="lm-world-attribution" hidden></div>
       </div><aside class="lm-details" aria-label="Selection details"></aside></main>
       <footer><span class="lm-updated">Waiting for data</span><span>Drag to pan · Scroll or double-click to zoom · Click a location to inspect · Keys: / find · F fit · + − zoom · arrows pan · D next problem · Esc clear</span></footer>
     </div>`;
-	let t = (t) => e.querySelector(t), n = t(".lm-notice"), r = t(".lm-details"), i = t(".lm-empty"), a = t(".lm-world"), o = t(".lm-world-tiles"), s = t(".lm-world-links"), c = t(".lm-world-markers"), l = t("[aria-label=\"Find device\"]"), u = t("[aria-label=\"Device group\"]"), d = (e) => t(`[data-world="${e}"]`);
-	e.dataset.homeUrl && (t(".lm-back").href = e.dataset.homeUrl), jg(t(".lm-pages"), e, "world"), Sg(e, () => {});
-	let f, p = {
+	let t = (t) => e.querySelector(t), n = t(".lm-notice"), r = t(".lm-details"), i = t(".lm-empty"), a = t(".lm-world"), o = t(".lm-world-tiles"), s = t(".lm-world-links"), c = t(".lm-world-markers"), l = t(".lm-world-weather"), u = t("[aria-label=\"Find device\"]"), d = t("[aria-label=\"Device group\"]"), f = (e) => t(`[data-world="${e}"]`);
+	e.dataset.homeUrl && (t(".lm-back").href = e.dataset.homeUrl), Mg(t(".lm-pages"), e, "world"), Cg(e, () => {});
+	let p, m = {
 		nodes: [],
 		links: [],
 		deviceGroups: []
-	}, m, h = [], g = [], _ = [], v = {
+	}, h, g = [], _ = [], v = [], y = /* @__PURE__ */ new Map(), b = 0, x = {
 		zoom: 2,
 		center: {
-			x: c_(2) / 2,
-			y: c_(2) / 2
+			x: l_(2) / 2,
+			y: l_(2) / 2
 		}
-	}, y, b = !1, x = !0, S = !1, C = !1, w = -1, T = 0, E = 0, D = () => Date.now() / 1e3 + E, O = (e, t = !1) => {
+	}, S, C = !1, w = !0, T = !1, E = !1, D = -1, O = 0, k = 0, A = () => Date.now() / 1e3 + k, j = (e, t = !1) => {
 		n.textContent = e, n.classList.toggle("lm-error", t);
-	}, k = (e) => ug(e), A = (e) => e.name.trim() || "Unnamed location";
-	async function j(e, t) {
+	}, M = (e) => ug(e), N = `libremap:world:${e.dataset.storageKey ?? "local"}`, P = (() => {
+		try {
+			let e = JSON.parse(localStorage.getItem(N) ?? "{}");
+			return F_(e) ? e : {};
+		} catch {
+			return {};
+		}
+	})(), F = () => {
+		try {
+			localStorage.setItem(N, JSON.stringify({
+				addresses: I,
+				weather: R
+			}));
+		} catch {}
+	}, I = P.addresses === !0, L = e.dataset.weatherEndpoint, R = !!L && P.weather === !0, z = [], B = "", V = 0, H = !1, U = /* @__PURE__ */ new Map();
+	function W(e) {
+		if (I && e.name.trim()) return e.name.trim();
+		let t = [...new Set(e.nodes.map((e) => e.site).filter((e) => e && e !== "Unclassified"))].sort();
+		if (t.length) return t.length > 1 ? `${t[0]} +${t.length - 1}` : t[0];
+		let n = e.nodes[0];
+		return n ? e.nodes.length > 1 ? `${M(n)} +${e.nodes.length - 1}` : M(n) : "Location";
+	}
+	async function G(e, t) {
 		if (!e) throw Error(`Missing ${t} endpoint.`);
 		let n = new URL(e, location.href);
 		if (n.origin !== location.origin) throw Error(`The ${t} endpoint must use the same origin.`);
@@ -19431,17 +19583,17 @@ function x_(e) {
 			let e = `LibreNMS returned HTTP ${r.status}`;
 			if (r.status === 422) {
 				let t = await r.json().catch(() => void 0);
-				b_(t) && typeof t.message == "string" && t.message.length <= 300 && (e = t.message);
+				F_(t) && typeof t.message == "string" && t.message.length <= 300 && (e = t.message);
 			}
-			throw r.status === 429 && (e = "Too many requests. The map will retry on the next refresh."), new y_(e, r.status);
+			throw r.status === 429 && (e = "Too many requests. The map will retry on the next refresh."), new P_(e, r.status);
 		}
 		return r.json();
 	}
-	function M(e) {
-		if (!b_(e) || !Array.isArray(e.locations) || !b_(e.devices)) throw Error("Unexpected locations response.");
-		let t = e.locations.filter((e) => b_(e) && typeof e.id == "string" && typeof e.name == "string" && typeof e.lat == "number" && typeof e.lng == "number" && Math.abs(e.lat) <= 90 && Math.abs(e.lng) <= 180), n = {};
+	function K(e) {
+		if (!F_(e) || !Array.isArray(e.locations) || !F_(e.devices)) throw Error("Unexpected locations response.");
+		let t = e.locations.filter((e) => F_(e) && typeof e.id == "string" && typeof e.name == "string" && typeof e.lat == "number" && typeof e.lng == "number" && Math.abs(e.lat) <= 90 && Math.abs(e.lng) <= 180), n = {};
 		for (let [t, r] of Object.entries(e.devices)) typeof r == "string" && (n[t] = r);
-		let r = b_(e.map) ? e.map : {}, i = b_(r.center) ? r.center : {}, a = (e, t) => typeof e == "number" && Number.isFinite(e) ? e : t;
+		let r = F_(e.map) ? e.map : {}, i = F_(r.center) ? r.center : {}, a = (e, t) => typeof e == "number" && Number.isFinite(e) ? e : t;
 		return {
 			locations: t,
 			devices: n,
@@ -19457,21 +19609,22 @@ function x_(e) {
 			}
 		};
 	}
-	function N() {
-		let e = l.value.trim().toLowerCase(), t = p.deviceGroups.find((e) => e.id === u.value), n = t ? new Set(t.deviceIds) : void 0, r = new Map((m?.locations ?? []).map((e) => [e.id, e])), a = (e) => {
-			let t = m?.devices[e];
+	function q() {
+		let e = u.value.trim().toLowerCase(), t = m.deviceGroups.find((e) => e.id === d.value), n = t ? new Set(t.deviceIds) : void 0, r = new Map((h?.locations ?? []).map((e) => [e.id, e])), a = (e) => {
+			let t = h?.devices[e];
 			return t ? r.get(t) : void 0;
-		}, o = p.nodes.filter((t) => n && !n.has(t.id) || b && t.status !== "down" ? !1 : !e || [
-			k(t),
+		}, o = m.nodes.filter((t) => n && !n.has(t.id) || C && t.status !== "down" ? !1 : !e || [
+			M(t),
 			t.hostname,
 			t.sysName ?? "",
-			a(t.id)?.name ?? ""
+			t.site,
+			I ? a(t.id)?.name ?? "" : ""
 		].some((t) => t.toLowerCase().includes(e))), s = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new Map();
-		_ = [];
+		v = [];
 		for (let e of o) {
 			let t = a(e.id);
 			if (!t) {
-				_.push(e);
+				v.push(e);
 				continue;
 			}
 			let n = s.get(t.id);
@@ -19481,14 +19634,22 @@ function x_(e) {
 				status: "up"
 			}, s.set(t.id, n)), n.nodes.push(e), c.set(e.id, n);
 		}
-		h = [...s.values()];
-		for (let e of h) e.nodes.sort((e, t) => k(e).localeCompare(k(t), void 0, { numeric: !0 })), e.status = e.nodes.some((e) => e.status === "down") ? "down" : e.nodes.every((e) => e.status === "up") ? "up" : "unknown";
-		h.sort((e, t) => Number(e.status === "down") - Number(t.status === "down") || e.id.localeCompare(t.id));
-		let d = /* @__PURE__ */ new Map();
-		for (let e of p.links) {
+		g = [...s.values()];
+		for (let e of g) e.nodes.sort((e, t) => M(e).localeCompare(M(t), void 0, { numeric: !0 })), e.status = e.nodes.some((e) => e.status === "down") ? "down" : e.nodes.every((e) => e.status === "up") ? "up" : "unknown";
+		g.sort((e, t) => Number(e.status === "down") - Number(t.status === "down") || e.id.localeCompare(t.id));
+		let l = /* @__PURE__ */ new Map(), f = new Set(o.map((e) => e.id));
+		y = /* @__PURE__ */ new Map(), b = 0;
+		for (let e of m.links) {
 			let t = c.get(e.source), n = c.get(e.target);
-			if (!t || !n || t === n) continue;
-			let [r, i] = t.id < n.id ? [t, n] : [n, t], a = `${r.id}|${i.id}`, o = d.get(a) ?? {
+			if (t && t === n) {
+				y.set(t.id, [...y.get(t.id) ?? [], e]);
+				continue;
+			}
+			if (!t || !n) {
+				f.has(e.source) && f.has(e.target) && b++;
+				continue;
+			}
+			let [r, i] = t.id < n.id ? [t, n] : [n, t], a = `${r.id}|${i.id}`, o = l.get(a) ?? {
 				key: a,
 				a: r,
 				b: i,
@@ -19497,222 +19658,277 @@ function x_(e) {
 				state: "",
 				label: ""
 			};
-			o.links.push(e), d.set(a, o);
+			o.links.push(e), l.set(a, o);
 		}
-		g = [...d.values()], P(), y?.type === "site" && !s.has(y.id) && (y = void 0), y?.type === "device" && !c.has(y.id) && (y = void 0), y?.type === "link" && !d.has(y.id) && (y = void 0), V(), U(), ne(), ae(), i.hidden = h.length > 0, i.textContent = f ? m?.locations.length ? "No located devices match these filters." : "No devices have map coordinates yet. Give devices a LibreNMS location with coordinates to place them here." : "Device locations unavailable. Use Refresh to retry.", G();
+		_ = [...l.values()], Y(), J(), S?.type === "site" && !s.has(S.id) && (S = void 0), S?.type === "device" && !c.has(S.id) && (S = void 0), S?.type === "link" && !l.has(S.id) && (S = void 0), S?.type === "warning" && !z.some((e) => e.id === S.id) && (S = void 0), ae(), se(), xe(), we(), i.hidden = g.length > 0, i.textContent = p ? h?.locations.length ? "No located devices match these filters." : "No devices have map coordinates yet. Give devices a LibreNMS location with coordinates to place them here." : "Device locations unavailable. Use Refresh to retry.", me();
 	}
-	function P() {
-		let e = D(), t = f?.config.staleAfter ?? 900;
-		for (let n of g) {
-			let r = n.links.map((n) => gg(n, e, t)), i = r.filter((e) => e.state === "down").length, a = r.filter((e) => e.state === "up" && e.utilization !== null).sort((e, t) => t.utilization - e.utilization)[0];
+	function J() {
+		if (U.clear(), R) for (let e of g) {
+			let t = C_(e, z);
+			t.length && U.set(e.id, t);
+		}
+	}
+	function Y() {
+		let e = A(), t = p?.config.staleAfter ?? 900;
+		for (let n of _) {
+			let r = n.links.map((n) => _g(n, e, t)), i = r.filter((e) => e.state === "down").length, a = r.filter((e) => e.state === "up" && e.utilization !== null).sort((e, t) => t.utilization - e.utilization)[0];
 			i ? (n.color = "#e05b65", n.state = "down", n.label = `${i} of ${n.links.length} down`) : a ? (n.color = a.color, n.state = "up", n.label = `busiest ${a.label}`) : (n.color = "#8a96a9", n.state = "unknown", n.label = "load unknown");
 		}
 	}
-	function F() {
-		P();
-		for (let e of g) {
-			let t = H.get(e.key);
+	function X() {
+		Y();
+		for (let e of _) {
+			let t = oe.get(e.key);
 			if (!t) continue;
 			t[1].setAttribute("stroke", e.color), e.state === "up" ? t[1].removeAttribute("stroke-dasharray") : t[1].setAttribute("stroke-dasharray", "7 5");
 			let n = t[1].parentElement?.querySelector("title");
-			n && (n.textContent = `${A(e.a)} ↔ ${A(e.b)} · ${e.links.length} link${e.links.length === 1 ? "" : "s"} · ${e.label}`);
+			n && (n.textContent = `${W(e.a)} ↔ ${W(e.b)} · ${e.links.length} link${e.links.length === 1 ? "" : "s"} · ${e.label}`);
 		}
 	}
-	let I = () => ({
+	let ee = () => ({
 		w: a.clientWidth,
 		h: a.clientHeight
 	});
-	function L(e) {
-		let { w: t, h: n } = I(), r = c_(v.zoom), i = e.x - v.center.x;
+	function te(e) {
+		let { w: t, h: n } = ee(), r = l_(x.zoom), i = e.x - x.center.x;
 		return i > r / 2 ? i -= r : i < -r / 2 && (i += r), {
 			x: t / 2 + i,
-			y: n / 2 + e.y - v.center.y
+			y: n / 2 + e.y - x.center.y
 		};
 	}
-	let R = /* @__PURE__ */ new Map();
-	function z() {
-		let e = m?.map.tiles;
+	let ne = /* @__PURE__ */ new Map();
+	function re() {
+		let e = h?.map.tiles;
 		if (!e) {
-			R.size && (o.replaceChildren(), R.clear());
+			ne.size && (o.replaceChildren(), ne.clear());
 			return;
 		}
-		let { w: t, h: n } = I(), r = v.zoom, i = 2 ** r, a = v.center.x - t / 2, s = v.center.y - n / 2, c = /* @__PURE__ */ new Set();
+		let { w: t, h: n } = ee(), r = x.zoom, i = 2 ** r, a = x.center.x - t / 2, s = x.center.y - n / 2, c = /* @__PURE__ */ new Set();
 		for (let l = Math.max(0, Math.floor(s / 256)); l <= Math.min(i - 1, Math.floor((s + n) / 256)); l++) for (let n = Math.floor(a / 256); n <= Math.floor((a + t) / 256); n++) {
 			let t = `${r}/${n}/${l}`;
 			c.add(t);
-			let i = R.get(t);
+			let i = ne.get(t);
 			if (!i) {
-				let a = d_(e, r, n, l);
+				let a = f_(e, r, n, l);
 				if (!a) continue;
 				i = new Image(256, 256), i.alt = "", i.decoding = "async", i.draggable = !1, i.onerror = () => {
-					i.classList.add("lm-tile-failed"), ++T === __ && O("Map tiles could not be loaded. Device locations are still shown.", !0);
-				}, i.src = a, R.set(t, i), o.append(i);
+					i.classList.add("lm-tile-failed"), ++O === j_ && j("Map tiles could not be loaded. Device locations are still shown.", !0);
+				}, i.src = a, ne.set(t, i), o.append(i);
 			}
 			i.style.transform = `translate(${Math.round(n * 256 - a)}px,${Math.round(l * 256 - s)}px)`;
 		}
-		for (let [e, t] of R) c.has(e) || (t.remove(), R.delete(e));
+		for (let [e, t] of ne) c.has(e) || (t.remove(), ne.delete(e));
 	}
-	let B = /* @__PURE__ */ new Map();
-	function V() {
-		B.clear(), c.replaceChildren(...h.map((e) => {
-			let t = e.nodes.length, n = e.nodes.filter((e) => e.status === "down").length, r = document.createElement("button");
-			r.type = "button", r.className = `lm-world-marker lm-world-${e.status}`, r.dataset.site = e.id, r.setAttribute("aria-label", `${A(e)}: ${t} device${t === 1 ? "" : "s"}${n ? `, ${n} down` : ""}`), r.style.setProperty("--marker", `${Math.round(Math.min(36, 14 + Math.sqrt(t) * 4))}px`);
-			let i = document.createElement("span");
-			i.className = "lm-world-dot", i.textContent = t > 1 ? String(t) : "";
+	let ie = /* @__PURE__ */ new Map();
+	function ae() {
+		ie.clear(), c.replaceChildren(...g.map((e) => {
+			let t = e.nodes.length, n = e.nodes.filter((e) => e.status === "down").length, r = document.createElement("button"), i = w_(U.get(e.id) ?? []);
+			r.type = "button", r.className = `lm-world-marker lm-world-${e.status}`, r.dataset.site = e.id, r.setAttribute("aria-label", `${W(e)}: ${t} device${t === 1 ? "" : "s"}${n ? `, ${n} down` : ""}${i ? `, ${i} weather warning` : ""}`), r.style.setProperty("--marker", `${Math.round(Math.min(36, 14 + Math.sqrt(t) * 4))}px`);
 			let a = document.createElement("span");
-			return a.className = "lm-world-label", a.textContent = A(e), r.append(i, a), B.set(e.id, r), r;
+			a.className = "lm-world-dot", a.textContent = t > 1 ? String(t) : "";
+			let o = document.createElement("span");
+			if (o.className = "lm-world-label", o.textContent = W(e), r.append(a, o), i) {
+				let e = document.createElement("span");
+				e.className = "lm-world-badge", e.textContent = "!", e.style.setProperty("--area", g_[i]), r.dataset.warning = i, r.append(e);
+			}
+			return ie.set(e.id, r), r;
 		}));
 	}
-	let H = /* @__PURE__ */ new Map();
-	function U() {
-		if (H.clear(), s.replaceChildren(), x) for (let e of g) {
-			let t = document.createElementNS(p_, "g");
-			t.classList.add("lm-world-link"), t.dataset.link = e.key, t.setAttribute("tabindex", "0"), t.setAttribute("role", "button"), t.setAttribute("aria-label", `${A(e.a)} to ${A(e.b)}: ${e.links.length} link${e.links.length === 1 ? "" : "s"}, ${e.label}`);
-			let n = document.createElementNS(p_, "title");
-			n.textContent = `${A(e.a)} ↔ ${A(e.b)} · ${e.links.length} link${e.links.length === 1 ? "" : "s"} · ${e.label}`;
-			let r = document.createElementNS(p_, "line");
+	let oe = /* @__PURE__ */ new Map();
+	function se() {
+		if (oe.clear(), s.replaceChildren(), w) for (let e of _) {
+			let t = document.createElementNS(D_, "g");
+			t.classList.add("lm-world-link"), t.dataset.link = e.key, t.setAttribute("tabindex", "0"), t.setAttribute("role", "button"), t.setAttribute("aria-label", `${W(e.a)} to ${W(e.b)}: ${e.links.length} link${e.links.length === 1 ? "" : "s"}, ${e.label}`);
+			let n = document.createElementNS(D_, "title");
+			n.textContent = `${W(e.a)} ↔ ${W(e.b)} · ${e.links.length} link${e.links.length === 1 ? "" : "s"} · ${e.label}`;
+			let r = document.createElementNS(D_, "line");
 			r.classList.add("lm-world-hit");
-			let i = document.createElementNS(p_, "line");
-			i.classList.add("lm-world-line"), i.setAttribute("stroke", e.color), i.setAttribute("stroke-width", String(Math.min(7, 2 + Math.log2(e.links.length)))), e.state !== "up" && i.setAttribute("stroke-dasharray", "7 5"), t.append(n, r, i), s.append(t), H.set(e.key, [r, i]);
+			let i = document.createElementNS(D_, "line");
+			i.classList.add("lm-world-line"), i.setAttribute("stroke", e.color), i.setAttribute("stroke-width", String(Math.min(7, 2 + Math.log2(e.links.length)))), e.state !== "up" && i.setAttribute("stroke-dasharray", "7 5"), t.append(n, r, i), s.append(t), oe.set(e.key, [r, i]);
 		}
 	}
-	let W = 0;
-	function G() {
-		cancelAnimationFrame(W), W = 0;
-		let { w: e, h: t } = I();
-		z();
-		for (let n of h) {
-			let r = B.get(n.id);
-			if (!r) continue;
-			let i = L(l_(n, v.zoom)), a = i.x < -60 || i.y < -60 || i.x > e + 60 || i.y > t + 60;
-			r.style.display = a ? "none" : "", a || (r.style.transform = `translate(${i.x}px,${i.y}px) translate(-50%,-50%)`), r.classList.toggle("lm-selected", y?.type === "site" && y.id === n.id || y?.type === "device" && n.nodes.some((e) => e.id === y.id));
+	let ce, le = -1, ue = /* @__PURE__ */ new Map();
+	function de() {
+		l.replaceChildren(), ue.clear(), ce = void 0, le = -1;
+		for (let t of e.querySelectorAll(".lm-world-weather-key")) t.hidden = !R;
+		if (R) {
+			ce = document.createElementNS(D_, "g");
+			for (let e of z) {
+				let t = document.createElementNS(D_, "path");
+				t.classList.add("lm-world-warning"), t.dataset.warning = e.id, t.setAttribute("fill-rule", "evenodd"), t.style.setProperty("--area", g_[e.level]);
+				let n = document.createElementNS(D_, "title");
+				n.textContent = `${v_[e.level]} warning: ${e.title}${e.area ? ` · ${e.area}` : ""}`, t.append(n), ce.append(t), ue.set(e.id, t);
+			}
+			l.append(ce);
 		}
-		c.classList.toggle("lm-world-named", v.zoom >= m_);
-		let n = c_(v.zoom);
-		for (let e of g) {
-			let t = H.get(e.key);
+	}
+	function fe() {
+		if (!ce) return;
+		if (le !== x.zoom) {
+			for (let e of z) ue.get(e.id)?.setAttribute("d", T_(e, x.zoom));
+			le = x.zoom;
+		}
+		let { w: e, h: t } = ee();
+		ce.setAttribute("transform", `translate(${e / 2 - x.center.x} ${t / 2 - x.center.y})`);
+		for (let [e, t] of ue) t.classList.toggle("lm-selected", S?.type === "warning" && S.id === e);
+	}
+	let pe = 0;
+	function me() {
+		cancelAnimationFrame(pe), pe = 0;
+		let { w: e, h: t } = ee();
+		re(), fe();
+		for (let n of g) {
+			let r = ie.get(n.id);
+			if (!r) continue;
+			let i = te(u_(n, x.zoom)), a = i.x < -60 || i.y < -60 || i.x > e + 60 || i.y > t + 60;
+			r.style.display = a ? "none" : "", a || (r.style.transform = `translate(${i.x}px,${i.y}px) translate(-50%,-50%)`), r.classList.toggle("lm-selected", S?.type === "site" && S.id === n.id || S?.type === "device" && n.nodes.some((e) => e.id === S.id));
+		}
+		c.classList.toggle("lm-world-named", x.zoom >= O_);
+		let n = l_(x.zoom);
+		for (let e of _) {
+			let t = oe.get(e.key);
 			if (!t) continue;
-			let r = L(l_(e.a, v.zoom)), i = L(l_(e.b, v.zoom));
+			let r = te(u_(e.a, x.zoom)), i = te(u_(e.b, x.zoom));
 			i.x - r.x > n / 2 ? i.x -= n : r.x - i.x > n / 2 && (i.x += n);
 			for (let e of t) e.setAttribute("x1", String(r.x)), e.setAttribute("y1", String(r.y)), e.setAttribute("x2", String(i.x)), e.setAttribute("y2", String(i.y));
-			t[1].classList.toggle("lm-selected", y?.type === "link" && y.id === e.key);
+			t[1].classList.toggle("lm-selected", S?.type === "link" && S.id === e.key);
 		}
 	}
-	let K = () => {
-		W ||= requestAnimationFrame(G);
+	let he = () => {
+		pe ||= requestAnimationFrame(me);
 	};
-	function q(e, t) {
-		let n = m?.map.maxZoom ?? 18;
-		e = Math.max(1, Math.min(n, Math.round(e))), v = {
+	function ge(e, t) {
+		let n = h?.map.maxZoom ?? 18;
+		e = Math.max(1, Math.min(n, Math.round(e))), x = {
 			zoom: e,
-			center: f_(t, e, I().h)
-		}, ee(), K();
+			center: h_(t, e, ee().h)
+		}, ye(), he();
 	}
-	function J(e, t) {
-		let { w: n, h: r } = I(), i = m?.map.maxZoom ?? 18, a = Math.max(1, Math.min(i, v.zoom + e));
-		if (a === v.zoom) return;
+	function _e(e, t) {
+		let { w: n, h: r } = ee(), i = h?.map.maxZoom ?? 18, a = Math.max(1, Math.min(i, x.zoom + e));
+		if (a === x.zoom) return;
 		let o = t ?? {
 			x: n / 2,
 			y: r / 2
-		}, s = 2 ** (a - v.zoom), c = {
+		}, s = 2 ** (a - x.zoom), c = {
 			x: o.x - n / 2,
 			y: o.y - r / 2
 		};
-		q(a, {
-			x: (v.center.x + c.x) * s - c.x,
-			y: (v.center.y + c.y) * s - c.y
+		ge(a, {
+			x: (x.center.x + c.x) * s - c.x,
+			y: (x.center.y + c.y) * s - c.y
 		});
 	}
-	function Y() {
-		let { w: e, h: t } = I();
-		if (!h.length) {
-			let e = m?.map.center ?? {
+	function Z() {
+		let { w: e, h: t } = ee();
+		if (!g.length) {
+			let e = h?.map.center ?? {
 				lat: 0,
 				lng: 0,
 				zoom: 2
 			};
-			q(e.zoom, l_(e, e.zoom));
+			ge(e.zoom, u_(e, e.zoom));
 			return;
 		}
-		let n = u_(h, e, t, h_, m?.map.maxZoom ?? 18, g_);
-		q(n.zoom, n.center);
+		let n = d_(g, e, t, k_, h?.map.maxZoom ?? 18, A_);
+		ge(n.zoom, n.center);
 	}
-	function X(e) {
-		let t = Math.max(v.zoom, Math.min(m?.map.maxZoom ?? 18, 8));
-		q(t, l_(e, t));
+	function ve(e) {
+		let t = Math.max(x.zoom, Math.min(h?.map.maxZoom ?? 18, 8));
+		ge(t, u_(e, t));
 	}
-	function ee() {
-		let e = m?.map.maxZoom ?? 18, t = !f;
-		d("zoom-in").disabled = v.zoom >= e, d("zoom-out").disabled = v.zoom <= 1, d("fit").disabled = t, l.disabled = t, u.disabled = t, d("problems").disabled = t, d("links").disabled = t;
-		for (let [e, t] of [["problems", b], ["links", x]]) d(e).classList.toggle("lm-active", t), d(e).setAttribute("aria-pressed", String(t));
+	function ye() {
+		let e = h?.map.maxZoom ?? 18, t = !p;
+		f("zoom-in").disabled = x.zoom >= e, f("zoom-out").disabled = x.zoom <= 1, f("fit").disabled = t, u.disabled = t, d.disabled = t, f("problems").disabled = t, f("links").disabled = t, f("addresses").disabled = t, f("weather").hidden = !L, f("weather").disabled = H;
+		for (let [e, t] of [
+			["problems", C],
+			["links", w],
+			["addresses", I],
+			["weather", R]
+		]) f(e).classList.toggle("lm-active", t), f(e).setAttribute("aria-pressed", String(t));
 	}
-	let Z = (e, t, n) => {
+	let Q = (e, t, n) => {
 		let r = document.createElement(e);
 		return t !== void 0 && (r.textContent = t), n && (r.className = n), r;
 	};
-	function te(e) {
-		let t = Z("dl");
-		for (let [n, r] of e) t.append(Z("dt", n), Z("dd", r));
+	function be(e) {
+		let t = Q("dl");
+		for (let [n, r] of e) t.append(Q("dt", n), Q("dd", r));
 		return t;
 	}
-	function ne() {
+	function xe() {
 		let e = t(".lm-summary");
-		if (e.replaceChildren(), !f) return;
-		let n = h.reduce((e, t) => e + t.nodes.length, 0), r = h.filter((e) => e.status === "down").length;
+		if (e.replaceChildren(), !p) return;
+		let n = g.reduce((e, t) => e + t.nodes.length, 0), r = g.filter((e) => e.status === "down").length;
 		for (let [t, i] of [
 			[n, "Located"],
-			[h.length, "Locations"],
-			[_.length, "No coordinates"],
+			[g.length, "Locations"],
+			[v.length, "No coordinates"],
 			[r, "Problem sites"]
 		]) {
-			let n = i === "Problem sites" && r > 0, a = Z(n ? "button" : "div");
-			a.append(Z("strong", String(t)), Z("span", i)), n && (a.className = "lm-summary-down", a.dataset.world = "next-down", a.title = "Show the next location with a down device (D)", a.setAttribute("aria-label", `${r} problem sites. Show the next one`)), e.append(a);
+			let n = i === "Problem sites" && r > 0, a = Q(n ? "button" : "div");
+			a.append(Q("strong", String(t)), Q("span", i)), n && (a.className = "lm-summary-down", a.dataset.world = "next-down", a.title = "Show the next location with a down device (D)", a.setAttribute("aria-label", `${r} problem sites. Show the next one`)), e.append(a);
+		}
+		if (R) {
+			let t = Q("div", void 0, "lm-summary-weather");
+			t.append(Q("strong", String(U.size)), Q("span", "Under warning")), e.append(t);
 		}
 	}
-	function re(e) {
-		y = e, ae(), K();
+	function Se(e) {
+		S = e, we(), he();
 	}
-	function ie() {
-		let e = Z("button", "×", "lm-close");
-		return e.setAttribute("aria-label", "Close details"), e.onclick = () => re(void 0), e;
+	function Ce() {
+		let e = Q("button", "×", "lm-close");
+		return e.setAttribute("aria-label", "Close details"), e.onclick = () => Se(void 0), e;
 	}
-	function ae() {
+	function we() {
 		r.replaceChildren();
-		let e = y?.type === "site" ? h.find((e) => e.id === y.id) : void 0, t = y?.type === "device" ? h.flatMap((e) => e.nodes).find((e) => e.id === y.id) : void 0, n = y?.type === "link" ? g.find((e) => e.key === y.id) : void 0;
-		if (e) return se(e);
-		if (t) return ce(t);
-		if (n) return le(n);
-		if (r.append(Z("div", "WORLD MAP", "lm-eyebrow"), Z("h2", "Where the network is"), Z("p", "Each marker is a LibreNMS location, sized by its number of devices and coloured by the worst device status there. Lines are discovered links between locations, coloured by their busiest link.")), _.length) {
-			let e = Z("details", "", "lm-world-unlocated");
-			e.append(Z("summary", `${_.length} device${_.length === 1 ? " has" : "s have"} no coordinates`));
-			let t = Z("ul");
-			for (let e of _.slice(0, 50)) t.append(Z("li", k(e)));
-			_.length > 50 && t.append(Z("li", `…and ${_.length - 50} more`)), e.append(t, Z("p", "Give these devices a LibreNMS location with coordinates to place them on the map.")), r.append(e);
+		let e = S?.type === "site" ? g.find((e) => e.id === S.id) : void 0, t = S?.type === "device" ? g.flatMap((e) => e.nodes).find((e) => e.id === S.id) : void 0, n = S?.type === "link" ? _.find((e) => e.key === S.id) : void 0, i = S?.type === "warning" ? z.find((e) => e.id === S.id) : void 0;
+		if (e) return Ee(e);
+		if (t) return ke(t);
+		if (n) return je(n);
+		if (i) return Oe(i);
+		r.append(Q("div", "WORLD MAP", "lm-eyebrow"), Q("h2", "Where the network is"), Q("p", "Each marker is a LibreNMS location, sized by its number of devices and coloured by the worst device status there. Lines are discovered links between locations, coloured by their busiest link."));
+		let a = [...y.values()].reduce((e, t) => e + t.length, 0);
+		if (a || b) {
+			let e = [a ? `${a} join devices at the same location (listed under that location)` : "", b ? `${b} reach a device without coordinates` : ""].filter(Boolean);
+			r.append(Q("p", `${a + b} link${a + b === 1 ? " is" : "s are"} not drawn as lines: ${e.join("; ")}.`, "lm-hint lm-world-undrawn"));
+		}
+		if (I || r.append(Q("p", "Locations are named by their LibreMap site or devices. Select Addresses to show the LibreNMS location text and coordinates.", "lm-hint")), R && (r.append(Q("div", `WEATHER WARNINGS · ${z.length}`, "lm-eyebrow lm-world-section")), z.length ? r.append(De(z)) : r.append(Q("p", V ? "MET Norway has no active warnings." : "Loading weather warnings…"))), v.length) {
+			let e = Q("details", "", "lm-world-unlocated");
+			e.append(Q("summary", `${v.length} device${v.length === 1 ? " has" : "s have"} no coordinates`));
+			let t = Q("ul");
+			for (let e of v.slice(0, 50)) t.append(Q("li", M(e)));
+			v.length > 50 && t.append(Q("li", `…and ${v.length - 50} more`)), e.append(t, Q("p", "Give these devices a LibreNMS location with coordinates to place them on the map.")), r.append(e);
 		}
 	}
-	function oe(e) {
-		let t = Z("button", void 0, "lm-world-device"), n = Z("i");
-		return n.style.background = vg(e.status), t.append(n, Z("span", k(e))), t.title = e.status, t.onclick = () => re({
+	function Te(e) {
+		let t = Q("button", void 0, "lm-world-device"), n = Q("i");
+		return n.style.background = yg(e.status), t.append(n, Q("span", M(e))), t.title = e.status, t.onclick = () => Se({
 			type: "device",
 			id: e.id
 		}), t;
 	}
-	function se(e) {
+	function Ee(e) {
 		let t = e.nodes.filter((e) => e.status === "down").length;
-		r.append(ie(), Z("div", "LOCATION", "lm-eyebrow"), Z("h2", A(e)), te([
+		r.append(Ce(), Q("div", "LOCATION", "lm-eyebrow"), Q("h2", W(e)), be([
 			["Devices", String(e.nodes.length)],
 			["Down", String(t)],
-			["Coordinates", `${e.lat.toFixed(5)}, ${e.lng.toFixed(5)}`]
+			...I ? [["Coordinates", `${e.lat.toFixed(5)}, ${e.lng.toFixed(5)}`]] : []
 		]));
-		let n = Z("div", void 0, "lm-device-list");
-		n.append(...e.nodes.map(oe)), r.append(n);
-		let i = g.filter((t) => t.a === e || t.b === e);
-		if (i.length) {
-			r.append(Z("div", "CONNECTED LOCATIONS", "lm-eyebrow"));
-			let t = Z("div", void 0, "lm-device-list");
-			for (let n of i) {
-				let r = n.a === e ? n.b : n.a, i = Z("button", `${A(r)} · ${n.links.length} link${n.links.length === 1 ? "" : "s"} · ${n.label}`);
-				i.onclick = () => re({
+		let n = U.get(e.id) ?? [];
+		n.length && r.append(Q("div", "WEATHER WARNINGS HERE", "lm-eyebrow lm-world-section"), De(n));
+		let i = Q("div", void 0, "lm-device-list");
+		i.append(...e.nodes.map(Te)), r.append(i);
+		let a = y.get(e.id) ?? [];
+		a.length && r.append(Q("div", `LINKS WITHIN THIS LOCATION · ${a.length}`, "lm-eyebrow lm-world-section"), Ae(a));
+		let o = _.filter((t) => t.a === e || t.b === e);
+		if (o.length) {
+			r.append(Q("div", "CONNECTED LOCATIONS", "lm-eyebrow"));
+			let t = Q("div", void 0, "lm-device-list");
+			for (let n of o) {
+				let r = n.a === e ? n.b : n.a, i = Q("button", `${W(r)} · ${n.links.length} link${n.links.length === 1 ? "" : "s"} · ${n.label}`);
+				i.onclick = () => Se({
 					type: "link",
 					id: n.key
 				}), t.append(i);
@@ -19720,225 +19936,315 @@ function x_(e) {
 			r.append(t);
 		}
 	}
-	function ce(e) {
-		let t = h.find((t) => t.nodes.includes(e)), n = Z("button", `← ${A(t)}`, "lm-world-back");
-		if (n.onclick = () => re({
+	function De(e) {
+		let t = Q("div", void 0, "lm-device-list lm-world-warnings");
+		for (let n of [...e].sort((e, t) => __[t.level] - __[e.level])) {
+			let e = Q("button", void 0, "lm-world-device"), r = Q("i");
+			r.style.background = g_[n.level], e.append(r, Q("span", `${n.title}${n.area ? ` · ${n.area}` : ""}`)), e.title = `${v_[n.level]} warning`, e.onclick = () => Se({
+				type: "warning",
+				id: n.id
+			}), t.append(e);
+		}
+		return t;
+	}
+	function Oe(e) {
+		let t = g.filter((t) => U.get(t.id)?.includes(e));
+		r.append(Ce(), Q("div", `${v_[e.level].toUpperCase()} WARNING · MET NORWAY`, "lm-eyebrow"), Q("h2", e.title), be([
+			...e.area ? [["Area", e.area]] : [],
+			["When", E_(e)],
+			["Locations affected", String(t.length)]
+		]));
+		for (let [t, n] of [
+			["", e.description],
+			["Consequences", e.consequences],
+			["Advice", e.instruction]
+		]) n && (t && r.append(Q("div", t.toUpperCase(), "lm-eyebrow lm-world-section")), r.append(Q("p", n)));
+		if (t.length) {
+			let e = Q("div", void 0, "lm-device-list");
+			for (let n of t) {
+				let t = Q("button", W(n));
+				t.onclick = () => {
+					Se({
+						type: "site",
+						id: n.id
+					}), ve(n);
+				}, e.append(t);
+			}
+			r.append(Q("div", "AFFECTED LOCATIONS", "lm-eyebrow lm-world-section"), e);
+		}
+		if (e.web) {
+			let t = Q("a", "Details at MET Norway ↗", "lm-device-link");
+			t.href = e.web, t.target = "_blank", t.rel = "noopener noreferrer", r.append(t);
+		}
+	}
+	function ke(e) {
+		let t = g.find((t) => t.nodes.includes(e)), n = Q("button", `← ${W(t)}`, "lm-world-back");
+		if (n.onclick = () => Se({
 			type: "site",
 			id: t.id
-		}), r.append(ie(), n, Z("div", `${e.role} / DEVICE`, "lm-eyebrow"), Z("h2", k(e)), te([
+		}), r.append(Ce(), n, Q("div", `${e.role} / DEVICE`, "lm-eyebrow"), Q("h2", M(e)), be([
 			["Status", e.status],
-			...k(e) === e.hostname ? [] : [["Hostname", e.hostname]],
-			["Location", A(t)],
+			...M(e) === e.hostname ? [] : [["Hostname", e.hostname]],
+			["Location", W(t)],
 			["Site", e.site]
 		])), e.url) {
 			let t = new URL(e.url, location.href);
 			if (t.origin === location.origin) {
-				let e = Z("a", "Open in LibreNMS ↗", "lm-device-link");
+				let e = Q("a", "Open in LibreNMS ↗", "lm-device-link");
 				e.href = t.href, r.append(e);
 			}
 		}
 	}
-	function le(e) {
-		let t = new Map(p.nodes.map((e) => [e.id, k(e)]));
-		r.append(ie(), Z("div", "CONNECTIONS", "lm-eyebrow"), Z("h2", `${A(e.a)} ↔ ${A(e.b)}`), te([["Links", String(e.links.length)], ["Status", e.label]]));
-		let n = Z("ul", void 0, "lm-world-links-list"), i = D(), a = f?.config.staleAfter ?? 900;
-		for (let r of e.links) {
-			let e = gg(r, i, a), o = Z("li"), s = Z("strong", e.label);
-			s.style.color = e.color, o.append(s, Z("span", `${t.get(r.source) ?? r.source} ${r.sourcePort} ↔ ${t.get(r.target) ?? r.target} ${r.targetPort}`)), n.append(o);
+	function Ae(e) {
+		let t = new Map(m.nodes.map((e) => [e.id, M(e)])), n = Q("ul", void 0, "lm-world-links-list"), r = A(), i = p?.config.staleAfter ?? 900;
+		for (let a of e) {
+			let e = _g(a, r, i), o = Q("li"), s = Q("strong", e.label);
+			s.style.color = e.color;
+			let c = a.targetPortId ? a.targetPort : `${a.targetPort} (reported by neighbor)`;
+			o.append(s, Q("span", `${t.get(a.source) ?? a.source} ${a.sourcePort} ↔ ${t.get(a.target) ?? a.target} ${c}`)), n.append(o);
 		}
-		r.append(n);
+		return n;
+	}
+	function je(e) {
+		r.append(Ce(), Q("div", "CONNECTIONS", "lm-eyebrow"), Q("h2", `${W(e.a)} ↔ ${W(e.b)}`), be([["Links", String(e.links.length)], ["Status", e.label]]), Ae(e.links));
 		for (let t of [e.a, e.b]) {
-			let e = Z("button", `Show ${A(t)}`, "lm-world-back");
+			let e = Q("button", `Show ${W(t)}`, "lm-world-back");
 			e.onclick = () => {
-				re({
+				Se({
 					type: "site",
 					id: t.id
-				}), X(t);
+				}), ve(t);
 			}, r.append(e);
 		}
 	}
-	function ue() {
-		let e = h.filter((e) => e.status === "down");
+	function Me() {
+		let e = g.filter((e) => e.status === "down");
 		if (!e.length) {
-			O(f && p.nodes.some((e) => e.status === "down") ? "Down devices have no coordinates or are hidden by the current filters." : "No located devices are down.");
+			j(p && m.nodes.some((e) => e.status === "down") ? "Down devices have no coordinates or are hidden by the current filters." : "No located devices are down.");
 			return;
 		}
-		w = (w + 1) % e.length;
-		let t = e[w];
-		re({
+		D = (D + 1) % e.length;
+		let t = e[D];
+		Se({
 			type: "site",
 			id: t.id
-		}), X(t), O(`Problem location ${w + 1} of ${e.length}: ${A(t)}`);
+		}), ve(t), j(`Problem location ${D + 1} of ${e.length}: ${W(t)}`);
 	}
-	async function de() {
-		if (!S) {
-			S = !0, d("refresh").disabled = !0;
+	async function Ne() {
+		if (!T) {
+			T = !0, f("refresh").disabled = !0;
 			try {
-				let [n, r] = await Promise.all([j(e.dataset.endpoint, "topology"), j(e.dataset.locationsEndpoint, "locations")]);
-				if (!b_(n) || !Array.isArray(n.devices) || !Array.isArray(n.links) || !b_(n.config)) throw Error("Unexpected topology response.");
-				f = n, m = M(r), p = pg(f), E = Number.isFinite(f.generatedAt) ? f.generatedAt - Date.now() / 1e3 : 0;
-				let i = u.value;
-				u.replaceChildren(new Option("All device groups", ""), ...p.deviceGroups.map((e) => new Option(e.name, e.id))), u.value = p.deviceGroups.some((e) => e.id === i) ? i : "";
-				let a = t(".lm-world-attribution");
-				a.textContent = m.map.tiles ? m.map.attribution : "", a.hidden = !a.textContent, N(), ee(), C ||= (Y(), !0), t(".lm-updated").textContent = `Snapshot fetched · ${(/* @__PURE__ */ new Date(f.generatedAt * 1e3)).toLocaleTimeString()}`, O(m.locations.length ? `${h.reduce((e, t) => e + t.nodes.length, 0)} devices at ${h.length} locations` : "No devices have map coordinates yet.");
+				let [n, r] = await Promise.all([G(e.dataset.endpoint, "topology"), G(e.dataset.locationsEndpoint, "locations")]);
+				if (!F_(n) || !Array.isArray(n.devices) || !Array.isArray(n.links) || !F_(n.config)) throw Error("Unexpected topology response.");
+				p = n, h = K(r), m = mg(p), k = Number.isFinite(p.generatedAt) ? p.generatedAt - Date.now() / 1e3 : 0;
+				let i = d.value;
+				d.replaceChildren(new Option("All device groups", ""), ...m.deviceGroups.map((e) => new Option(e.name, e.id))), d.value = m.deviceGroups.some((e) => e.id === i) ? i : "", Pe(), q(), ye(), E ||= (Z(), !0), t(".lm-updated").textContent = `Snapshot fetched · ${(/* @__PURE__ */ new Date(p.generatedAt * 1e3)).toLocaleTimeString()}`, j(h.locations.length ? `${g.reduce((e, t) => e + t.nodes.length, 0)} devices at ${g.length} locations` : "No devices have map coordinates yet.");
 			} catch (e) {
 				let t = e instanceof Error ? e.message : "Unable to load device locations";
-				if (f && !(e instanceof y_ && v_.has(e.status))) {
-					O(`${t} · Showing the data from ${(/* @__PURE__ */ new Date(f.generatedAt * 1e3)).toLocaleTimeString()}.`, !0);
+				if (p && !(e instanceof P_ && N_.has(e.status))) {
+					j(`${t} · Showing the data from ${(/* @__PURE__ */ new Date(p.generatedAt * 1e3)).toLocaleTimeString()}.`, !0);
 					return;
 				}
-				f = void 0, m = void 0, p = {
+				p = void 0, h = void 0, m = {
 					nodes: [],
 					links: [],
 					deviceGroups: []
-				}, y = void 0, C = !1, N(), ee(), O(t, !0);
+				}, S = void 0, E = !1, q(), ye(), j(t, !0);
 			} finally {
-				S = !1, d("refresh").disabled = !1;
+				T = !1, f("refresh").disabled = !1;
 			}
 		}
 	}
-	let fe;
+	function Pe() {
+		let e = t(".lm-world-attribution");
+		e.textContent = [h?.map.tiles ? h.map.attribution : "", R ? B || "Weather warnings © MET Norway" : ""].filter(Boolean).join(" · "), e.hidden = !e.textContent;
+	}
+	async function Fe() {
+		if (R && !H && L) {
+			H = !0, ye();
+			try {
+				let e = S_(await G(L, "weather warning"));
+				if (!R) return;
+				z = e.warnings, B = e.attribution, V = e.fetchedAt || Date.now() / 1e3, de(), q(), Pe();
+				let t = (/* @__PURE__ */ new Date(V * 1e3)).toLocaleTimeString();
+				j(e.stale ? `MET Norway is unreachable · Showing the weather warnings from ${t}.` : `${z.length} active weather warning${z.length === 1 ? "" : "s"} · ${U.size} location${U.size === 1 ? "" : "s"} affected · MET Norway, ${t}`, e.stale);
+			} catch (e) {
+				j(`${e instanceof Error ? e.message : "Weather warnings are unavailable."}${z.length ? " · Showing the last warnings received." : ""}`, !0);
+			} finally {
+				H = !1, ye();
+			}
+		}
+	}
+	function Ie(e) {
+		R = e && !!L, F(), R || (z = [], V = 0, S?.type === "warning" && (S = void 0)), de(), q(), Pe(), ye(), R && Fe();
+	}
+	let Le;
 	a.addEventListener("pointerdown", (e) => {
-		e.button !== 0 || e.target.closest(".lm-world-marker, .lm-world-link") || (fe = {
+		if (e.button !== 0 || e.target.closest(".lm-world-marker, .lm-world-link")) return;
+		let t = e.target.closest(".lm-world-warning")?.dataset.warning;
+		Le = {
 			id: e.pointerId,
 			start: {
 				x: e.clientX,
 				y: e.clientY
 			},
-			center: { ...v.center },
-			moved: !1
-		}, a.setPointerCapture(e.pointerId), a.classList.add("lm-dragging"));
+			center: { ...x.center },
+			moved: !1,
+			warning: t
+		}, a.setPointerCapture(e.pointerId), a.classList.add("lm-dragging");
 	}), a.addEventListener("pointermove", (e) => {
-		if (!fe || e.pointerId !== fe.id) return;
-		let t = e.clientX - fe.start.x, n = e.clientY - fe.start.y;
-		!fe.moved && Math.hypot(t, n) < 4 || (fe.moved = !0, v = {
-			zoom: v.zoom,
-			center: f_({
-				x: fe.center.x - t,
-				y: fe.center.y - n
-			}, v.zoom, I().h)
-		}, K());
+		if (!Le || e.pointerId !== Le.id) return;
+		let t = e.clientX - Le.start.x, n = e.clientY - Le.start.y;
+		!Le.moved && Math.hypot(t, n) < 4 || (Le.moved = !0, x = {
+			zoom: x.zoom,
+			center: h_({
+				x: Le.center.x - t,
+				y: Le.center.y - n
+			}, x.zoom, ee().h)
+		}, he());
 	});
-	let pe = (e) => {
-		fe && e.pointerId === fe.id && (!fe.moved && e.type === "pointerup" && y && re(void 0), fe = void 0, a.classList.remove("lm-dragging"));
+	let Re = (e) => {
+		Le && e.pointerId === Le.id && (!Le.moved && e.type === "pointerup" && (Le.warning ? Se({
+			type: "warning",
+			id: Le.warning
+		}) : S && Se(void 0)), Le = void 0, a.classList.remove("lm-dragging"));
 	};
-	a.addEventListener("pointerup", pe), a.addEventListener("pointercancel", pe);
-	let me = 0;
+	a.addEventListener("pointerup", Re), a.addEventListener("pointercancel", Re);
+	let ze = 0;
 	a.addEventListener("wheel", (e) => {
-		if (e.preventDefault(), e.timeStamp - me < 180 || e.deltaY === 0) return;
-		me = e.timeStamp;
+		if (e.preventDefault(), e.timeStamp - ze < 180 || e.deltaY === 0) return;
+		ze = e.timeStamp;
 		let t = a.getBoundingClientRect();
-		J(e.deltaY < 0 ? 1 : -1, {
+		_e(e.deltaY < 0 ? 1 : -1, {
 			x: e.clientX - t.left,
 			y: e.clientY - t.top
 		});
 	}, { passive: !1 }), a.addEventListener("dblclick", (e) => {
 		if (e.target.closest(".lm-world-marker, .lm-world-link")) return;
 		let t = a.getBoundingClientRect();
-		J(e.shiftKey ? -1 : 1, {
+		_e(e.shiftKey ? -1 : 1, {
 			x: e.clientX - t.left,
 			y: e.clientY - t.top
 		});
 	}), c.addEventListener("click", (e) => {
 		let t = e.target.closest(".lm-world-marker");
-		t?.dataset.site && re({
+		t?.dataset.site && Se({
 			type: "site",
 			id: t.dataset.site
 		});
 	});
-	let he = (e) => {
+	let Be = (e) => {
 		let t = e.target.closest(".lm-world-link");
-		t?.dataset.link && re({
+		t?.dataset.link && Se({
 			type: "link",
 			id: t.dataset.link
 		});
 	};
-	s.addEventListener("click", he), s.addEventListener("keydown", (e) => {
-		(e.key === "Enter" || e.key === " ") && (e.preventDefault(), he(e));
-	}), l.addEventListener("input", () => {
-		l.value = n_(l.value), N();
-	}), u.addEventListener("change", () => {
-		N(), Y();
+	s.addEventListener("click", Be), s.addEventListener("keydown", (e) => {
+		(e.key === "Enter" || e.key === " ") && (e.preventDefault(), Be(e));
+	}), u.addEventListener("input", () => {
+		u.value = r_(u.value), q();
+	}), d.addEventListener("change", () => {
+		q(), Z();
 	}), e.addEventListener("click", (t) => {
 		switch (t.target.closest("[data-world]")?.dataset.world) {
 			case "problems":
-				b = !b, ee(), N(), b && h.length && Y();
+				C = !C, ye(), q(), C && g.length && Z();
 				break;
 			case "links":
-				x = !x, ee(), U(), G();
+				w = !w, ye(), se(), me();
+				break;
+			case "weather":
+				Ie(!R);
+				break;
+			case "addresses":
+				I = !I, F(), ye(), q();
 				break;
 			case "refresh":
-				de();
+				Ne();
 				break;
 			case "fit":
-				Y();
+				Z();
 				break;
 			case "zoom-in":
-				J(1);
+				_e(1);
 				break;
 			case "zoom-out":
-				J(-1);
+				_e(-1);
 				break;
 			case "next-down":
-				ue();
+				Me();
 				break;
-			case "fullscreen": (document.fullscreenElement ? document.exitFullscreen() : e.requestFullscreen()).catch(() => O("Fullscreen is unavailable in this browser."));
+			case "fullscreen": (document.fullscreenElement ? document.exitFullscreen() : e.requestFullscreen()).catch(() => j("Fullscreen is unavailable in this browser."));
 		}
 	}), document.addEventListener("keydown", (t) => {
-		if (!Dg(t, e)) return;
-		let n = (e, t) => q(v.zoom, {
-			x: v.center.x + e,
-			y: v.center.y + t
+		if (!Og(t, e)) return;
+		let n = (e, t) => ge(x.zoom, {
+			x: x.center.x + e,
+			y: x.center.y + t
 		}), r = {
 			"/": () => {
-				l.disabled || l.focus();
+				u.disabled || u.focus();
 			},
-			f: Y,
-			"+": () => J(1),
-			"=": () => J(1),
-			"-": () => J(-1),
-			d: ue,
+			f: Z,
+			"+": () => _e(1),
+			"=": () => _e(1),
+			"-": () => _e(-1),
+			d: Me,
 			ArrowLeft: () => n(-120, 0),
 			ArrowRight: () => n(120, 0),
 			ArrowUp: () => n(0, -120),
 			ArrowDown: () => n(0, 120),
 			Escape: () => {
-				y && re(void 0);
+				S && Se(void 0);
 			}
 		}[t.key.length === 1 ? t.key.toLowerCase() : t.key];
 		r && (t.preventDefault(), r());
 	}), new ResizeObserver(() => {
-		q(v.zoom, v.center), !C && h.length && (Y(), C = !0);
+		ge(x.zoom, x.center), !E && g.length && (Z(), E = !0);
 	}).observe(a), setInterval(() => {
-		f && g.length && F();
+		p && _.length && X();
 	}, 1e4), setInterval(() => {
-		document.hidden || de();
-	}, 6e4), e.dataset.debug === "true" && Object.defineProperty(window, "libremapWorldDebug", {
+		document.hidden || Ne();
+	}, 6e4), setInterval(() => {
+		R && !document.hidden && Fe();
+	}, M_), e.dataset.debug === "true" && Object.defineProperty(window, "libremapWorldDebug", {
 		value: () => ({
-			zoom: v.zoom,
-			center: { ...v.center },
-			markers: h.map((e) => ({
+			zoom: x.zoom,
+			center: { ...x.center },
+			markers: g.map((e) => ({
 				id: e.id,
 				name: e.name,
+				label: W(e),
 				count: e.nodes.length,
 				status: e.status,
-				position: L(l_(e, v.zoom))
+				warning: w_(U.get(e.id) ?? []) ?? null,
+				position: te(u_(e, x.zoom))
 			})),
-			links: g.map((e) => ({
+			links: _.map((e) => ({
 				key: e.key,
 				count: e.links.length,
 				state: e.state,
 				label: e.label,
 				color: e.color
 			})),
-			tiles: [...R.values()].map((e) => e.src)
+			undrawn: {
+				withinSite: Object.fromEntries([...y].map(([e, t]) => [e, t.length])),
+				unlocated: b
+			},
+			warnings: R ? z.map((e) => ({
+				id: e.id,
+				level: e.level,
+				drawn: !!ue.get(e.id)?.getAttribute("d")
+			})) : [],
+			tiles: [...ne.values()].map((e) => e.src)
 		}),
 		configurable: !0
-	}), ee(), ae(), de();
+	}), ye(), we(), de(), Ne(), R && Fe();
 }
 //#endregion
 //#region node_modules/elkjs/lib/elk-worker.min.js?worker
-var S_ = /* @__PURE__ */ c((/* @__PURE__ */ o(((e, t) => {
+var L_ = /* @__PURE__ */ c((/* @__PURE__ */ o(((e, t) => {
 	(function(n) {
 		if (typeof e == "object" && t !== void 0) t.exports = n();
 		else if (typeof define == "function" && define.amd) define([], n);
@@ -20132,7 +20438,7 @@ var S_ = /* @__PURE__ */ c((/* @__PURE__ */ o(((e, t) => {
 		}, {}, [2])(2);
 	});
 })))(), 1);
-function C_(e) {
+function R_(e) {
 	return new Worker("" + new URL("assets/elk-worker.min-ChMHynyl.js", import.meta.url).href, {
 		type: "module",
 		name: e?.name
@@ -20140,20 +20446,20 @@ function C_(e) {
 }
 //#endregion
 //#region frontend/layout-positions.ts
-var w_ = 256, T_ = 180, E_ = 246, D_ = 155, O_ = 8, k_ = 4, A_ = 4, j_ = [{
+var z_ = 256, B_ = 180, V_ = 246, H_ = 155, U_ = 8, W_ = 4, G_ = 4, K_ = [{
 	column: 260,
 	row: 210
 }, {
 	column: 238,
 	row: 135
-}], M_ = 2;
-function N_(e, t) {
+}], q_ = 2;
+function J_(e, t) {
 	if (e <= 0) return !1;
 	let n = Math.max(1, Math.round(e / t));
-	return Math.abs(e - n * t) <= M_;
+	return Math.abs(e - n * t) <= q_;
 }
-function P_(e, t) {
-	if (e.length <= O_) return !1;
+function Y_(e, t) {
+	if (e.length <= U_) return !1;
 	let n = /* @__PURE__ */ new Map();
 	for (let [, t] of e) {
 		let e = Math.round(t.y);
@@ -20164,19 +20470,19 @@ function P_(e, t) {
 		return t.slice(1).map((e, n) => e - t[n]).filter((e) => e > 0);
 	});
 	if (i.length === 0 || a.length < 2) return !1;
-	let o = i.filter((e) => N_(e, t.row)).length, s = a.filter((e) => N_(e, t.column)).length;
+	let o = i.filter((e) => J_(e, t.row)).length, s = a.filter((e) => J_(e, t.column)).length;
 	return o / i.length >= .75 && s / a.length >= .75;
 }
-function F_(e, t) {
+function X_(e, t) {
 	let n = Object.entries(e);
-	if (n.length <= O_) return e;
+	if (n.length <= U_) return e;
 	let r = n.map(([, e]) => e.x), i = n.map(([, e]) => e.y), a = Math.max(...r) - Math.min(...r) + 210, o = Math.max(...i) - Math.min(...i) + 76, s = n.filter(([e]) => !t.has(e));
-	return a / o <= A_ && !j_.some((e) => P_(s, e)) ? e : Object.fromEntries(n.filter(([e]) => t.has(e)));
+	return a / o <= G_ && !K_.some((e) => Y_(s, e)) ? e : Object.fromEntries(n.filter(([e]) => t.has(e)));
 }
-function I_(e, t, n = !1) {
+function Z_(e, t, n = !1) {
 	let r = /* @__PURE__ */ new Map();
 	for (let t of e.nodes) r.set(t.tier, [...r.get(t.tier) ?? [], t]);
-	let i = n ? E_ : w_, a = n ? D_ : T_, o = n ? 1.2 : 1.4, s = Math.max(n ? k_ : O_, Math.ceil(Math.sqrt(e.nodes.length * o * a / i))), c = {}, l = 0;
+	let i = n ? V_ : z_, a = n ? H_ : B_, o = n ? 1.2 : 1.4, s = Math.max(n ? W_ : U_, Math.ceil(Math.sqrt(e.nodes.length * o * a / i))), c = {}, l = 0;
 	for (let e of [...r.keys()].sort((e, t) => e - t)) {
 		let n = r.get(e);
 		n.sort((e, n) => e.site.localeCompare(n.site) || (t.get(e.id) ?? 0) - (t.get(n.id) ?? 0) || e.id.localeCompare(n.id));
@@ -20194,11 +20500,11 @@ function I_(e, t, n = !1) {
 }
 //#endregion
 //#region frontend/layout.ts
-var L_ = () => new S_.default({ workerFactory: () => new C_() }), R_ = L_();
-function z_() {
-	R_.terminateWorker(), R_ = L_();
+var Q_ = () => new L_.default({ workerFactory: () => new R_() }), $_ = Q_();
+function ev() {
+	$_.terminateWorker(), $_ = Q_();
 }
-async function B_(e) {
+async function tv(e) {
 	let t = new Map(e.nodes.map((e) => [e.id, e])), n = e.links.filter((e) => t.get(e.source).tier !== t.get(e.target).tier).map((e, n) => {
 		let r = t.get(e.source).tier < t.get(e.target).tier;
 		return {
@@ -20206,7 +20512,7 @@ async function B_(e) {
 			sources: [r ? e.source : e.target],
 			targets: [r ? e.target : e.source]
 		};
-	}), r = await R_.layout({
+	}), r = await $_.layout({
 		id: "root",
 		layoutOptions: {
 			"elk.algorithm": "layered",
@@ -20222,12 +20528,12 @@ async function B_(e) {
 		})),
 		edges: n
 	});
-	return I_(e, new Map(r.children.map((e) => [e.id, e.x ?? 0])));
+	return Z_(e, new Map(r.children.map((e) => [e.id, e.x ?? 0])));
 }
 //#endregion
 //#region frontend/link-preview.ts
-var V_ = 300, H_ = 150, U_ = 400;
-function W_(e, t, n) {
+var nv = 300, rv = 150, iv = 400;
+function av(e, t, n) {
 	let r = e.querySelector(".lm-canvas-wrap"), i = e.querySelector(".lm-canvas"), a = document.createElement("div");
 	a.className = "lm-link-preview", a.hidden = !0, a.setAttribute("role", "tooltip"), r.append(a);
 	let o = "", s, c = () => {
@@ -20242,8 +20548,8 @@ function W_(e, t, n) {
 			id: t,
 			from: "-1d",
 			legend: "no",
-			width: String(V_),
-			height: String(H_),
+			width: String(nv),
+			height: String(rv),
 			refreshnum: String(n() ?? 0)
 		};
 		for (let [e, t] of Object.entries(i)) r.searchParams.set(e, t);
@@ -20275,7 +20581,7 @@ function W_(e, t, n) {
 			let o = l(e.portId);
 			if (o) {
 				let n = document.createElement("img");
-				n.src = o, n.width = V_, n.height = H_, n.alt = `Traffic graph for ${e.hostname} ${e.port}`, n.decoding = "async", t.append(n);
+				n.src = o, n.width = nv, n.height = rv, n.alt = `Traffic graph for ${e.hostname} ${e.port}`, n.decoding = "async", t.append(n);
 			} else {
 				let e = document.createElement("div");
 				e.className = "lm-link-preview-unavailable", e.textContent = "Traffic graph unavailable", t.append(e);
@@ -20289,14 +20595,14 @@ function W_(e, t, n) {
 		let t = e.target, n = e.renderedPosition ?? t.renderedMidpoint();
 		s = setTimeout(() => {
 			o === t.id() && t.visible() && d(t, n);
-		}, U_);
+		}, iv);
 	}), t.on("mouseout", "edge", (e) => {
 		o === e.target.id() && c();
 	}), t.on("pan zoom", c), i.addEventListener("mouseleave", c), { hide: c };
 }
 //#endregion
 //#region frontend/demo.ts
-function G_() {
+function ov() {
 	let e = Math.floor(Date.now() / 1e3);
 	return {
 		generatedAt: e,
@@ -20461,7 +20767,7 @@ function G_() {
 		}))
 	};
 }
-var K_ = () => ({
+var sv = () => ({
 	rootId: null,
 	deviceGroupId: null,
 	site: "",
@@ -20476,26 +20782,26 @@ var K_ = () => ({
 		x: 0,
 		y: 0
 	}
-}), q_ = (e) => !!e && typeof e == "object" && !Array.isArray(e), J_ = (e) => typeof e == "number" && Number.isFinite(e) && Math.abs(e) <= 1e6, Y_ = (e) => q_(e) && J_(e.x) && J_(e.y);
-function X_(e, t) {
-	let n = K_();
-	if (!q_(e)) return n;
+}), cv = (e) => !!e && typeof e == "object" && !Array.isArray(e), lv = (e) => typeof e == "number" && Number.isFinite(e) && Math.abs(e) <= 1e6, uv = (e) => cv(e) && lv(e.x) && lv(e.y);
+function dv(e, t) {
+	let n = sv();
+	if (!cv(e)) return n;
 	let r = t ? new Set(t.nodes.map((e) => e.id)) : void 0, i = (e) => /^\d+$/.test(e) && (!r || r.has(e));
-	typeof e.rootId == "string" && i(e.rootId) && (!t || t.nodes.some((t) => t.id === e.rootId && t.role === "AGG")) && (n.rootId = e.rootId), typeof e.deviceGroupId == "string" && /^[1-9]\d{0,9}$/.test(e.deviceGroupId) && (!t || t.deviceGroups.some((t) => t.id === e.deviceGroupId)) && (n.deviceGroupId = e.deviceGroupId), typeof e.site == "string" && t_(e.site) <= 200 && (!t || t.nodes.some((t) => t.site === e.site)) && (n.site = e.site), typeof e.search == "string" && (n.search = n_(e.search)), n.backbone = e.backbone === !0, n.showOther = e.showOther === !0, typeof e.hops == "number" && Number.isInteger(e.hops) && e.hops >= 1 && e.hops <= 5 && (n.hops = e.hops);
-	let a = t ? t.nodes.length : e_, o = 0;
-	if (q_(e.positions)) for (let [t, r] of Object.entries(e.positions)) {
+	typeof e.rootId == "string" && i(e.rootId) && (!t || t.nodes.some((t) => t.id === e.rootId && t.role === "AGG")) && (n.rootId = e.rootId), typeof e.deviceGroupId == "string" && /^[1-9]\d{0,9}$/.test(e.deviceGroupId) && (!t || t.deviceGroups.some((t) => t.id === e.deviceGroupId)) && (n.deviceGroupId = e.deviceGroupId), typeof e.site == "string" && n_(e.site) <= 200 && (!t || t.nodes.some((t) => t.site === e.site)) && (n.site = e.site), typeof e.search == "string" && (n.search = r_(e.search)), n.backbone = e.backbone === !0, n.showOther = e.showOther === !0, typeof e.hops == "number" && Number.isInteger(e.hops) && e.hops >= 1 && e.hops <= 5 && (n.hops = e.hops);
+	let a = t ? t.nodes.length : t_, o = 0;
+	if (cv(e.positions)) for (let [t, r] of Object.entries(e.positions)) {
 		if (o >= a) break;
-		i(t) && Y_(r) && (n.positions[t] = {
+		i(t) && uv(r) && (n.positions[t] = {
 			x: r.x,
 			y: r.y
 		}, o++);
 	}
-	return Array.isArray(e.pinned) && (n.pinned = [...new Set(e.pinned.filter((e) => typeof e == "string" && i(e) && Object.hasOwn(n.positions, e)))].slice(0, a)), typeof e.zoom == "number" && Number.isFinite(e.zoom) && (n.zoom = Math.min(2.5, Math.max(.15, e.zoom))), Y_(e.pan) && (n.pan = {
+	return Array.isArray(e.pinned) && (n.pinned = [...new Set(e.pinned.filter((e) => typeof e == "string" && i(e) && Object.hasOwn(n.positions, e)))].slice(0, a)), typeof e.zoom == "number" && Number.isFinite(e.zoom) && (n.zoom = Math.min(2.5, Math.max(.15, e.zoom))), uv(e.pan) && (n.pan = {
 		x: e.pan.x,
 		y: e.pan.y
 	}), n;
 }
-function Z_(e, t) {
+function fv(e, t) {
 	let n = e.nodes.find((e) => e.id === t && e.role === "AGG");
 	if (!n) return new Set(e.nodes.map((e) => e.id));
 	let r = new Map(e.nodes.map((e) => [e.id, e])), i = new Map(e.nodes.map((e) => [e.id, []]));
@@ -20515,7 +20821,7 @@ function Z_(e, t) {
 	}
 	return o;
 }
-function Q_(e, t, n, r) {
+function pv(e, t, n, r) {
 	let i = /* @__PURE__ */ new Map();
 	for (let t of e.links) if (r.has(t.source) && r.has(t.target)) for (let e of [t.source, t.target]) {
 		let n = i.get(e);
@@ -20536,8 +20842,8 @@ function Q_(e, t, n, r) {
 		links: o
 	};
 }
-function $_(e, t) {
-	let n = Z_(e, t.rootId), r = t.deviceGroupId ? e.deviceGroups.find((e) => e.id === t.deviceGroupId) : void 0;
+function mv(e, t) {
+	let n = fv(e, t.rootId), r = t.deviceGroupId ? e.deviceGroups.find((e) => e.id === t.deviceGroupId) : void 0;
 	if (t.deviceGroupId && !r) return /* @__PURE__ */ new Set();
 	let i = r ? new Set(r.deviceIds) : void 0, a = new Set(e.nodes.filter((e) => {
 		let r = t.backbone ? e.role === "AGG" : t.showOther || e.role === "AGG" || e.role === "ER";
@@ -20550,40 +20856,40 @@ function $_(e, t) {
 	if (t.search) for (let t of e.links) s.has(t.source) && a.has(t.target) && c.add(t.target), s.has(t.target) && a.has(t.source) && c.add(t.source);
 	return c;
 }
-var ev = 228, tv = 94;
-function nv(e, t, n, r) {
+var hv = 228, gv = 94;
+function _v(e, t, n, r) {
 	let i = {}, a = /* @__PURE__ */ new Map(), o = (e, t) => `${e}:${t}`, s = (e) => {
-		let t = o(Math.floor(e.x / ev), Math.floor(e.y / tv)), n = a.get(t);
+		let t = o(Math.floor(e.x / hv), Math.floor(e.y / gv)), n = a.get(t);
 		n ? n.push(e) : a.set(t, [e]);
 	}, c = (e) => {
-		let t = Math.floor(e.x / ev), n = Math.floor(e.y / tv);
-		for (let r = -1; r <= 1; r++) for (let i = -1; i <= 1; i++) for (let s of a.get(o(t + r, n + i)) ?? []) if (Math.abs(s.x - e.x) < ev && Math.abs(s.y - e.y) < tv) return !0;
+		let t = Math.floor(e.x / hv), n = Math.floor(e.y / gv);
+		for (let r = -1; r <= 1; r++) for (let i = -1; i <= 1; i++) for (let s of a.get(o(t + r, n + i)) ?? []) if (Math.abs(s.x - e.x) < hv && Math.abs(s.y - e.y) < gv) return !0;
 		return !1;
 	};
-	for (let t of e.nodes) Y_(n[t.id]) && (i[t.id] = { ...n[t.id] }, s(i[t.id]));
+	for (let t of e.nodes) uv(n[t.id]) && (i[t.id] = { ...n[t.id] }, s(i[t.id]));
 	for (let n of e.nodes) if (!i[n.id]) {
 		let r = { ...t[n.id] ?? {
 			x: 0,
 			y: n.tier * 180
 		} }, a = r.x;
-		for (let t = 1; c(r) && t <= e.nodes.length * 2 + 1; t++) r.x = a + Math.ceil(t / 2) * ev * (t % 2 ? 1 : -1);
+		for (let t = 1; c(r) && t <= e.nodes.length * 2 + 1; t++) r.x = a + Math.ceil(t / 2) * hv * (t % 2 ? 1 : -1);
 		i[n.id] = r, s(r);
 	}
-	for (let e of r) i[e] && Y_(n[e]) && (i[e] = { ...n[e] });
+	for (let e of r) i[e] && uv(n[e]) && (i[e] = { ...n[e] });
 	return i;
 }
 //#endregion
 //#region frontend/view-store.ts
-var rv = class extends Error {
+var vv = class extends Error {
 	status;
 	constructor(e, t = 0) {
 		super(e), this.status = t;
 	}
-}, iv = {
+}, yv = {
 	PUT: "This view changed in another tab. Reload views before saving again.",
 	DELETE: "This view changed in another tab. Reload views before deleting it."
 };
-function av(e, t) {
+function bv(e, t) {
 	let n = new URL(e, location.href);
 	if (n.origin !== location.origin) throw Error("Saved views must use the same origin.");
 	async function r(e, r, i, a = {}) {
@@ -20601,7 +20907,7 @@ function av(e, t) {
 			body: i === void 0 ? void 0 : JSON.stringify(i),
 			signal: AbortSignal.timeout(2e4)
 		});
-		if (!c.ok) throw new rv(await ov(c, e), c.status);
+		if (!c.ok) throw new vv(await xv(c, e), c.status);
 		return c.status === 204 ? void 0 : c.json();
 	}
 	return {
@@ -20620,7 +20926,7 @@ function av(e, t) {
 		}
 	};
 }
-async function ov(e, t) {
+async function xv(e, t) {
 	if (e.status === 422) {
 		let t = await e.json().catch(() => void 0), n = t && typeof t == "object" && "message" in t && typeof t.message == "string" ? t.message.trim() : "";
 		if (n && n.length <= 300) return n;
@@ -20629,21 +20935,21 @@ async function ov(e, t) {
 		401: "Your session has expired. Sign in and reload.",
 		403: "You no longer have access to saved views.",
 		404: "This view is no longer available. Reload views.",
-		409: iv[t] ?? iv.PUT,
+		409: yv[t] ?? yv.PUT,
 		419: "Your session has expired. Reload the page before saving.",
 		422: "The view could not be saved. Check its name, device access and size.",
 		429: "Too many requests. Wait a moment before saving again.",
 		503: "Saved views are unavailable. The plugin database migration may be pending."
 	}[e.status] ?? `Saved views request failed (HTTP ${e.status}).`;
 }
-function sv() {
+function Sv() {
 	if (typeof crypto.randomUUID == "function") return crypto.randomUUID();
 	let e = crypto.getRandomValues(/* @__PURE__ */ new Uint8Array(16));
 	e[6] = e[6] & 15 | 64, e[8] = e[8] & 63 | 128;
 	let t = [...e].map((e) => e.toString(16).padStart(2, "0")).join("");
 	return `${t.slice(0, 8)}-${t.slice(8, 12)}-${t.slice(12, 16)}-${t.slice(16, 20)}-${t.slice(20)}`;
 }
-function cv(e) {
+function Cv(e) {
 	function t() {
 		let t;
 		try {
@@ -20662,7 +20968,7 @@ function cv(e) {
 		}
 		return Array.isArray(n) ? n.filter((e) => e && typeof e.id == "string" && typeof e.name == "string" && Number.isInteger(e.revision)).slice(0, 50).map((e) => ({
 			...e,
-			state: X_(e.state)
+			state: dv(e.state)
 		})) : [];
 	}
 	function n(t) {
@@ -20672,12 +20978,12 @@ function cv(e) {
 		list: async () => t(),
 		save: async (e, r, i) => {
 			let a = t(), o = a.findIndex((e) => e.id === i?.id);
-			if (i && (o < 0 || a[o].revision !== i.revision)) throw new rv(iv.PUT, 409);
-			if (!i && a.length >= 50) throw new rv("You can save up to 50 views. Delete a view before creating another.", 422);
+			if (i && (o < 0 || a[o].revision !== i.revision)) throw new vv(yv.PUT, 409);
+			if (!i && a.length >= 50) throw new vv("You can save up to 50 views. Delete a view before creating another.", 422);
 			let s = {
-				id: i?.id ?? sv(),
+				id: i?.id ?? Sv(),
 				name: e,
-				state: X_(r),
+				state: dv(r),
 				revision: (i?.revision ?? 0) + 1,
 				updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 			};
@@ -20685,14 +20991,14 @@ function cv(e) {
 		},
 		remove: async (e) => {
 			let r = t(), i = r.find((t) => t.id === e.id);
-			if (!i || i.revision !== e.revision) throw new rv(iv.DELETE, 409);
+			if (!i || i.revision !== e.revision) throw new vv(yv.DELETE, 409);
 			n(r.filter((t) => t.id !== e.id));
 		}
 	};
 }
 //#endregion
 //#region frontend/views-panel.ts
-function lv(e, t) {
+function wv(e, t) {
 	e.innerHTML = "<label class=\"lm-select\">Saved view <select aria-label=\"Saved view\"><option value=\"\">Current workspace</option></select></label><button data-view-action=\"save\" disabled>Save view</button><button data-view-action=\"delete\" disabled>Delete view</button><button data-view-action=\"reload\">Reload views</button><span class=\"lm-view-status\" aria-live=\"polite\"></span><dialog class=\"lm-view-dialog\" aria-labelledby=\"lm-view-title\"><form><h2 id=\"lm-view-title\">Save current view</h2><p>Remember filters, positions, pins and zoom.</p><label>View name<input name=\"name\" aria-label=\"View name\" required autocomplete=\"off\"></label><div class=\"lm-dialog-actions\"><button type=\"button\" data-view-action=\"cancel\">Cancel</button><button type=\"submit\" value=\"new\">Save as new</button><button type=\"submit\" value=\"update\">Save changes</button></div></form></dialog><dialog class=\"lm-delete-dialog\" aria-labelledby=\"lm-delete-title\"><h2 id=\"lm-delete-title\">Delete saved view?</h2><p></p><div class=\"lm-dialog-actions\"><button data-view-action=\"cancel-delete\">Cancel</button><button data-view-action=\"confirm-delete\">Delete saved view</button></div></dialog>";
 	let n = e.querySelector("select"), r = e.querySelector(".lm-view-status"), i = e.querySelector(".lm-view-dialog"), a = e.querySelector(".lm-delete-dialog"), o = e.querySelector("input"), s = [], c, l = !1, u = !1, d = !1, f = 0;
 	function p(e, t = !1) {
@@ -20709,7 +21015,7 @@ function lv(e, t) {
 		n.replaceChildren(new Option("Current workspace", ""), ...s.map((e) => new Option(e.name, e.id))), n.value = c?.id ?? "", m();
 	}
 	function g(e) {
-		e instanceof rv && [
+		e instanceof vv && [
 			401,
 			403,
 			404,
@@ -20738,7 +21044,7 @@ function lv(e, t) {
 	}), i.querySelector("form").onsubmit = async (e) => {
 		if (e.preventDefault(), !t.store || l || d || !u) return;
 		let n = o.value.trim();
-		if (!n || t_(n) > 100) {
+		if (!n || n_(n) > 100) {
 			o.setCustomValidity(n ? "Use at most 100 characters." : "Enter a view name."), o.reportValidity();
 			return;
 		}
@@ -20755,7 +21061,7 @@ function lv(e, t) {
 		} finally {
 			l = !1, m();
 		}
-	}, o.oninput = () => o.setCustomValidity(t_(o.value.trim()) > 100 ? "Use at most 100 characters." : "");
+	}, o.oninput = () => o.setCustomValidity(n_(o.value.trim()) > 100 ? "Use at most 100 characters." : "");
 	async function v() {
 		if (!t.store || !c || l) return;
 		l = !0, m();
@@ -20781,19 +21087,19 @@ function lv(e, t) {
 }
 //#endregion
 //#region frontend/main.ts
-var uv = class extends Error {
+var Tv = class extends Error {
 	status;
 	constructor(e, t) {
 		super(e), this.status = t;
 	}
-}, dv = /* @__PURE__ */ new Set([
+}, Ev = /* @__PURE__ */ new Set([
 	401,
 	403,
 	404,
 	419
-]), fv = document.querySelector("#libremap");
-fv && (fv.dataset.mode === "custom" ? o_(fv) : fv.dataset.mode === "world" ? x_(fv) : pv(fv));
-function pv(e) {
+]), Dv = document.querySelector("#libremap");
+Dv && (Dv.dataset.mode === "custom" ? s_(Dv) : Dv.dataset.mode === "world" ? I_(Dv) : Ov(Dv));
+function Ov(e) {
 	let t = e.dataset.demo === "true";
 	e.innerHTML = `
     <div class="lm-shell">
@@ -20802,18 +21108,18 @@ function pv(e) {
       <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device…"></label><label class="lm-select">Site <select aria-label="Site"><option value="">All sites</option></select></label><button data-action="overview">AGG backbone</button><button data-action="other-devices" aria-pressed="false">Show other devices</button><span class="lm-spacer"></span><button data-action="refresh">↻ Refresh</button><button data-action="layout">Re-layout</button><button data-action="export" title="Download the visible map as an image">Export PNG</button><button data-action="fullscreen" title="Fullscreen">⛶</button></div>
       <div class="lm-viewbar"><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><label class="lm-select">AGG root <select aria-label="AGG root"><option value="">All AGG groups</option></select></label><label class="lm-select">Highlight <select aria-label="Highlight hops">${Array.from({ length: 5 }, (e, t) => `<option value="${t + 1}">${t + 1} hop${t ? "s" : ""}</option>`).join("")}</select></label><span class="lm-pin-count">0 pinned</span><button data-action="unpin-all">Unpin all</button><div class="lm-views"></div></div>
       <div class="lm-notice" role="status" aria-live="polite">Loading topology…</div>
-      <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong>Physical topology</strong><span>AGG → ER · discovered links</span></div><div class="lm-canvas" aria-label="Interactive network topology"></div><div class="lm-empty" hidden></div><div class="lm-map-controls"><button data-action="zoom-in" aria-label="Zoom in">+</button><button data-action="zoom-out" aria-label="Zoom out">−</button><button data-action="fit">Fit</button></div><div class="lm-legend"><span><i style="color:${hg.normal}"></i>&lt;50%</span><span><i style="color:${hg.warning}"></i>50–70%</span><span><i style="color:${hg.high}"></i>&gt;70%</span><span><i class="lm-dashed" style="color:#e05b65"></i>Down</span><span><i class="lm-dashed" style="color:#8a96a9"></i>Disabled / unknown / stale</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
+      <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong>Physical topology</strong><span>AGG → ER · discovered links</span></div><div class="lm-canvas" aria-label="Interactive network topology"></div><div class="lm-empty" hidden></div><div class="lm-map-controls"><button data-action="zoom-in" aria-label="Zoom in">+</button><button data-action="zoom-out" aria-label="Zoom out">−</button><button data-action="fit">Fit</button></div><div class="lm-legend"><span><i style="color:${gg.normal}"></i>&lt;50%</span><span><i style="color:${gg.warning}"></i>50–70%</span><span><i style="color:${gg.high}"></i>&gt;70%</span><span><i class="lm-dashed" style="color:#e05b65"></i>Down</span><span><i class="lm-dashed" style="color:#8a96a9"></i>Disabled / unknown / stale</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
       <footer><span class="lm-updated">Waiting for data</span><span>Drag to arrange · Scroll to zoom · Hover links for traffic · Click to inspect · Keys: / find · F fit · + − zoom · D next down device · Esc clear</span></footer>
     </div>`, t && e.querySelector(".lm-back")?.remove(), e.dataset.hostTheme === "true" && e.querySelector("[data-action=\"theme\"]")?.remove();
 	let n = e.querySelector(".lm-back");
-	n && e.dataset.homeUrl && (n.href = e.dataset.homeUrl), t || jg(e.querySelector(".lm-pages"), e, "topology");
+	n && e.dataset.homeUrl && (n.href = e.dataset.homeUrl), t || Mg(e.querySelector(".lm-pages"), e, "topology");
 	let r = (t) => e.querySelector(t), i = r(".lm-notice"), a = r("[aria-label=\"Find device\"]"), o = r("[aria-label=\"Site\"]"), s = r("[aria-label=\"Device group\"]"), c = r("[aria-label=\"AGG root\"]"), l = r("[aria-label=\"Highlight hops\"]"), u = sg({
 		container: r(".lm-canvas"),
 		minZoom: .15,
 		maxZoom: 2.5,
 		selectionType: "single",
-		style: bg(e)
-	}), d = Sg(e, () => u.style(bg(e))), f, p = t ? void 0 : W_(e, u, () => f?.generatedAt), m = {
+		style: xg(e)
+	}), d = Cg(e, () => u.style(xg(e))), f, p = t ? void 0 : av(e, u, () => f?.generatedAt), m = {
 		nodes: [],
 		links: [],
 		deviceGroups: []
@@ -20821,9 +21127,9 @@ function pv(e) {
 	function A() {
 		try {
 			let e = localStorage.getItem(k);
-			return X_(e ? JSON.parse(e) : { positions: JSON.parse(localStorage.getItem(O) ?? "{}") });
+			return dv(e ? JSON.parse(e) : { positions: JSON.parse(localStorage.getItem(O) ?? "{}") });
 		} catch {
-			return K_();
+			return sv();
 		}
 	}
 	let j = A(), M = j.positions, N = new Set(j.pinned), P = !1, F = {}, I = !1, L = () => Object.fromEntries(u.nodes().map((e) => [e.id(), e.position()])), R = () => {
@@ -20834,7 +21140,7 @@ function pv(e) {
 		return t;
 	};
 	function z() {
-		return X_({
+		return dv({
 			rootId: c.value || null,
 			deviceGroupId: s.value || null,
 			site: o.value,
@@ -20861,9 +21167,9 @@ function pv(e) {
 		i.textContent = e, i.classList.toggle("lm-error", t);
 	}, H;
 	try {
-		H = t ? cv(`${k}:views`) : e.dataset.viewsEndpoint ? av(e.dataset.viewsEndpoint, e.dataset.csrf ?? "") : void 0;
+		H = t ? Cv(`${k}:views`) : e.dataset.viewsEndpoint ? bv(e.dataset.viewsEndpoint, e.dataset.csrf ?? "") : void 0;
 	} catch {}
-	let U = lv(r(".lm-views"), {
+	let U = wv(r(".lm-views"), {
 		store: H,
 		demo: t,
 		capture: z,
@@ -20899,8 +21205,8 @@ function pv(e) {
 	}
 	function q(e) {
 		if (!f) return;
-		let t = X_(e, m);
-		c.value = t.rootId ?? "", s.value = t.deviceGroupId ?? "", o.value = t.site, a.value = t.search, h = t.backbone, g = t.showOther, l.value = String(t.hops), N = new Set(t.pinned), v = void 0, u.elements().unselect().removeClass("lm-dim"), K(), ee(), J(), Y(), ne(t.positions, t);
+		let t = dv(e, m);
+		c.value = t.rootId ?? "", s.value = t.deviceGroupId ?? "", o.value = t.site, a.value = t.search, h = t.backbone, g = t.showOther, l.value = String(t.hops), N = new Set(t.pinned), v = void 0, u.elements().unselect().removeClass("lm-dim"), K(), ee(), J(), Y(), re(t.positions, t);
 	}
 	function J() {
 		let e = r("[data-action=\"overview\"]");
@@ -20923,7 +21229,7 @@ function pv(e) {
 		a.className = "lm-device-list";
 		for (let e of m.nodes.filter((e) => e.role === "AGG")) {
 			let t = document.createElement("button");
-			t.textContent = `◈  ${ug(e)}`, t.addEventListener("click", () => Z(e.id)), a.append(t);
+			t.textContent = `◈  ${ug(e)}`, t.addEventListener("click", () => te(e.id)), a.append(t);
 		}
 		e.append(a);
 		let o = document.createElement("p");
@@ -20954,12 +21260,12 @@ function pv(e) {
 			["Placement", e.reachable ? e.tier === 0 ? "Root tier" : `Hop ${e.tier} from AGG` : "No discovered AGG path"],
 			["Connections", String(m.links.filter((t) => t.source === e.id || t.target === e.id).length)]
 		] : [
-			["Status", gg(t, D(), f.config.staleAfter).label],
+			["Status", _g(t, D(), f.config.staleAfter).label],
 			["Source interface", t.sourcePort],
-			["Remote interface", t.targetPort],
-			["Capacity", _g(t.speedBps)],
-			["Inbound at source", _g(t.inBps)],
-			["Outbound at source", _g(t.outBps)],
+			["Remote interface", t.targetPortId ? t.targetPort : `${t.targetPort} (as reported by the neighbor; not matched to a LibreNMS port)`],
+			["Capacity", vg(t.speedBps)],
+			["Inbound at source", vg(t.inBps)],
+			["Outbound at source", vg(t.outBps)],
 			["Sample time", t.sampledAt ? (/* @__PURE__ */ new Date(t.sampledAt * 1e3)).toLocaleString() : "Unavailable"]
 		], d = document.createElement("dl");
 		for (let [e, n] of l) {
@@ -20971,11 +21277,11 @@ function pv(e) {
 		if (n.append(d), e) {
 			let t = document.createElement("button");
 			if (t.className = "lm-pin-device", t.disabled = C, t.textContent = N.has(e.id) ? "Unpin device" : "Pin position", t.setAttribute("aria-pressed", String(N.has(e.id))), t.onclick = () => {
-				N.has(e.id) ? N.delete(e.id) : (N.add(e.id), F[e.id] = { ...u.getElementById(e.id).position() }), K(), te(!1), B(), ee();
+				N.has(e.id) ? N.delete(e.id) : (N.add(e.id), F[e.id] = { ...u.getElementById(e.id).position() }), K(), ne(!1), B(), ee();
 			}, n.append(t), e.role === "AGG") {
 				let t = document.createElement("button");
 				t.className = "lm-focus-device", t.disabled = C, t.textContent = "Focus AGG group", t.onclick = () => {
-					c.value = e.id, te(), B();
+					c.value = e.id, ne(), B();
 				}, n.append(t);
 			}
 		}
@@ -20987,18 +21293,18 @@ function pv(e) {
 			}
 		}
 	}
-	function Z(e) {
+	function te(e) {
 		let t = u.getElementById(e);
 		if (!t.length) return;
 		v = {
 			type: "node",
 			id: e
 		}, u.elements().unselect(), t.select();
-		let n = Q_(m, e, Number(l.value), new Set(u.nodes(":visible").map((e) => e.id())));
+		let n = pv(m, e, Number(l.value), new Set(u.nodes(":visible").map((e) => e.id())));
 		u.elements().addClass("lm-dim"), u.elements().filter((e) => e.isNode() ? n.nodes.has(e.id()) : n.links.has(e.data("linkId"))).removeClass("lm-dim"), ee();
 	}
-	function te(e = !0) {
-		let t = $_(m, {
+	function ne(e = !0) {
+		let t = mv(m, {
 			rootId: c.value || null,
 			deviceGroupId: s.value || null,
 			site: o.value,
@@ -21016,7 +21322,7 @@ function pv(e) {
 					nodes: m.nodes.filter((e) => t.has(e.id)),
 					links: m.links.filter((e) => t.has(e.source) && t.has(e.target)),
 					deviceGroups: []
-				}, n = I_(e, new Map(e.nodes.map((e) => [e.id, F[e.id]?.x ?? 0])), !0), r = new Set([...N].filter((e) => t.has(e))), i = nv(e, n, Object.fromEntries([...r].filter((e) => F[e]).map((e) => [e, F[e]])), r);
+				}, n = Z_(e, new Map(e.nodes.map((e) => [e.id, F[e.id]?.x ?? 0])), !0), r = new Set([...N].filter((e) => t.has(e))), i = _v(e, n, Object.fromEntries([...r].filter((e) => F[e]).map((e) => [e, F[e]])), r);
 				u.nodes().filter((e) => t.has(e.id()) && !N.has(e.id())).forEach((e) => {
 					e.position(i[e.id()]);
 				}), I = !0;
@@ -21025,25 +21331,25 @@ function pv(e) {
 			}), I = !1);
 		}), r(".lm-empty").hidden = t.size > 0, r(".lm-empty").textContent = m.nodes.length ? "No devices match these filters." : "No authorized devices are available.", e && t.size && u.fit(u.elements(":visible"), 70);
 	}
-	function ne(e = {}, t) {
-		let n = F_(e, N);
+	function re(e = {}, t) {
+		let n = X_(e, N);
 		x = n, S = n === e ? t : void 0, y++, G(!0), clearTimeout(b), b = setTimeout(() => {
-			y++, z_(), G(!1), V("Layout timed out. Existing positions are retained; retry Re-layout.", !0);
+			y++, ev(), G(!1), V("Layout timed out. Existing positions are retained; retry Re-layout.", !0);
 		}, 2e4);
 		let r = y;
-		B_(m).then((e) => re(r, e)).catch(() => {
+		tv(m).then((e) => ie(r, e)).catch(() => {
 			r === y && (clearTimeout(b), G(!1), V("Automatic layout failed. Check the published worker asset and retry Re-layout.", !0));
 		});
 	}
-	function re(e, n) {
+	function ie(e, n) {
 		if (e !== y) return;
 		clearTimeout(b);
-		let r = nv(m, n, x, N);
+		let r = _v(m, n, x, N);
 		F = r, I = !1, u.batch(() => u.nodes().forEach((e) => {
 			e.unlock(), e.position(r[e.id()]);
-		})), K(), te(!S), S && u.viewport(S), S = void 0, G(!1), B(), V(t ? "Demo topology · illustrative devices and traffic" : "Topology loaded · positions saved in this browser");
+		})), K(), ne(!S), S && u.viewport(S), S = void 0, G(!1), B(), V(t ? "Demo topology · illustrative devices and traffic" : "Topology loaded · positions saved in this browser");
 	}
-	function ie(e) {
+	function ae(e) {
 		p?.hide();
 		let n = C ? x : void 0, i = C ? S : void 0, d = JSON.stringify([m.nodes.map((e) => [
 			e.id,
@@ -21051,7 +21357,7 @@ function pv(e) {
 			e.site,
 			e.tier
 		]), m.links.map((e) => e.id)]);
-		f = e, m = pg(e), E = Number.isFinite(e.generatedAt) ? e.generatedAt - Date.now() / 1e3 : 0;
+		f = e, m = mg(e), E = Number.isFinite(e.generatedAt) ? e.generatedAt - Date.now() / 1e3 : 0;
 		let _ = JSON.stringify([m.nodes.map((e) => [
 			e.id,
 			e.role,
@@ -21063,7 +21369,7 @@ function pv(e) {
 		c.replaceChildren(new Option("All AGG groups", ""), ...m.nodes.filter((e) => e.role === "AGG").map((e) => new Option(ug(e), e.id))), [...c.options].some((e) => e.value === b) && (c.value = b);
 		let w = s.value;
 		if (s.replaceChildren(new Option("All device groups", ""), ...m.deviceGroups.map((e) => new Option(e.name, e.id))), [...s.options].some((e) => e.value === w) && (s.value = w), N = new Set([...N].filter((e) => m.nodes.some((t) => t.id === e))), !P) {
-			let e = X_(j, m);
+			let e = dv(j, m);
 			c.value = e.rootId ?? "", s.value = e.deviceGroupId ?? "", o.value = e.site, a.value = e.search, h = e.backbone, g = e.showOther, l.value = String(e.hops), N = new Set(e.pinned), J(), Y();
 		}
 		u.batch(() => {
@@ -21079,9 +21385,9 @@ function pv(e) {
 				}, r = u.getElementById(e.id);
 				r.length ? r.data(n) : u.add({ data: n });
 			}
-			let r = mg(m);
+			let r = hg(m);
 			for (let t of m.links) {
-				let n = gg(t, D(), e.config.staleAfter), i = {
+				let n = _g(t, D(), e.config.staleAfter), i = {
 					...t,
 					id: `edge:${t.id}`,
 					linkId: t.id,
@@ -21108,7 +21414,7 @@ function pv(e) {
 			let a = document.createElement("span");
 			a.textContent = t, r.append(i, a), n && (r.className = "lm-summary-down", r.dataset.action = "next-down", r.title = "Select the next down device (D)", r.setAttribute("aria-label", `${O} down. Select the next down device`)), T.append(r);
 		}
-		r(".lm-updated").textContent = `${t ? "Demo snapshot" : "Snapshot fetched"} · ${(/* @__PURE__ */ new Date(e.generatedAt * 1e3)).toLocaleTimeString()}`, te(!1), ee(), U.setAvailable(!0), P || U.reload(), _ !== d || C ? ne(n ?? {
+		r(".lm-updated").textContent = `${t ? "Demo snapshot" : "Snapshot fetched"} · ${(/* @__PURE__ */ new Date(e.generatedAt * 1e3)).toLocaleTimeString()}`, ne(!1), ee(), U.setAvailable(!0), P || U.reload(), _ !== d || C ? re(n ?? {
 			...M,
 			...v
 		}, i ?? (!P && Object.keys(M).length ? j : P ? {
@@ -21116,11 +21422,11 @@ function pv(e) {
 			pan: u.pan()
 		} : void 0)) : V(t ? "Demo topology · illustrative devices and traffic" : "Updated · layout unchanged"), P = !0;
 	}
-	async function ae() {
+	async function oe() {
 		if (!_) {
 			_ = !0;
 			try {
-				if (t) ie(G_());
+				if (t) ae(ov());
 				else {
 					if (!e.dataset.endpoint) throw Error("Missing topology endpoint");
 					let t = new URL(e.dataset.endpoint, location.href);
@@ -21130,15 +21436,15 @@ function pv(e) {
 						headers: { Accept: "application/json" },
 						signal: AbortSignal.timeout(2e4)
 					});
-					if (n.status === 429) throw new uv("Too many topology requests. The map will retry on the next refresh.", 429);
-					if (!n.ok) throw new uv(await mv(n), n.status);
+					if (n.status === 429) throw new Tv("Too many topology requests. The map will retry on the next refresh.", 429);
+					if (!n.ok) throw new Tv(await kv(n), n.status);
 					let r = await n.json();
 					if (!Array.isArray(r.devices) || !Array.isArray(r.links) || !r.config) throw Error("Unexpected topology response");
-					ie(r);
+					ae(r);
 				}
 			} catch (e) {
 				let t = e instanceof Error ? e.message : "Unable to load topology";
-				if (f && !(e instanceof uv && dv.has(e.status))) {
+				if (f && !(e instanceof Tv && Ev.has(e.status))) {
 					V(`${t} · Showing the snapshot from ${(/* @__PURE__ */ new Date(f.generatedAt * 1e3)).toLocaleTimeString()}.`, !0);
 					return;
 				}
@@ -21152,7 +21458,7 @@ function pv(e) {
 			}
 		}
 	}
-	u.on("tap", "node", (e) => Z(e.target.id())), u.on("tap", "edge", (e) => {
+	u.on("tap", "node", (e) => te(e.target.id())), u.on("tap", "edge", (e) => {
 		v = {
 			type: "link",
 			id: e.target.data("linkId")
@@ -21166,54 +21472,54 @@ function pv(e) {
 			f && !C && B();
 		}, 200));
 	}), a.addEventListener("input", () => {
-		a.value = n_(a.value), te(!1), clearTimeout(T), T = setTimeout(() => {
+		a.value = r_(a.value), ne(!1), clearTimeout(T), T = setTimeout(() => {
 			if (!f) return;
 			let e = u.elements(":visible");
 			e.length && u.fit(e, 70), B();
 		}, 300);
 	}), o.addEventListener("change", () => {
-		te(), B();
+		ne(), B();
 	}), s.addEventListener("change", () => {
-		te(), B();
+		ne(), B();
 	}), c.addEventListener("change", () => {
-		te(), B();
+		ne(), B();
 	}), l.addEventListener("change", () => {
-		v?.type === "node" && Z(v.id), B();
+		v?.type === "node" && te(v.id), B();
 	}), e.addEventListener("click", (t) => {
 		let n = t.target.closest("button[data-action]");
 		if (n) switch (n.dataset.action) {
 			case "refresh":
-				ae();
+				oe();
 				break;
 			case "fit":
 				u.fit(u.elements(":visible"), 70);
 				break;
 			case "layout":
-				ne(Object.fromEntries(u.nodes().map((e) => ({
+				re(Object.fromEntries(u.nodes().map((e) => ({
 					id: e.id(),
 					position: e.position()
 				})).filter((e) => N.has(e.id)).map((e) => [e.id, e.position])));
 				break;
 			case "unpin-all":
-				N.clear(), K(), te(!1), B(), ee();
+				N.clear(), K(), ne(!1), B(), ee();
 				break;
 			case "zoom-in":
-				Og(u, 1.2);
+				kg(u, 1.2);
 				break;
 			case "zoom-out":
-				Og(u, 1 / 1.2);
+				kg(u, 1 / 1.2);
 				break;
 			case "next-down":
-				se();
+				ce();
 				break;
 			case "export":
-				Tg(u, e, "libremap-topology").then(() => V("Map image downloaded."), (e) => V(e instanceof Error ? e.message : "The map image could not be created.", !0));
+				Eg(u, e, "libremap-topology").then(() => V("Map image downloaded."), (e) => V(e instanceof Error ? e.message : "The map image could not be created.", !0));
 				break;
 			case "overview":
-				h = !h, J(), te(), B();
+				h = !h, J(), ne(), B();
 				break;
 			case "other-devices":
-				g = !g, Y(), te(), B();
+				g = !g, Y(), ne(), B();
 				break;
 			case "theme":
 				d.toggle();
@@ -21221,23 +21527,23 @@ function pv(e) {
 			case "fullscreen": (document.fullscreenElement ? document.exitFullscreen() : e.requestFullscreen()).catch(() => V("Fullscreen is unavailable in this browser."));
 		}
 	});
-	let oe = -1;
-	function se() {
+	let se = -1;
+	function ce() {
 		if (!f || C) return;
 		let e = m.nodes.filter((e) => e.status === "down"), t = e.filter((e) => u.getElementById(e.id).visible());
 		if (!t.length) {
 			V(e.length ? "Down devices are hidden by the current filters." : "No devices are down.");
 			return;
 		}
-		oe = (oe + 1) % t.length;
-		let n = t[oe];
-		Z(n.id), u.animate({
+		se = (se + 1) % t.length;
+		let n = t[se];
+		te(n.id), u.animate({
 			center: { eles: u.getElementById(n.id) },
 			zoom: Math.max(u.zoom(), .8)
-		}, { duration: 250 }), V(`Down device ${oe + 1} of ${t.length}: ${ug(n)}`);
+		}, { duration: 250 }), V(`Down device ${se + 1} of ${t.length}: ${ug(n)}`);
 	}
 	document.addEventListener("keydown", (t) => {
-		if (!Dg(t, e)) return;
+		if (!Og(t, e)) return;
 		let n = () => {
 			v = void 0, u.elements().unselect().removeClass("lm-dim"), X();
 		}, r = {
@@ -21248,27 +21554,27 @@ function pv(e) {
 				C || u.fit(u.elements(":visible"), 70);
 			},
 			"+": () => {
-				C || Og(u, 1.2);
+				C || kg(u, 1.2);
 			},
 			"=": () => {
-				C || Og(u, 1.2);
+				C || kg(u, 1.2);
 			},
 			"-": () => {
-				C || Og(u, 1 / 1.2);
+				C || kg(u, 1 / 1.2);
 			},
-			d: se,
+			d: ce,
 			Escape: () => {
 				v && n();
 			}
 		}[t.key.length === 1 ? t.key.toLowerCase() : t.key];
 		r && (t.preventDefault(), r());
-	}), new ResizeObserver(() => u.resize()).observe(r(".lm-canvas")), W(), X(), ae(), setInterval(() => {
-		document.hidden || ae();
+	}), new ResizeObserver(() => u.resize()).observe(r(".lm-canvas")), W(), X(), oe(), setInterval(() => {
+		document.hidden || oe();
 	}, 6e4), setInterval(() => {
 		if (!f) return;
 		let t = D();
 		u.batch(() => m.links.forEach((n) => {
-			let r = gg(n, t, f.config.staleAfter);
+			let r = _g(n, t, f.config.staleAfter);
 			if (u.getElementById(`edge:${n.id}`).data({
 				label: r.label,
 				color: r.color,
@@ -21307,7 +21613,7 @@ function pv(e) {
 		configurable: !0
 	});
 }
-async function mv(e) {
+async function kv(e) {
 	if (e.status === 422) {
 		let t = await e.json().catch(() => void 0), n = t && typeof t == "object" && "message" in t && typeof t.message == "string" ? t.message.trim() : "";
 		if (n && n.length <= 300) return n;
