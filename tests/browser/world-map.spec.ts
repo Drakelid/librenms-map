@@ -46,7 +46,7 @@ test('devices are placed at their locations with the links between them',async({
   // Every one of the demo's 18 links is accounted for: 3 lines, 10 inside a location, 5 to devices without coordinates.
   expect(state.undrawn).toEqual({withinSite:{'1':7,'2':3},unlocated:5});
   await expect(page.locator('.lm-world-undrawn')).toHaveText('15 links are not drawn as lines: 10 join devices at the same location (listed under that location); 5 reach a device without coordinates.');
-  await page.getByRole('button',{name:'rossa1: 6 devices'}).click();
+  await page.getByRole('button',{name:'Location 1: 6 devices'}).click();
   await expect(page.locator('.lm-details')).toContainText('LINKS WITHIN THIS LOCATION · 7');
   await expect(page.locator('.lm-details .lm-world-links-list li')).toHaveCount(7);
   await page.keyboard.press('Escape');
@@ -55,18 +55,19 @@ test('devices are placed at their locations with the links between them',async({
   await expect(page.locator('.lm-world-attribution')).toHaveText('© OpenStreetMap contributors');
   await expect(page.locator('.lm-summary')).toContainText('4No coordinates');
 
-  // Addresses are hidden: locations are named by the LibreMap site of their devices.
-  expect(state.markers.map(m=>m.label).sort()).toEqual(['heiane1','kvala1','rossa1','se1']);
+  // Addresses and device names are hidden: the map itself shows no names, and
+  // sites read from hostnames ("hk-rossa1agg1" → "rossa1") are not shown either.
+  expect(state.markers.map(m=>m.label).sort()).toEqual(['Location 1','Location 2','Location 3','Location 4']);
+  for(const layer of ['.lm-world-markers','.lm-world-links'])await expect(page.locator(layer)).not.toContainText(/hk-|rossa1|heiane1|kvala1|se1/);
   await expect(page.locator('.lm-world-label',{hasText:/Karmsundgata|^SE$/})).toHaveCount(0);
 
-  // Locations open their devices; devices link back to LibreNMS details.
-  await page.getByRole('button',{name:'se1: 1 device, 1 down'}).click();
+  // Locations open their devices, always by their real names; devices link back to LibreNMS details.
+  await page.getByRole('button',{name:'Location 3: 1 device, 1 down'}).click();
+  // The map hides the site (it comes from the hostname); the details panel names it.
   await expect(page.getByRole('heading',{name:'se1',exact:true})).toBeVisible();
   await expect(page.locator('.lm-details')).not.toContainText('Coordinates');
-  // Device names are hidden by default: devices are named by role and number.
-  await page.locator('.lm-details').getByRole('button',{name:'ER 1',exact:true}).click();
-  await expect(page.getByRole('heading',{name:'ER 1',exact:true})).toBeVisible();
-  await expect(page.locator('#libremap')).not.toContainText('hk-');
+  await page.locator('.lm-details').getByRole('button',{name:'hk-se1er1',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'hk-se1er1',exact:true})).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('heading',{name:'Where the network is'})).toBeVisible();
 
@@ -119,8 +120,8 @@ test('addresses appear only when asked for, and the choice is remembered',async(
 test('device names label the markers only when asked for',async({page})=>{
   await open(page);
   const text=async()=>Object.fromEntries((await debug(page)).markers.map(m=>[m.label,m.text]));
-  // Off by default: markers carry their site, and no device name is on the map.
-  expect(await text()).toEqual({rossa1:'rossa1',heiane1:'heiane1',se1:'se1',kvala1:'kvala1'});
+  // Off by default: markers have no label, and no device name is on the map.
+  expect(await text()).toEqual({'Location 1':'','Location 2':'','Location 3':'','Location 4':''});
   await expect(page.locator('.lm-world-markers')).not.toContainText('hk-');
 
   const toggle=page.getByRole('button',{name:'Device names',exact:true});
@@ -142,16 +143,59 @@ test('device names label the markers only when asked for',async({page})=>{
   await page.reload();
   await expect(page.getByRole('button',{name:'Device names',exact:true})).toHaveAttribute('aria-pressed','true');
   await page.getByRole('button',{name:'Device names',exact:true}).click();
-  expect((await text()).rossa1).toBe('rossa1');
-  // Off again: no device name anywhere on the page, including the details and link lists.
-  await page.getByRole('button',{name:'rossa1: 6 devices'}).click();
-  await expect(page.locator('.lm-details').getByRole('button',{name:'AGG 1',exact:true})).toBeVisible();
-  await expect(page.locator('.lm-details')).toContainText('rossa1 AGG 1 ');
-  await expect(page.locator('#libremap')).not.toContainText('hk-');
+  expect((await text())['Location 1']).toBe('');
+  // Off again: no device name on the map, but a selected location still lists its devices by name.
+  await expect(page.locator('.lm-world-markers')).not.toContainText('hk-');
+  await page.getByRole('button',{name:'Location 1: 6 devices'}).click();
+  await expect(page.getByRole('heading',{name:'rossa1',exact:true})).toBeVisible();
+  await expect(page.locator('.lm-details')).toContainText('hk-rossa1agg2 ');
+  await page.locator('.lm-details').getByRole('button',{name:'hk-rossa1agg1',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'hk-rossa1agg1',exact:true})).toBeVisible();
+  await expect(page.locator('.lm-details dl')).toContainText('Siterossa1');
+  // The toggle never puts placeholders such as "AGG 1" or "Device 2" in the panel.
+  await expect(page.locator('.lm-details')).not.toContainText(/\b(AGG|ER|Device) \d+\b/);
   await page.keyboard.press('Escape');
   await page.locator('.lm-world-unlocated summary').click();
-  await expect(page.locator('.lm-world-unlocated')).toContainText('Select Device names to list them.');
-  await expect(page.locator('#libremap')).not.toContainText('hk-');
+  await expect(page.locator('.lm-world-unlocated')).toContainText('hk-solvang1er1');
+});
+
+test('a device is named by its hostname, else its sysName, else its IP address',async({page})=>{
+  await page.route('**/world-page',route=>route.fulfill({contentType:'text/html',body:'<div id="libremap" data-mode="world" data-debug="true" data-endpoint="/world-topology" data-locations-endpoint="/world-locations"></div><script type="module" src="/frontend/main.ts"></script>'}));
+  const snapshot=demoSnapshot();
+  // Added by IP: one with a sysName, one without. Both carry a display name that must not win.
+  Object.assign(snapshot.devices.find(d=>d.id==='14')!,{hostname:'192.0.2.14',sysName:'hk-se1er1.example.net',displayName:'SE core'});
+  Object.assign(snapshot.devices.find(d=>d.id==='10')!,{hostname:'192.0.2.10',sysName:null,displayName:'Kvala edge'});
+  await page.route('**/world-topology',route=>route.fulfill({json:snapshot}));
+  await page.route('**/world-locations',route=>route.fulfill({json:{...locations,map:{...locations.map,tiles:null}}}));
+  await page.goto('/world-page');
+  await expect(page.getByRole('status')).toContainText('12 devices at 4 locations');
+
+  await page.getByRole('button',{name:'Location 3: 1 device, 1 down'}).click();
+  await page.locator('.lm-details').getByRole('button',{name:'hk-se1er1.example.net',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'hk-se1er1.example.net',exact:true})).toBeVisible();
+  await expect(page.locator('.lm-details dl')).toContainText('IP address192.0.2.14');
+  await page.keyboard.press('Escape');
+
+  await page.getByRole('button',{name:'Location 4: 1 device'}).click();
+  await page.locator('.lm-details').getByRole('button',{name:'192.0.2.10',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'192.0.2.10',exact:true})).toBeVisible();
+  await expect(page.locator('.lm-details')).not.toContainText(/SE core|Kvala edge/);
+});
+
+test('a site set by an administrator still names its location with device names hidden',async({page})=>{
+  await page.route('**/world-page',route=>route.fulfill({contentType:'text/html',body:'<div id="libremap" data-mode="world" data-debug="true" data-endpoint="/world-topology" data-locations-endpoint="/world-locations"></div><script type="module" src="/frontend/main.ts"></script>'}));
+  const snapshot=demoSnapshot();
+  snapshot.config.overrides={'14':{site:'Bergen POP'}};
+  await page.route('**/world-topology',route=>route.fulfill({json:snapshot}));
+  await page.route('**/world-locations',route=>route.fulfill({json:{...locations,map:{...locations.map,tiles:null}}}));
+  await page.goto('/world-page');
+  await expect(page.getByRole('status')).toContainText('12 devices at 4 locations');
+  const labels=Object.fromEntries((await debug(page)).markers.map(m=>[m.name,m.text]));
+  expect(labels).toEqual({Rossa:'',Heiane:'',SE:'Bergen POP','Karmsundgata 12, Haugesund':''});
+  await page.getByRole('button',{name:'Bergen POP: 1 device, 1 down'}).click();
+  await page.locator('.lm-details').getByRole('button',{name:'hk-se1er1',exact:true}).click();
+  await expect(page.locator('.lm-details dl')).toContainText('SiteBergen POP');
+  await expect(page.locator('.lm-world-markers')).not.toContainText(/hk-|se1/);
 });
 
 test('weather warnings are drawn on request and flag the locations they cover',async({page})=>{
@@ -165,12 +209,12 @@ test('weather warnings are drawn on request and flag the locations they cover',a
   await expect(page.getByRole('status')).toContainText('2 active weather warnings · 1 location affected');
   let state=await debug(page);
   expect(state.warnings.map(w=>[w.id,w.level,w.drawn])).toEqual([['far','yellow',true],['wind','orange',true]]);
-  expect(state.markers.filter(m=>m.warning).map(m=>[m.label,m.warning])).toEqual([['se1','orange']]);
+  expect(state.markers.filter(m=>m.warning).map(m=>[m.label,m.warning])).toEqual([['Location 3','orange']]);
   await expect(page.locator('.lm-world-attribution')).toContainText('Weather warnings © MET Norway');
   await expect(page.locator('.lm-summary')).toContainText('1Under warning');
 
   // A covered location lists its warning; the warning opens MET's text and the affected locations.
-  await page.getByRole('button',{name:'se1: 1 device, 1 down, orange weather warning'}).click();
+  await page.getByRole('button',{name:'Location 3: 1 device, 1 down, orange weather warning'}).click();
   await page.locator('.lm-details').getByRole('button',{name:'Strong wind · Vestland'}).click();
   await expect(page.getByRole('heading',{name:'Strong wind'})).toBeVisible();
   await expect(page.locator('.lm-details')).toContainText('Power outages are likely.');

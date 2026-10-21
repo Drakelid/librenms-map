@@ -67,7 +67,13 @@ export function mountWorldMap(root:HTMLElement) {
   let clockOffset=0;
   const serverNow=()=>Date.now()/1000+clockOffset;
   const message=(text:string,error=false)=>{notice.textContent=text;notice.classList.toggle('lm-error',error);};
-  const nameOf=(node:MapNode)=>deviceName(node);
+  const isAddress=(text:string)=>/^\d{1,3}(\.\d{1,3}){3}$/.test(text) || (text.includes(':') && /^[0-9a-f:.]+$/i.test(text));
+  /** A device's name: its hostname, else its sysName when the hostname is only an IP address, else that address. */
+  function nameOf(node:MapNode):string {
+    const host=node.hostname.trim(), sysName=(node.sysName ?? '').trim();
+    if(host && !isAddress(host)) return host;
+    return sysName || host || deviceName(node);
+  }
 
   // Per-viewer display preferences; storage is optional.
   const prefsKey=`libremap:world:${root.dataset.storageKey ?? 'local'}`;
@@ -82,21 +88,35 @@ export function mountWorldMap(root:HTMLElement) {
   let warnings:Warning[]=[], weatherAttribution='', weatherFetchedAt=0, weatherBusy=false;
   const siteWarnings=new Map<string,Warning[]>();
 
-  /** The address when shown, else the LibreMap site its devices are classified into, else nothing. */
+  // Naming has two audiences. The map itself (marker labels, their screen
+  // reader text, link tooltips) follows the Addresses and Device names
+  // toggles. The details panel, opened by selecting something, always names
+  // things fully.
+
+  /** A device's LibreMap site, or nothing when it is unclassified. */
+  const siteOfDevice=(n:MapNode)=>n.site && n.site!=='Unclassified' ? n.site : '';
+  /**
+   * A device's site as far as the map may show it. Sites are usually read from
+   * the hostname or sysName ("hk-rossa1agg1" → "rossa1"), so with device names
+   * hidden only a site an administrator set in libremap.overrides is shown.
+   */
+  function mapSite(n:MapNode):string {
+    if(showDeviceNames) return siteOfDevice(n);
+    const configured=snapshot?.config.overrides?.[n.id]?.site;
+    return typeof configured==='string' ? configured.trim() : '';
+  }
+  const joinSites=(names:string[])=>{const unique=[...new Set(names.filter(Boolean))].sort();return unique.length>1 ? `${unique[0]} +${unique.length-1}` : unique[0] ?? '';};
+  /** The name the map itself may show: the address when shown, else its sites the map may show, else nothing. */
   function shownName(site:Site):string {
     if(showAddresses && site.name.trim()) return site.name.trim();
-    const classified=[...new Set(site.nodes.map(n=>n.site).filter(s=>s && s!=='Unclassified'))].sort();
-    return classified.length>1 ? `${classified[0]} +${classified.length-1}` : classified[0] ?? '';
+    return joinSites(site.nodes.map(mapSite));
   }
-  /** A location's name for headings, link titles and screen readers. */
-  const siteName=(site:Site)=>shownName(site) || (showDeviceNames && site.nodes.length ? deviceNames(site) : 'Location');
-  /**
-   * With device names hidden, a device is named by its role and position at
-   * its location ("AGG 1", "ER 2"), so the details panel stays usable without
-   * showing a name anywhere on the page.
-   */
-  let aliases=new Map<string,string>();
-  const deviceLabel=(n:MapNode)=>showDeviceNames ? nameOf(n) : aliases.get(n.id) ?? (n.role==='OTHER' ? 'Device' : n.role);
+  // Locations with no name the map may show are numbered, in a fixed order.
+  let locationNumbers=new Map<string,number>();
+  /** A location's name on the map: screen reader text and link tooltips. */
+  const mapName=(site:Site)=>shownName(site) || (showDeviceNames && site.nodes.length ? deviceNames(site) : `Location ${locationNumbers.get(site.id) ?? ''}`.trim());
+  /** A location's name in the details panel: its address when shown, else its site, else its devices. */
+  const siteName=(site:Site)=>(showAddresses && site.name.trim()) || joinSites(site.nodes.map(siteOfDevice)) || deviceNames(site) || 'Location';
   /** The first few device names at a location; the rest as a count. */
   function deviceNames(site:Site,shown=3):string {
     const names=site.nodes.slice(0,shown).map(nameOf).join(', ');
@@ -164,14 +184,8 @@ export function mountWorldMap(root:HTMLElement) {
       site.nodes.push(node);siteOf.set(node.id,site);
     }
     sites=[...bySite.values()];
-    aliases=new Map();
     for(const site of sites){
       site.nodes.sort((a,b)=>nameOf(a).localeCompare(nameOf(b),undefined,{numeric:true}));
-      const counts=new Map<string,number>();
-      for(const n of site.nodes){
-        const role=n.role==='OTHER' ? 'Device' : n.role, number=(counts.get(role) ?? 0)+1;
-        counts.set(role,number);aliases.set(n.id,`${role} ${number}`);
-      }
       site.status=site.nodes.some(n=>n.status==='down') ? 'down' : site.nodes.every(n=>n.status==='up') ? 'up' : 'unknown';
     }
     // Draw problem locations last, so they sit on top of healthy neighbours.
@@ -231,7 +245,7 @@ export function mountWorldMap(root:HTMLElement) {
       pairLines[1].setAttribute('stroke',pair.color);
       if(pair.state==='up') pairLines[1].removeAttribute('stroke-dasharray'); else pairLines[1].setAttribute('stroke-dasharray','7 5');
       const title=pairLines[1].parentElement?.querySelector('title');
-      if(title) title.textContent=`${siteName(pair.a)} ↔ ${siteName(pair.b)} · ${pair.links.length} link${pair.links.length===1 ? '' : 's'} · ${pair.label}`;
+      if(title) title.textContent=`${mapName(pair.a)} ↔ ${mapName(pair.b)} · ${pair.links.length} link${pair.links.length===1 ? '' : 's'} · ${pair.label}`;
     }
   }
 
@@ -275,7 +289,7 @@ export function mountWorldMap(root:HTMLElement) {
       const marker=document.createElement('button');
       const level=worstLevel(siteWarnings.get(site.id) ?? []);
       marker.type='button';marker.className=`lm-world-marker lm-world-${site.status}`;marker.dataset.site=site.id;
-      marker.setAttribute('aria-label',`${siteName(site)}: ${count} device${count===1 ? '' : 's'}${down ? `, ${down} down` : ''}${level ? `, ${level} weather warning` : ''}`);
+      marker.setAttribute('aria-label',`${mapName(site)}: ${count} device${count===1 ? '' : 's'}${down ? `, ${down} down` : ''}${level ? `, ${level} weather warning` : ''}`);
       marker.style.setProperty('--marker',`${Math.round(Math.min(36,14+Math.sqrt(count)*4))}px`);
       const dot=document.createElement('span');dot.className='lm-world-dot';dot.textContent=count>1 ? String(count) : '';
       const label=document.createElement('span');label.className='lm-world-label';label.textContent=markerLabel(site);
@@ -295,8 +309,8 @@ export function mountWorldMap(root:HTMLElement) {
     for(const pair of siteLinks){
       const g=document.createElementNS(SVG,'g');
       g.classList.add('lm-world-link');g.dataset.link=pair.key;g.setAttribute('tabindex','0');g.setAttribute('role','button');
-      g.setAttribute('aria-label',`${siteName(pair.a)} to ${siteName(pair.b)}: ${pair.links.length} link${pair.links.length===1 ? '' : 's'}, ${pair.label}`);
-      const title=document.createElementNS(SVG,'title');title.textContent=`${siteName(pair.a)} ↔ ${siteName(pair.b)} · ${pair.links.length} link${pair.links.length===1 ? '' : 's'} · ${pair.label}`;
+      g.setAttribute('aria-label',`${mapName(pair.a)} to ${mapName(pair.b)}: ${pair.links.length} link${pair.links.length===1 ? '' : 's'}, ${pair.label}`);
+      const title=document.createElementNS(SVG,'title');title.textContent=`${mapName(pair.a)} ↔ ${mapName(pair.b)} · ${pair.links.length} link${pair.links.length===1 ? '' : 's'} · ${pair.label}`;
       const hit=document.createElementNS(SVG,'line');hit.classList.add('lm-world-hit');
       const line=document.createElementNS(SVG,'line');line.classList.add('lm-world-line');
       line.setAttribute('stroke',pair.color);line.setAttribute('stroke-width',String(Math.min(7,2+Math.log2(pair.links.length))));
@@ -440,7 +454,8 @@ export function mountWorldMap(root:HTMLElement) {
       ].filter(Boolean);
       panel.append(el('p',`${internal+undrawnUnlocated} link${internal+undrawnUnlocated===1 ? ' is' : 's are'} not drawn as lines: ${parts.join('; ')}.`,'lm-hint lm-world-undrawn'));
     }
-    if(!showAddresses) panel.append(el('p','Locations are named by their LibreMap site or devices. Select Addresses to show the LibreNMS location text and coordinates.','lm-hint'));
+    if(!showAddresses && !showDeviceNames) panel.append(el('p','Markers are shown without names. Select Addresses for the LibreNMS location text, or Device names to label them with their devices. Select a location to see its devices.','lm-hint'));
+    else if(!showAddresses) panel.append(el('p','Select Addresses to show the LibreNMS location text and coordinates.','lm-hint'));
     if(weatherOn){
       panel.append(el('div',`WEATHER WARNINGS · ${warnings.length}`,'lm-eyebrow lm-world-section'));
       if(warnings.length) panel.append(warningList(warnings));
@@ -449,21 +464,17 @@ export function mountWorldMap(root:HTMLElement) {
     if(unlocated.length){
       const more=el('details','','lm-world-unlocated');
       more.append(el('summary',`${unlocated.length} device${unlocated.length===1 ? ' has' : 's have'} no coordinates`));
-      // Unplaced devices have no location to number them by: list them only with names shown.
-      if(showDeviceNames){
-        const names=el('ul');
-        for(const n of unlocated.slice(0,50)) names.append(el('li',nameOf(n)));
-        if(unlocated.length>50) names.append(el('li',`…and ${unlocated.length-50} more`));
-        more.append(names);
-      } else more.append(el('p','Select Device names to list them.'));
-      more.append(el('p','Give these devices a LibreNMS location with coordinates to place them on the map.'));
+      const names=el('ul');
+      for(const n of unlocated.slice(0,50)) names.append(el('li',nameOf(n)));
+      if(unlocated.length>50) names.append(el('li',`…and ${unlocated.length-50} more`));
+      more.append(names,el('p','Give these devices a LibreNMS location with coordinates to place them on the map.'));
       panel.append(more);
     }
   }
   function deviceButton(n:MapNode){
     const b=el('button',undefined,'lm-world-device');
     const dot=el('i');dot.style.background=statusColor(n.status);
-    b.append(dot,el('span',deviceLabel(n)));b.title=n.status;b.onclick=()=>select({type:'device',id:n.id});
+    b.append(dot,el('span',nameOf(n)));b.title=n.status;b.onclick=()=>select({type:'device',id:n.id});
     return b;
   }
   function siteDetails(site:Site){
@@ -523,15 +534,17 @@ export function mountWorldMap(root:HTMLElement) {
   function deviceDetails(n:MapNode){
     const site=sites.find(s=>s.nodes.includes(n))!;
     const back=el('button',`← ${siteName(site)}`,'lm-world-back');back.onclick=()=>select({type:'site',id:site.id});
-    panel.append(closeButton(),back,el('div',`${n.role} / DEVICE`,'lm-eyebrow'),el('h2',deviceLabel(n)),list([
-      ['Status',n.status],...(showDeviceNames && nameOf(n)!==n.hostname ? [['Hostname',n.hostname] as [string,string]] : []),['Location',siteName(site)],['Site',n.site],
+    panel.append(closeButton(),back,el('div',`${n.role} / DEVICE`,'lm-eyebrow'),el('h2',nameOf(n)),list([
+      // The heading is the hostname, else the sysName or IP; show the other identifiers beside it.
+      ['Status',n.status],
+      ...(n.hostname.trim() && n.hostname.trim()!==nameOf(n) ? [[isAddress(n.hostname.trim()) ? 'IP address' : 'Hostname',n.hostname.trim()] as [string,string]] : []),
+      ...(n.sysName?.trim() && n.sysName.trim()!==nameOf(n) ? [['sysName',n.sysName.trim()] as [string,string]] : []),['Location',siteName(site)],...(siteOfDevice(n) ? [['Site',siteOfDevice(n)] as [string,string]] : []),
     ]));
     if(n.url){const url=new URL(n.url,location.href);if(url.origin===location.origin){const a=el('a','Open in LibreNMS ↗','lm-device-link');a.href=url.href;panel.append(a);}}
   }
   /** Each link's load and both interfaces; a far port LibreNMS did not match is marked. */
   function linkRows(links:Link[]){
-    // A role number is only unique within its location, so prefix the location.
-    const names=new Map(sites.flatMap(site=>site.nodes.map(n=>[n.id,showDeviceNames ? nameOf(n) : `${siteName(site)} ${deviceLabel(n)}`] as const)));
+    const names=new Map(graph.nodes.map(n=>[n.id,nameOf(n)]));
     const rows=el('ul',undefined,'lm-world-links-list');
     const now=serverNow(), staleAfter=snapshot?.config.staleAfter ?? 900;
     for(const link of links){
@@ -564,6 +577,8 @@ export function mountWorldMap(root:HTMLElement) {
       const [topologyData,locationData]=await Promise.all([getJson(root.dataset.endpoint,'topology'),getJson(root.dataset.locationsEndpoint,'locations')]);
       if(!object(topologyData) || !Array.isArray(topologyData.devices) || !Array.isArray(topologyData.links) || !object(topologyData.config)) throw new Error('Unexpected topology response.');
       snapshot=topologyData as unknown as Snapshot;places=parseLocations(locationData);graph=topology(snapshot);
+      // Numbered by LibreNMS location ID, so a location keeps its number across refreshes and filters.
+      locationNumbers=new Map([...places.locations].sort((a,b)=>Number(a.id)-Number(b.id) || a.id.localeCompare(b.id)).map((l,i)=>[l.id,i+1]));
       clockOffset=Number.isFinite(snapshot.generatedAt) ? snapshot.generatedAt-Date.now()/1000 : 0;
       const group=groupSelect.value;
       groupSelect.replaceChildren(new Option('All device groups',''),...graph.deviceGroups.map(g=>new Option(g.name,g.id)));
@@ -696,7 +711,7 @@ export function mountWorldMap(root:HTMLElement) {
   // Read-only diagnostic hook for browser checks with fixtures that opt in.
   if(root.dataset.debug==='true') Object.defineProperty(window,'libremapWorldDebug',{value:()=>({
     zoom:view.zoom,center:{...view.center},
-    markers:sites.map(site=>({id:site.id,name:site.name,label:siteName(site),text:markers.get(site.id)?.querySelector('.lm-world-label')?.textContent ?? '',count:site.nodes.length,status:site.status,warning:worstLevel(siteWarnings.get(site.id) ?? []) ?? null,position:screen(project(site,view.zoom))})),
+    markers:sites.map(site=>({id:site.id,name:site.name,label:mapName(site),text:markers.get(site.id)?.querySelector('.lm-world-label')?.textContent ?? '',count:site.nodes.length,status:site.status,warning:worstLevel(siteWarnings.get(site.id) ?? []) ?? null,position:screen(project(site,view.zoom))})),
     links:siteLinks.map(pair=>({key:pair.key,count:pair.links.length,state:pair.state,label:pair.label,color:pair.color})),
     undrawn:{withinSite:Object.fromEntries([...withinSite].map(([id,list])=>[id,list.length])),unlocated:undrawnUnlocated},
     warnings:weatherOn ? warnings.map(w=>({id:w.id,level:w.level,drawn:!!weatherPaths.get(w.id)?.getAttribute('d')})) : [],
