@@ -1043,23 +1043,23 @@ var A = E(""), j = E({}), M = E(function() {}), N = typeof HTMLElement > "u" ? "
 		if (t = t[a], t == null) return t;
 	}
 	return t;
-}, Q = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {};
-function Ee(e) {
+}, Ee = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {};
+function De(e) {
 	return e && e.__esModule && Object.prototype.hasOwnProperty.call(e, "default") ? e.default : e;
 }
-var De, Oe;
-function ke() {
-	if (Oe) return De;
-	Oe = 1;
+var Oe, ke;
+function Q() {
+	if (ke) return Oe;
+	ke = 1;
 	function e(e) {
 		var t = typeof e;
 		return e != null && (t == "object" || t == "function");
 	}
-	return De = e, De;
+	return Oe = e, Oe;
 }
 var Ae, je;
 function Me() {
-	return je ? Ae : (je = 1, Ae = typeof Q == "object" && Q && Q.Object === Object && Q, Ae);
+	return je ? Ae : (je = 1, Ae = typeof Ee == "object" && Ee && Ee.Object === Object && Ee, Ae);
 }
 var Ne, Pe;
 function Fe() {
@@ -1161,7 +1161,7 @@ var lt, ut;
 function dt() {
 	if (ut) return lt;
 	ut = 1;
-	var e = We(), t = ke(), n = ct(), r = NaN, i = /^[-+]0x[0-9a-f]+$/i, a = /^0b[01]+$/i, o = /^0o[0-7]+$/i, s = parseInt;
+	var e = We(), t = Q(), n = ct(), r = NaN, i = /^[-+]0x[0-9a-f]+$/i, a = /^0b[01]+$/i, o = /^0o[0-7]+$/i, s = parseInt;
 	function c(c) {
 		if (typeof c == "number") return c;
 		if (n(c)) return r;
@@ -1180,7 +1180,7 @@ var ft, pt;
 function mt() {
 	if (pt) return ft;
 	pt = 1;
-	var e = ke(), t = Re(), n = dt(), r = "Expected a function", i = Math.max, a = Math.min;
+	var e = Q(), t = Re(), n = dt(), r = "Expected a function", i = Math.max, a = Math.min;
 	function o(o, s, c) {
 		var l, u, d, f, p, m, h = 0, g = !1, _ = !1, v = !0;
 		if (typeof o != "function") throw TypeError(r);
@@ -1226,7 +1226,7 @@ function mt() {
 	}
 	return ft = o, ft;
 }
-var ht = /*@__PURE__*/ Ee(mt()), gt = O ? O.performance : null, _t = gt && gt.now ? function() {
+var ht = /*@__PURE__*/ De(mt()), gt = O ? O.performance : null, _t = gt && gt.now ? function() {
 	return gt.now();
 } : function() {
 	return Date.now();
@@ -1683,7 +1683,7 @@ var vn, yn;
 function bn() {
 	return yn ? vn : (yn = 1, vn = _n(), vn);
 }
-var xn = /*@__PURE__*/ Ee(bn()), Sn = en({
+var xn = /*@__PURE__*/ De(bn()), Sn = en({
 	root: null,
 	weight: function(e) {
 		return 1;
@@ -3584,7 +3584,7 @@ var Ma, Na;
 function Pa() {
 	if (Na) return Ma;
 	Na = 1;
-	var e = nt(), t = ke(), n = "[object AsyncFunction]", r = "[object Function]", i = "[object GeneratorFunction]", a = "[object Proxy]";
+	var e = nt(), t = Q(), n = "[object AsyncFunction]", r = "[object Function]", i = "[object GeneratorFunction]", a = "[object Proxy]";
 	function o(o) {
 		if (!t(o)) return !1;
 		var s = e(o);
@@ -3631,7 +3631,7 @@ var Wa, Ga;
 function Ka() {
 	if (Ga) return Wa;
 	Ga = 1;
-	var e = Pa(), t = Ba(), n = ke(), r = Ua(), i = /[\\^$.*+?()[\]{}|]/g, a = /^\[object .+?Constructor\]$/, o = Function.prototype, s = Object.prototype, c = o.toString, l = s.hasOwnProperty, u = RegExp("^" + c.call(l).replace(i, "\\$&").replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, "$1.*?") + "$");
+	var e = Pa(), t = Ba(), n = Q(), r = Ua(), i = /[\\^$.*+?()[\]{}|]/g, a = /^\[object .+?Constructor\]$/, o = Function.prototype, s = Object.prototype, c = o.toString, l = s.hasOwnProperty, u = RegExp("^" + c.call(l).replace(i, "\\$&").replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, "$1.*?") + "$");
 	function d(i) {
 		return !n(i) || t(i) ? !1 : (e(i) ? u : a).test(r(i));
 	}
@@ -4034,7 +4034,7 @@ function qs() {
 	}
 	return Gs = t, Gs;
 }
-var Js = /*@__PURE__*/ Ee(qs()), Ys, Xs;
+var Js = /*@__PURE__*/ De(qs()), Ys, Xs;
 function Zs() {
 	if (Xs) return Ys;
 	Xs = 1;
@@ -4087,7 +4087,7 @@ var sc, cc;
 function lc() {
 	if (cc) return sc;
 	cc = 1;
-	var e = rc(), t = Rs(), n = oc(), r = ke(), i = Vs();
+	var e = rc(), t = Rs(), n = oc(), r = Q(), i = Vs();
 	function a(a, o, s, c) {
 		if (!r(a)) return a;
 		o = t(o, a);
@@ -4114,7 +4114,7 @@ function fc() {
 	}
 	return uc = t, uc;
 }
-var pc = /*@__PURE__*/ Ee(fc()), mc, hc;
+var pc = /*@__PURE__*/ De(fc()), mc, hc;
 function gc() {
 	if (hc) return mc;
 	hc = 1;
@@ -4135,7 +4135,7 @@ function yc() {
 	}
 	return _c = s, _c;
 }
-var bc = /*@__PURE__*/ Ee(yc()), xc = {
+var bc = /*@__PURE__*/ De(yc()), xc = {
 	data: function(e) {
 		return e = Z({}, {
 			field: "data",
@@ -19213,10 +19213,10 @@ function s_(e) {
 				u.close();
 				break;
 			case "confirm-delete":
-				u.close(), Q();
+				u.close(), Ee();
 				break;
 			case "edit":
-				Ee();
+				De();
 				break;
 			case "save":
 				ue();
@@ -19269,11 +19269,11 @@ function s_(e) {
 	}), o.addEventListener("keydown", (e) => {
 		e.key === "Enter" && (e.preventDefault(), n("add-device").click());
 	});
-	async function Q() {
+	async function Ee() {
 		let e = h?.map;
 		e && p && await ce(async () => (await p.remove(e), !0)) && (m = m.filter((t) => t.id !== e.id), re(), U(`Deleted “${e.name}”.`));
 	}
-	async function Ee() {
+	async function De() {
 		if (!_) {
 			_ = !0, G(), ye(), X(), de();
 			return;
@@ -19307,7 +19307,7 @@ function s_(e) {
 	}), window.addEventListener("beforeunload", (e) => {
 		v && (e.preventDefault(), e.returnValue = "");
 	});
-	async function De() {
+	async function Oe() {
 		if (!p || !h || y || document.hidden) return;
 		let e = h.map.id;
 		try {
@@ -19331,7 +19331,7 @@ function s_(e) {
 			].includes(t.status) ? se(t) : U(`${t instanceof Error ? t.message : "Live data unavailable."} · Showing the last data received.`, !0);
 		}
 	}
-	if (setInterval(() => void De(), 6e4), setInterval(() => {
+	if (setInterval(() => void Oe(), 6e4), setInterval(() => {
 		h && ee();
 	}, 1e4), new ResizeObserver(() => f.resize()).observe(t(".lm-canvas")), e.dataset.debug === "true" && Object.defineProperty(window, "libremapCustomDebug", {
 		value: () => ({
@@ -19552,34 +19552,46 @@ function R_(e) {
 		}
 	}, S, C = !1, w = !0, T = !1, E = !1, D = -1, O = 0, k = 0, A = () => Date.now() / 1e3 + k, j = (e, t = !1) => {
 		n.textContent = e, n.classList.toggle("lm-error", t);
-	}, M = (e) => ug(e), N = `libremap:world:${e.dataset.storageKey ?? "local"}`, P = (() => {
+	}, M = (e) => /^\d{1,3}(\.\d{1,3}){3}$/.test(e) || e.includes(":") && /^[0-9a-f:.]+$/i.test(e);
+	function N(e) {
+		let t = e.hostname.trim(), n = (e.sysName ?? "").trim();
+		return t && !M(t) ? t : n || t || ug(e);
+	}
+	let P = `libremap:world:${e.dataset.storageKey ?? "local"}`, F = (() => {
 		try {
-			let e = JSON.parse(localStorage.getItem(N) ?? "{}");
+			let e = JSON.parse(localStorage.getItem(P) ?? "{}");
 			return L_(e) ? e : {};
 		} catch {
 			return {};
 		}
-	})(), F = () => {
+	})(), I = () => {
 		try {
-			localStorage.setItem(N, JSON.stringify({
-				addresses: I,
-				deviceNames: L,
-				weather: z
+			localStorage.setItem(P, JSON.stringify({
+				addresses: L,
+				deviceNames: R,
+				weather: B
 			}));
 		} catch {}
-	}, I = P.addresses === !0, L = P.deviceNames === !0, R = e.dataset.weatherEndpoint, z = !!R && P.weather === !0, B = [], V = "", H = 0, U = !1, W = /* @__PURE__ */ new Map();
-	function G(e) {
-		if (I && e.name.trim()) return e.name.trim();
-		let t = [...new Set(e.nodes.map((e) => e.site).filter((e) => e && e !== "Unclassified"))].sort();
-		return t.length > 1 ? `${t[0]} +${t.length - 1}` : t[0] ?? "";
+	}, L = F.addresses === !0, R = F.deviceNames === !0, z = e.dataset.weatherEndpoint, B = !!z && F.weather === !0, V = [], H = "", U = 0, W = !1, G = /* @__PURE__ */ new Map(), K = (e) => e.site && e.site !== "Unclassified" ? e.site : "";
+	function q(e) {
+		if (R) return K(e);
+		let t = p?.config.overrides?.[e.id]?.site;
+		return typeof t == "string" ? t.trim() : "";
 	}
-	let K = (e) => G(e) || (L && e.nodes.length ? Y(e) : "Location"), q = /* @__PURE__ */ new Map(), J = (e) => L ? M(e) : q.get(e.id) ?? (e.role === "OTHER" ? "Device" : e.role);
-	function Y(e, t = 3) {
-		let n = e.nodes.slice(0, t).map(M).join(", ");
+	let J = (e) => {
+		let t = [...new Set(e.filter(Boolean))].sort();
+		return t.length > 1 ? `${t[0]} +${t.length - 1}` : t[0] ?? "";
+	};
+	function Y(e) {
+		return L && e.name.trim() ? e.name.trim() : J(e.nodes.map(q));
+	}
+	let X = /* @__PURE__ */ new Map(), ee = (e) => Y(e) || (R && e.nodes.length ? ne(e) : `Location ${X.get(e.id) ?? ""}`.trim()), te = (e) => L && e.name.trim() || J(e.nodes.map(K)) || ne(e) || "Location";
+	function ne(e, t = 3) {
+		let n = e.nodes.slice(0, t).map(N).join(", ");
 		return e.nodes.length > t ? `${n} +${e.nodes.length - t}` : n;
 	}
-	let X = (e) => L ? Y(e) : G(e);
-	async function ee(e, t) {
+	let re = (e) => R ? ne(e) : Y(e);
+	async function ie(e, t) {
 		if (!e) throw Error(`Missing ${t} endpoint.`);
 		let n = new URL(e, location.href);
 		if (n.origin !== location.origin) throw Error(`The ${t} endpoint must use the same origin.`);
@@ -19598,7 +19610,7 @@ function R_(e) {
 		}
 		return r.json();
 	}
-	function te(e) {
+	function ae(e) {
 		if (!L_(e) || !Array.isArray(e.locations) || !L_(e.devices)) throw Error("Unexpected locations response.");
 		let t = e.locations.filter((e) => L_(e) && typeof e.id == "string" && typeof e.name == "string" && typeof e.lat == "number" && typeof e.lng == "number" && Math.abs(e.lat) <= 90 && Math.abs(e.lng) <= 180).map((e) => ({
 			id: e.id,
@@ -19623,16 +19635,16 @@ function R_(e) {
 			}
 		};
 	}
-	function ne() {
+	function oe() {
 		let e = u.value.trim().toLowerCase(), t = m.deviceGroups.find((e) => e.id === d.value), n = t ? new Set(t.deviceIds) : void 0, r = new Map((h?.locations ?? []).map((e) => [e.id, e])), a = (e) => {
 			let t = h?.devices[e];
 			return t ? r.get(t) : void 0;
 		}, o = m.nodes.filter((t) => n && !n.has(t.id) || C && t.status !== "down" ? !1 : !e || [
-			M(t),
+			N(t),
 			t.hostname,
 			t.sysName ?? "",
 			t.site,
-			I ? a(t.id)?.name ?? "" : ""
+			L ? a(t.id)?.name ?? "" : ""
 		].some((t) => t.toLowerCase().includes(e))), s = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new Map();
 		v = [];
 		for (let e of o) {
@@ -19648,16 +19660,8 @@ function R_(e) {
 				status: "up"
 			}, s.set(t.id, n)), n.nodes.push(e), c.set(e.id, n);
 		}
-		g = [...s.values()], q = /* @__PURE__ */ new Map();
-		for (let e of g) {
-			e.nodes.sort((e, t) => M(e).localeCompare(M(t), void 0, { numeric: !0 }));
-			let t = /* @__PURE__ */ new Map();
-			for (let n of e.nodes) {
-				let e = n.role === "OTHER" ? "Device" : n.role, r = (t.get(e) ?? 0) + 1;
-				t.set(e, r), q.set(n.id, `${e} ${r}`);
-			}
-			e.status = e.nodes.some((e) => e.status === "down") ? "down" : e.nodes.every((e) => e.status === "up") ? "up" : "unknown";
-		}
+		g = [...s.values()];
+		for (let e of g) e.nodes.sort((e, t) => N(e).localeCompare(N(t), void 0, { numeric: !0 })), e.status = e.nodes.some((e) => e.status === "down") ? "down" : e.nodes.every((e) => e.status === "up") ? "up" : "unknown";
 		g.sort((e, t) => Number(e.status === "down") - Number(t.status === "down") || e.id.localeCompare(t.id));
 		let l = /* @__PURE__ */ new Map(), f = new Set(o.map((e) => e.id));
 		y = /* @__PURE__ */ new Map(), b = 0;
@@ -19682,152 +19686,152 @@ function R_(e) {
 			};
 			o.links.push(e), l.set(a, o);
 		}
-		_ = [...l.values()], ie(), re(), S?.type === "site" && !s.has(S.id) && (S = void 0), S?.type === "device" && !c.has(S.id) && (S = void 0), S?.type === "link" && !l.has(S.id) && (S = void 0), S?.type === "warning" && !B.some((e) => e.id === S.id) && (S = void 0), de(), pe(), De(), Ae(), i.hidden = g.length > 0, i.textContent = p ? h?.locations.length ? "No located devices match these filters." : "No devices have map coordinates yet. Give devices a LibreNMS location with coordinates to place them here." : "Device locations unavailable. Use Refresh to retry.", ye();
+		_ = [...l.values()], ce(), se(), S?.type === "site" && !s.has(S.id) && (S = void 0), S?.type === "device" && !c.has(S.id) && (S = void 0), S?.type === "link" && !l.has(S.id) && (S = void 0), S?.type === "warning" && !V.some((e) => e.id === S.id) && (S = void 0), he(), _e(), je(), Pe(), i.hidden = g.length > 0, i.textContent = p ? h?.locations.length ? "No located devices match these filters." : "No devices have map coordinates yet. Give devices a LibreNMS location with coordinates to place them here." : "Device locations unavailable. Use Refresh to retry.", Ce();
 	}
-	function re() {
-		if (W.clear(), z) for (let e of g) {
-			let t = T_(e, B);
-			t.length && W.set(e.id, t);
+	function se() {
+		if (G.clear(), B) for (let e of g) {
+			let t = T_(e, V);
+			t.length && G.set(e.id, t);
 		}
 	}
-	function ie() {
+	function ce() {
 		let e = A(), t = p?.config.staleAfter ?? 900;
 		for (let n of _) {
 			let r = n.links.map((n) => _g(n, e, t)), i = r.filter((e) => e.state === "down").length, a = r.filter((e) => e.state === "up" && e.utilization !== null).sort((e, t) => t.utilization - e.utilization)[0];
 			i ? (n.color = "#e05b65", n.state = "down", n.label = `${i} of ${n.links.length} down`) : a ? (n.color = a.color, n.state = "up", n.label = `busiest ${a.label}`) : (n.color = "#8a96a9", n.state = "unknown", n.label = "load unknown");
 		}
 	}
-	function ae() {
-		ie();
+	function le() {
+		ce();
 		for (let e of _) {
-			let t = fe.get(e.key);
+			let t = ge.get(e.key);
 			if (!t) continue;
 			t[1].setAttribute("stroke", e.color), e.state === "up" ? t[1].removeAttribute("stroke-dasharray") : t[1].setAttribute("stroke-dasharray", "7 5");
 			let n = t[1].parentElement?.querySelector("title");
-			n && (n.textContent = `${K(e.a)} ↔ ${K(e.b)} · ${e.links.length} link${e.links.length === 1 ? "" : "s"} · ${e.label}`);
+			n && (n.textContent = `${ee(e.a)} ↔ ${ee(e.b)} · ${e.links.length} link${e.links.length === 1 ? "" : "s"} · ${e.label}`);
 		}
 	}
-	let oe = () => ({
+	let ue = () => ({
 		w: a.clientWidth,
 		h: a.clientHeight
 	});
-	function se(e) {
-		let { w: t, h: n } = oe(), r = l_(x.zoom), i = e.x - x.center.x;
+	function de(e) {
+		let { w: t, h: n } = ue(), r = l_(x.zoom), i = e.x - x.center.x;
 		return i > r / 2 ? i -= r : i < -r / 2 && (i += r), {
 			x: t / 2 + i,
 			y: n / 2 + e.y - x.center.y
 		};
 	}
-	let ce = /* @__PURE__ */ new Map();
-	function le() {
+	let fe = /* @__PURE__ */ new Map();
+	function pe() {
 		let e = h?.map.tiles;
 		if (!e) {
-			ce.size && (o.replaceChildren(), ce.clear());
+			fe.size && (o.replaceChildren(), fe.clear());
 			return;
 		}
-		let { w: t, h: n } = oe(), r = x.zoom, i = 2 ** r, a = x.center.x - t / 2, s = x.center.y - n / 2, c = /* @__PURE__ */ new Set();
+		let { w: t, h: n } = ue(), r = x.zoom, i = 2 ** r, a = x.center.x - t / 2, s = x.center.y - n / 2, c = /* @__PURE__ */ new Set();
 		for (let l = Math.max(0, Math.floor(s / 256)); l <= Math.min(i - 1, Math.floor((s + n) / 256)); l++) for (let n = Math.floor(a / 256); n <= Math.floor((a + t) / 256); n++) {
 			let t = `${r}/${n}/${l}`;
 			c.add(t);
-			let i = ce.get(t);
+			let i = fe.get(t);
 			if (!i) {
 				let a = f_(e, r, n, l);
 				if (!a) continue;
 				i = new Image(256, 256), i.alt = "", i.decoding = "async", i.draggable = !1, i.onerror = () => {
 					i.classList.add("lm-tile-failed"), ++O === N_ && j("Map tiles could not be loaded. Device locations are still shown.", !0);
-				}, i.src = a, ce.set(t, i), o.append(i);
+				}, i.src = a, fe.set(t, i), o.append(i);
 			}
 			i.style.transform = `translate(${Math.round(n * 256 - a)}px,${Math.round(l * 256 - s)}px)`;
 		}
-		for (let [e, t] of ce) c.has(e) || (t.remove(), ce.delete(e));
+		for (let [e, t] of fe) c.has(e) || (t.remove(), fe.delete(e));
 	}
-	let ue = /* @__PURE__ */ new Map();
-	function de() {
-		ue.clear(), c.replaceChildren(...g.map((e) => {
-			let t = e.nodes.length, n = e.nodes.filter((e) => e.status === "down").length, r = document.createElement("button"), i = E_(W.get(e.id) ?? []);
-			r.type = "button", r.className = `lm-world-marker lm-world-${e.status}`, r.dataset.site = e.id, r.setAttribute("aria-label", `${K(e)}: ${t} device${t === 1 ? "" : "s"}${n ? `, ${n} down` : ""}${i ? `, ${i} weather warning` : ""}`), r.style.setProperty("--marker", `${Math.round(Math.min(36, 14 + Math.sqrt(t) * 4))}px`);
+	let me = /* @__PURE__ */ new Map();
+	function he() {
+		me.clear(), c.replaceChildren(...g.map((e) => {
+			let t = e.nodes.length, n = e.nodes.filter((e) => e.status === "down").length, r = document.createElement("button"), i = E_(G.get(e.id) ?? []);
+			r.type = "button", r.className = `lm-world-marker lm-world-${e.status}`, r.dataset.site = e.id, r.setAttribute("aria-label", `${ee(e)}: ${t} device${t === 1 ? "" : "s"}${n ? `, ${n} down` : ""}${i ? `, ${i} weather warning` : ""}`), r.style.setProperty("--marker", `${Math.round(Math.min(36, 14 + Math.sqrt(t) * 4))}px`);
 			let a = document.createElement("span");
 			a.className = "lm-world-dot", a.textContent = t > 1 ? String(t) : "";
 			let o = document.createElement("span");
-			if (o.className = "lm-world-label", o.textContent = X(e), r.append(a, o), i) {
+			if (o.className = "lm-world-label", o.textContent = re(e), r.append(a, o), i) {
 				let e = document.createElement("span");
 				e.className = "lm-world-badge", e.textContent = "!", e.style.setProperty("--area", v_[i]), r.dataset.warning = i, r.append(e);
 			}
-			return ue.set(e.id, r), r;
+			return me.set(e.id, r), r;
 		}));
 	}
-	let fe = /* @__PURE__ */ new Map();
-	function pe() {
-		if (fe.clear(), s.replaceChildren(), w) for (let e of _) {
+	let ge = /* @__PURE__ */ new Map();
+	function _e() {
+		if (ge.clear(), s.replaceChildren(), w) for (let e of _) {
 			let t = document.createElementNS(k_, "g");
-			t.classList.add("lm-world-link"), t.dataset.link = e.key, t.setAttribute("tabindex", "0"), t.setAttribute("role", "button"), t.setAttribute("aria-label", `${K(e.a)} to ${K(e.b)}: ${e.links.length} link${e.links.length === 1 ? "" : "s"}, ${e.label}`);
+			t.classList.add("lm-world-link"), t.dataset.link = e.key, t.setAttribute("tabindex", "0"), t.setAttribute("role", "button"), t.setAttribute("aria-label", `${ee(e.a)} to ${ee(e.b)}: ${e.links.length} link${e.links.length === 1 ? "" : "s"}, ${e.label}`);
 			let n = document.createElementNS(k_, "title");
-			n.textContent = `${K(e.a)} ↔ ${K(e.b)} · ${e.links.length} link${e.links.length === 1 ? "" : "s"} · ${e.label}`;
+			n.textContent = `${ee(e.a)} ↔ ${ee(e.b)} · ${e.links.length} link${e.links.length === 1 ? "" : "s"} · ${e.label}`;
 			let r = document.createElementNS(k_, "line");
 			r.classList.add("lm-world-hit");
 			let i = document.createElementNS(k_, "line");
-			i.classList.add("lm-world-line"), i.setAttribute("stroke", e.color), i.setAttribute("stroke-width", String(Math.min(7, 2 + Math.log2(e.links.length)))), e.state !== "up" && i.setAttribute("stroke-dasharray", "7 5"), t.append(n, r, i), s.append(t), fe.set(e.key, [r, i]);
+			i.classList.add("lm-world-line"), i.setAttribute("stroke", e.color), i.setAttribute("stroke-width", String(Math.min(7, 2 + Math.log2(e.links.length)))), e.state !== "up" && i.setAttribute("stroke-dasharray", "7 5"), t.append(n, r, i), s.append(t), ge.set(e.key, [r, i]);
 		}
 	}
-	let me, he = -1, ge = /* @__PURE__ */ new Map();
-	function _e() {
-		l.replaceChildren(), ge.clear(), me = void 0, he = -1;
-		for (let t of e.querySelectorAll(".lm-world-weather-key")) t.hidden = !z;
-		if (z) {
-			me = document.createElementNS(k_, "g");
-			for (let e of B) {
+	let Z, ve = -1, ye = /* @__PURE__ */ new Map();
+	function be() {
+		l.replaceChildren(), ye.clear(), Z = void 0, ve = -1;
+		for (let t of e.querySelectorAll(".lm-world-weather-key")) t.hidden = !B;
+		if (B) {
+			Z = document.createElementNS(k_, "g");
+			for (let e of V) {
 				let t = document.createElementNS(k_, "path");
 				t.classList.add("lm-world-warning"), t.dataset.warning = e.id, t.setAttribute("fill-rule", "evenodd"), t.style.setProperty("--area", v_[e.level]);
 				let n = document.createElementNS(k_, "title");
-				n.textContent = `${b_[e.level]} warning: ${e.title}${e.area ? ` · ${e.area}` : ""}`, t.append(n), me.append(t), ge.set(e.id, t);
+				n.textContent = `${b_[e.level]} warning: ${e.title}${e.area ? ` · ${e.area}` : ""}`, t.append(n), Z.append(t), ye.set(e.id, t);
 			}
-			l.append(me);
+			l.append(Z);
 		}
 	}
-	function Z() {
-		if (!me) return;
-		if (he !== x.zoom) {
-			for (let e of B) ge.get(e.id)?.setAttribute("d", D_(e, x.zoom));
-			he = x.zoom;
+	function xe() {
+		if (!Z) return;
+		if (ve !== x.zoom) {
+			for (let e of V) ye.get(e.id)?.setAttribute("d", D_(e, x.zoom));
+			ve = x.zoom;
 		}
-		let { w: e, h: t } = oe();
-		me.setAttribute("transform", `translate(${e / 2 - x.center.x} ${t / 2 - x.center.y})`);
-		for (let [e, t] of ge) t.classList.toggle("lm-selected", S?.type === "warning" && S.id === e);
+		let { w: e, h: t } = ue();
+		Z.setAttribute("transform", `translate(${e / 2 - x.center.x} ${t / 2 - x.center.y})`);
+		for (let [e, t] of ye) t.classList.toggle("lm-selected", S?.type === "warning" && S.id === e);
 	}
-	let ve = 0;
-	function ye() {
-		cancelAnimationFrame(ve), ve = 0;
-		let { w: e, h: t } = oe();
-		le(), Z();
+	let Se = 0;
+	function Ce() {
+		cancelAnimationFrame(Se), Se = 0;
+		let { w: e, h: t } = ue();
+		pe(), xe();
 		for (let n of g) {
-			let r = ue.get(n.id);
+			let r = me.get(n.id);
 			if (!r) continue;
-			let i = se(u_(n, x.zoom)), a = i.x < -60 || i.y < -60 || i.x > e + 60 || i.y > t + 60;
+			let i = de(u_(n, x.zoom)), a = i.x < -60 || i.y < -60 || i.x > e + 60 || i.y > t + 60;
 			r.style.display = a ? "none" : "", a || (r.style.transform = `translate(${i.x}px,${i.y}px) translate(-50%,-50%)`), r.classList.toggle("lm-selected", S?.type === "site" && S.id === n.id || S?.type === "device" && n.nodes.some((e) => e.id === S.id));
 		}
-		c.classList.toggle("lm-world-named", x.zoom >= A_ || L), c.classList.toggle("lm-world-device-names", L);
+		c.classList.toggle("lm-world-named", x.zoom >= A_ || R), c.classList.toggle("lm-world-device-names", R);
 		let n = l_(x.zoom);
 		for (let e of _) {
-			let t = fe.get(e.key);
+			let t = ge.get(e.key);
 			if (!t) continue;
-			let r = se(u_(e.a, x.zoom)), i = se(u_(e.b, x.zoom));
+			let r = de(u_(e.a, x.zoom)), i = de(u_(e.b, x.zoom));
 			i.x - r.x > n / 2 ? i.x -= n : r.x - i.x > n / 2 && (i.x += n);
 			for (let e of t) e.setAttribute("x1", String(r.x)), e.setAttribute("y1", String(r.y)), e.setAttribute("x2", String(i.x)), e.setAttribute("y2", String(i.y));
 			t[1].classList.toggle("lm-selected", S?.type === "link" && S.id === e.key);
 		}
 	}
-	let be = () => {
-		ve ||= requestAnimationFrame(ye);
+	let we = () => {
+		Se ||= requestAnimationFrame(Ce);
 	};
-	function xe(e, t) {
+	function Te(e, t) {
 		let n = h?.map.maxZoom ?? 18;
 		e = Math.max(1, Math.min(n, Math.round(e))), x = {
 			zoom: e,
-			center: __(t, e, oe().h)
-		}, Te(), be();
+			center: __(t, e, ue().h)
+		}, ke(), we();
 	}
-	function Se(e, t) {
-		let { w: n, h: r } = oe(), i = h?.map.maxZoom ?? 18, a = Math.max(1, Math.min(i, x.zoom + e));
+	function Ee(e, t) {
+		let { w: n, h: r } = ue(), i = h?.map.maxZoom ?? 18, a = Math.max(1, Math.min(i, x.zoom + e));
 		if (a === x.zoom) return;
 		let o = t ?? {
 			x: n / 2,
@@ -19836,50 +19840,50 @@ function R_(e) {
 			x: o.x - n / 2,
 			y: o.y - r / 2
 		};
-		xe(a, {
+		Te(a, {
 			x: (x.center.x + c.x) * s - c.x,
 			y: (x.center.y + c.y) * s - c.y
 		});
 	}
-	function Ce() {
-		let { w: e, h: t } = oe();
+	function De() {
+		let { w: e, h: t } = ue();
 		if (!g.length) {
 			let e = h?.map.center ?? {
 				lat: 0,
 				lng: 0,
 				zoom: 2
 			};
-			xe(e.zoom, u_(e, e.zoom));
+			Te(e.zoom, u_(e, e.zoom));
 			return;
 		}
 		let n = d_(g, e, t, j_, h?.map.maxZoom ?? 18, M_);
-		xe(n.zoom, n.center);
+		Te(n.zoom, n.center);
 	}
-	function we(e) {
+	function Oe(e) {
 		let t = Math.max(x.zoom, Math.min(h?.map.maxZoom ?? 18, 8));
-		xe(t, u_(e, t));
+		Te(t, u_(e, t));
 	}
-	function Te() {
+	function ke() {
 		let e = h?.map.maxZoom ?? 18, t = !p;
-		f("zoom-in").disabled = x.zoom >= e, f("zoom-out").disabled = x.zoom <= 1, f("fit").disabled = t, u.disabled = t, d.disabled = t, f("problems").disabled = t, f("links").disabled = t, f("addresses").disabled = t, f("names").disabled = t, f("weather").hidden = !R, f("weather").disabled = U;
+		f("zoom-in").disabled = x.zoom >= e, f("zoom-out").disabled = x.zoom <= 1, f("fit").disabled = t, u.disabled = t, d.disabled = t, f("problems").disabled = t, f("links").disabled = t, f("addresses").disabled = t, f("names").disabled = t, f("weather").hidden = !z, f("weather").disabled = W;
 		for (let [e, t] of [
 			["problems", C],
 			["links", w],
-			["addresses", I],
-			["names", L],
-			["weather", z]
+			["addresses", L],
+			["names", R],
+			["weather", B]
 		]) f(e).classList.toggle("lm-active", t), f(e).setAttribute("aria-pressed", String(t));
 	}
 	let Q = (e, t, n) => {
 		let r = document.createElement(e);
 		return t !== void 0 && (r.textContent = t), n && (r.className = n), r;
 	};
-	function Ee(e) {
+	function Ae(e) {
 		let t = Q("dl");
 		for (let [n, r] of e) t.append(Q("dt", n), Q("dd", r));
 		return t;
 	}
-	function De() {
+	function je() {
 		let e = t(".lm-summary");
 		if (e.replaceChildren(), !p) return;
 		let n = g.reduce((e, t) => e + t.nodes.length, 0), r = g.filter((e) => e.status === "down").length;
@@ -19892,68 +19896,66 @@ function R_(e) {
 			let n = i === "Problem sites" && r > 0, a = Q(n ? "button" : "div");
 			a.append(Q("strong", String(t)), Q("span", i)), n && (a.className = "lm-summary-down", a.dataset.world = "next-down", a.title = "Show the next location with a down device (D)", a.setAttribute("aria-label", `${r} problem sites. Show the next one`)), e.append(a);
 		}
-		if (z) {
+		if (B) {
 			let t = Q("div", void 0, "lm-summary-weather");
-			t.append(Q("strong", String(W.size)), Q("span", "Under warning")), e.append(t);
+			t.append(Q("strong", String(G.size)), Q("span", "Under warning")), e.append(t);
 		}
 	}
-	function Oe(e) {
-		S = e, Ae(), be();
+	function Me(e) {
+		S = e, Pe(), we();
 	}
-	function ke() {
+	function Ne() {
 		let e = Q("button", "×", "lm-close");
-		return e.setAttribute("aria-label", "Close details"), e.onclick = () => Oe(void 0), e;
+		return e.setAttribute("aria-label", "Close details"), e.onclick = () => Me(void 0), e;
 	}
-	function Ae() {
+	function Pe() {
 		r.replaceChildren();
-		let e = S?.type === "site" ? g.find((e) => e.id === S.id) : void 0, t = S?.type === "device" ? g.flatMap((e) => e.nodes).find((e) => e.id === S.id) : void 0, n = S?.type === "link" ? _.find((e) => e.key === S.id) : void 0, i = S?.type === "warning" ? B.find((e) => e.id === S.id) : void 0;
-		if (e) return Me(e);
-		if (t) return Fe(t);
-		if (n) return Le(n);
-		if (i) return Pe(i);
+		let e = S?.type === "site" ? g.find((e) => e.id === S.id) : void 0, t = S?.type === "device" ? g.flatMap((e) => e.nodes).find((e) => e.id === S.id) : void 0, n = S?.type === "link" ? _.find((e) => e.key === S.id) : void 0, i = S?.type === "warning" ? V.find((e) => e.id === S.id) : void 0;
+		if (e) return Ie(e);
+		if (t) return ze(t);
+		if (n) return Ve(n);
+		if (i) return Re(i);
 		r.append(Q("div", "WORLD MAP", "lm-eyebrow"), Q("h2", "Where the network is"), Q("p", "Each marker is a LibreNMS location, sized by its number of devices and coloured by the worst device status there. Lines are discovered links between locations, coloured by their busiest link."));
 		let a = [...y.values()].reduce((e, t) => e + t.length, 0);
 		if (a || b) {
 			let e = [a ? `${a} join devices at the same location (listed under that location)` : "", b ? `${b} reach a device without coordinates` : ""].filter(Boolean);
 			r.append(Q("p", `${a + b} link${a + b === 1 ? " is" : "s are"} not drawn as lines: ${e.join("; ")}.`, "lm-hint lm-world-undrawn"));
 		}
-		if (I || r.append(Q("p", "Locations are named by their LibreMap site or devices. Select Addresses to show the LibreNMS location text and coordinates.", "lm-hint")), z && (r.append(Q("div", `WEATHER WARNINGS · ${B.length}`, "lm-eyebrow lm-world-section")), B.length ? r.append(Ne(B)) : r.append(Q("p", H ? "MET Norway has no active warnings." : "Loading weather warnings…"))), v.length) {
+		if (!L && !R ? r.append(Q("p", "Markers are shown without names. Select Addresses for the LibreNMS location text, or Device names to label them with their devices. Select a location to see its devices.", "lm-hint")) : L || r.append(Q("p", "Select Addresses to show the LibreNMS location text and coordinates.", "lm-hint")), B && (r.append(Q("div", `WEATHER WARNINGS · ${V.length}`, "lm-eyebrow lm-world-section")), V.length ? r.append(Le(V)) : r.append(Q("p", U ? "MET Norway has no active warnings." : "Loading weather warnings…"))), v.length) {
 			let e = Q("details", "", "lm-world-unlocated");
-			if (e.append(Q("summary", `${v.length} device${v.length === 1 ? " has" : "s have"} no coordinates`)), L) {
-				let t = Q("ul");
-				for (let e of v.slice(0, 50)) t.append(Q("li", M(e)));
-				v.length > 50 && t.append(Q("li", `…and ${v.length - 50} more`)), e.append(t);
-			} else e.append(Q("p", "Select Device names to list them."));
-			e.append(Q("p", "Give these devices a LibreNMS location with coordinates to place them on the map.")), r.append(e);
+			e.append(Q("summary", `${v.length} device${v.length === 1 ? " has" : "s have"} no coordinates`));
+			let t = Q("ul");
+			for (let e of v.slice(0, 50)) t.append(Q("li", N(e)));
+			v.length > 50 && t.append(Q("li", `…and ${v.length - 50} more`)), e.append(t, Q("p", "Give these devices a LibreNMS location with coordinates to place them on the map.")), r.append(e);
 		}
 	}
-	function je(e) {
+	function Fe(e) {
 		let t = Q("button", void 0, "lm-world-device"), n = Q("i");
-		return n.style.background = yg(e.status), t.append(n, Q("span", J(e))), t.title = e.status, t.onclick = () => Oe({
+		return n.style.background = yg(e.status), t.append(n, Q("span", N(e))), t.title = e.status, t.onclick = () => Me({
 			type: "device",
 			id: e.id
 		}), t;
 	}
-	function Me(e) {
+	function Ie(e) {
 		let t = e.nodes.filter((e) => e.status === "down").length;
-		r.append(ke(), Q("div", "LOCATION", "lm-eyebrow"), Q("h2", K(e)), Ee([
+		r.append(Ne(), Q("div", "LOCATION", "lm-eyebrow"), Q("h2", te(e)), Ae([
 			["Devices", String(e.nodes.length)],
 			["Down", String(t)],
-			...I ? [["Coordinates", `${e.lat.toFixed(5)}, ${e.lng.toFixed(5)}`]] : []
+			...L ? [["Coordinates", `${e.lat.toFixed(5)}, ${e.lng.toFixed(5)}`]] : []
 		]));
-		let n = W.get(e.id) ?? [];
-		n.length && r.append(Q("div", "WEATHER WARNINGS HERE", "lm-eyebrow lm-world-section"), Ne(n));
+		let n = G.get(e.id) ?? [];
+		n.length && r.append(Q("div", "WEATHER WARNINGS HERE", "lm-eyebrow lm-world-section"), Le(n));
 		let i = Q("div", void 0, "lm-device-list");
-		i.append(...e.nodes.map(je)), r.append(i);
+		i.append(...e.nodes.map(Fe)), r.append(i);
 		let a = y.get(e.id) ?? [];
-		a.length && r.append(Q("div", `LINKS WITHIN THIS LOCATION · ${a.length}`, "lm-eyebrow lm-world-section"), Ie(a));
+		a.length && r.append(Q("div", `LINKS WITHIN THIS LOCATION · ${a.length}`, "lm-eyebrow lm-world-section"), Be(a));
 		let o = _.filter((t) => t.a === e || t.b === e);
 		if (o.length) {
 			r.append(Q("div", "CONNECTED LOCATIONS", "lm-eyebrow"));
 			let t = Q("div", void 0, "lm-device-list");
 			for (let n of o) {
-				let r = n.a === e ? n.b : n.a, i = Q("button", `${K(r)} · ${n.links.length} link${n.links.length === 1 ? "" : "s"} · ${n.label}`);
-				i.onclick = () => Oe({
+				let r = n.a === e ? n.b : n.a, i = Q("button", `${te(r)} · ${n.links.length} link${n.links.length === 1 ? "" : "s"} · ${n.label}`);
+				i.onclick = () => Me({
 					type: "link",
 					id: n.key
 				}), t.append(i);
@@ -19961,20 +19963,20 @@ function R_(e) {
 			r.append(t);
 		}
 	}
-	function Ne(e) {
+	function Le(e) {
 		let t = Q("div", void 0, "lm-device-list lm-world-warnings");
 		for (let n of [...e].sort((e, t) => y_[t.level] - y_[e.level])) {
 			let e = Q("button", void 0, "lm-world-device"), r = Q("i");
-			r.style.background = v_[n.level], e.append(r, Q("span", `${n.title}${n.area ? ` · ${n.area}` : ""}`)), e.title = `${b_[n.level]} warning`, e.onclick = () => Oe({
+			r.style.background = v_[n.level], e.append(r, Q("span", `${n.title}${n.area ? ` · ${n.area}` : ""}`)), e.title = `${b_[n.level]} warning`, e.onclick = () => Me({
 				type: "warning",
 				id: n.id
 			}), t.append(e);
 		}
 		return t;
 	}
-	function Pe(e) {
-		let t = g.filter((t) => W.get(t.id)?.includes(e));
-		r.append(ke(), Q("div", `${b_[e.level].toUpperCase()} WARNING · MET NORWAY`, "lm-eyebrow"), Q("h2", e.title), Ee([
+	function Re(e) {
+		let t = g.filter((t) => G.get(t.id)?.includes(e));
+		r.append(Ne(), Q("div", `${b_[e.level].toUpperCase()} WARNING · MET NORWAY`, "lm-eyebrow"), Q("h2", e.title), Ae([
 			...e.area ? [["Area", e.area]] : [],
 			["When", O_(e)],
 			["Locations affected", String(t.length)]
@@ -19987,12 +19989,12 @@ function R_(e) {
 		if (t.length) {
 			let e = Q("div", void 0, "lm-device-list");
 			for (let n of t) {
-				let t = Q("button", K(n));
+				let t = Q("button", te(n));
 				t.onclick = () => {
-					Oe({
+					Me({
 						type: "site",
 						id: n.id
-					}), we(n);
+					}), Oe(n);
 				}, e.append(t);
 			}
 			r.append(Q("div", "AFFECTED LOCATIONS", "lm-eyebrow lm-world-section"), e);
@@ -20002,16 +20004,17 @@ function R_(e) {
 			t.href = e.web, t.target = "_blank", t.rel = "noopener noreferrer", r.append(t);
 		}
 	}
-	function Fe(e) {
-		let t = g.find((t) => t.nodes.includes(e)), n = Q("button", `← ${K(t)}`, "lm-world-back");
-		if (n.onclick = () => Oe({
+	function ze(e) {
+		let t = g.find((t) => t.nodes.includes(e)), n = Q("button", `← ${te(t)}`, "lm-world-back");
+		if (n.onclick = () => Me({
 			type: "site",
 			id: t.id
-		}), r.append(ke(), n, Q("div", `${e.role} / DEVICE`, "lm-eyebrow"), Q("h2", J(e)), Ee([
+		}), r.append(Ne(), n, Q("div", `${e.role} / DEVICE`, "lm-eyebrow"), Q("h2", N(e)), Ae([
 			["Status", e.status],
-			...L && M(e) !== e.hostname ? [["Hostname", e.hostname]] : [],
-			["Location", K(t)],
-			["Site", e.site]
+			...e.hostname.trim() && e.hostname.trim() !== N(e) ? [[M(e.hostname.trim()) ? "IP address" : "Hostname", e.hostname.trim()]] : [],
+			...e.sysName?.trim() && e.sysName.trim() !== N(e) ? [["sysName", e.sysName.trim()]] : [],
+			["Location", te(t)],
+			...K(e) ? [["Site", K(e)]] : []
 		])), e.url) {
 			let t = new URL(e.url, location.href);
 			if (t.origin === location.origin) {
@@ -20020,8 +20023,8 @@ function R_(e) {
 			}
 		}
 	}
-	function Ie(e) {
-		let t = new Map(g.flatMap((e) => e.nodes.map((t) => [t.id, L ? M(t) : `${K(e)} ${J(t)}`]))), n = Q("ul", void 0, "lm-world-links-list"), r = A(), i = p?.config.staleAfter ?? 900;
+	function Be(e) {
+		let t = new Map(m.nodes.map((e) => [e.id, N(e)])), n = Q("ul", void 0, "lm-world-links-list"), r = A(), i = p?.config.staleAfter ?? 900;
 		for (let a of e) {
 			let e = _g(a, r, i), o = Q("li"), s = Q("strong", e.label);
 			s.style.color = e.color;
@@ -20030,19 +20033,19 @@ function R_(e) {
 		}
 		return n;
 	}
-	function Le(e) {
-		r.append(ke(), Q("div", "CONNECTIONS", "lm-eyebrow"), Q("h2", `${K(e.a)} ↔ ${K(e.b)}`), Ee([["Links", String(e.links.length)], ["Status", e.label]]), Ie(e.links));
+	function Ve(e) {
+		r.append(Ne(), Q("div", "CONNECTIONS", "lm-eyebrow"), Q("h2", `${te(e.a)} ↔ ${te(e.b)}`), Ae([["Links", String(e.links.length)], ["Status", e.label]]), Be(e.links));
 		for (let t of [e.a, e.b]) {
-			let e = Q("button", `Show ${K(t)}`, "lm-world-back");
+			let e = Q("button", `Show ${te(t)}`, "lm-world-back");
 			e.onclick = () => {
-				Oe({
+				Me({
 					type: "site",
 					id: t.id
-				}), we(t);
+				}), Oe(t);
 			}, r.append(e);
 		}
 	}
-	function Re() {
+	function He() {
 		let e = g.filter((e) => e.status === "down");
 		if (!e.length) {
 			j(p && m.nodes.some((e) => e.status === "down") ? "Down devices have no coordinates or are hidden by the current filters." : "No located devices are down.");
@@ -20050,20 +20053,20 @@ function R_(e) {
 		}
 		D = (D + 1) % e.length;
 		let t = e[D];
-		Oe({
+		Me({
 			type: "site",
 			id: t.id
-		}), we(t), j(`Problem location ${D + 1} of ${e.length}: ${K(t)}`);
+		}), Oe(t), j(`Problem location ${D + 1} of ${e.length}: ${te(t)}`);
 	}
-	async function ze() {
+	async function Ue() {
 		if (!T) {
 			T = !0, f("refresh").disabled = !0;
 			try {
-				let [n, r] = await Promise.all([ee(e.dataset.endpoint, "topology"), ee(e.dataset.locationsEndpoint, "locations")]);
+				let [n, r] = await Promise.all([ie(e.dataset.endpoint, "topology"), ie(e.dataset.locationsEndpoint, "locations")]);
 				if (!L_(n) || !Array.isArray(n.devices) || !Array.isArray(n.links) || !L_(n.config)) throw Error("Unexpected topology response.");
-				p = n, h = te(r), m = mg(p), k = Number.isFinite(p.generatedAt) ? p.generatedAt - Date.now() / 1e3 : 0;
+				p = n, h = ae(r), m = mg(p), X = new Map([...h.locations].sort((e, t) => Number(e.id) - Number(t.id) || e.id.localeCompare(t.id)).map((e, t) => [e.id, t + 1])), k = Number.isFinite(p.generatedAt) ? p.generatedAt - Date.now() / 1e3 : 0;
 				let i = d.value;
-				d.replaceChildren(new Option("All device groups", ""), ...m.deviceGroups.map((e) => new Option(e.name, e.id))), d.value = m.deviceGroups.some((e) => e.id === i) ? i : "", Be(), ne(), Te(), E ||= (Ce(), !0), t(".lm-updated").textContent = `Snapshot fetched · ${(/* @__PURE__ */ new Date(p.generatedAt * 1e3)).toLocaleTimeString()}`, j(h.locations.length ? `${g.reduce((e, t) => e + t.nodes.length, 0)} devices at ${g.length} locations` : "No devices have map coordinates yet.");
+				d.replaceChildren(new Option("All device groups", ""), ...m.deviceGroups.map((e) => new Option(e.name, e.id))), d.value = m.deviceGroups.some((e) => e.id === i) ? i : "", We(), oe(), ke(), E ||= (De(), !0), t(".lm-updated").textContent = `Snapshot fetched · ${(/* @__PURE__ */ new Date(p.generatedAt * 1e3)).toLocaleTimeString()}`, j(h.locations.length ? `${g.reduce((e, t) => e + t.nodes.length, 0)} devices at ${g.length} locations` : "No devices have map coordinates yet.");
 			} catch (e) {
 				let t = e instanceof Error ? e.message : "Unable to load device locations";
 				if (p && !(e instanceof I_ && F_.has(e.status))) {
@@ -20074,40 +20077,40 @@ function R_(e) {
 					nodes: [],
 					links: [],
 					deviceGroups: []
-				}, S = void 0, E = !1, ne(), Te(), j(t, !0);
+				}, S = void 0, E = !1, oe(), ke(), j(t, !0);
 			} finally {
 				T = !1, f("refresh").disabled = !1;
 			}
 		}
 	}
-	function Be() {
+	function We() {
 		let e = t(".lm-world-attribution");
-		e.textContent = [h?.map.tiles ? h.map.attribution : "", z ? V || "Weather warnings © MET Norway" : ""].filter(Boolean).join(" · "), e.hidden = !e.textContent;
+		e.textContent = [h?.map.tiles ? h.map.attribution : "", B ? H || "Weather warnings © MET Norway" : ""].filter(Boolean).join(" · "), e.hidden = !e.textContent;
 	}
-	async function Ve() {
-		if (z && !U && R) {
-			U = !0, Te();
+	async function Ge() {
+		if (B && !W && z) {
+			W = !0, ke();
 			try {
-				let e = w_(await ee(R, "weather warning"));
-				if (!z) return;
-				B = e.warnings, V = e.attribution, H = e.fetchedAt || Date.now() / 1e3, _e(), ne(), Be();
-				let t = (/* @__PURE__ */ new Date(H * 1e3)).toLocaleTimeString();
-				j(e.stale ? `MET Norway is unreachable · Showing the weather warnings from ${t}.` : `${B.length} active weather warning${B.length === 1 ? "" : "s"} · ${W.size} location${W.size === 1 ? "" : "s"} affected · MET Norway, ${t}`, e.stale);
+				let e = w_(await ie(z, "weather warning"));
+				if (!B) return;
+				V = e.warnings, H = e.attribution, U = e.fetchedAt || Date.now() / 1e3, be(), oe(), We();
+				let t = (/* @__PURE__ */ new Date(U * 1e3)).toLocaleTimeString();
+				j(e.stale ? `MET Norway is unreachable · Showing the weather warnings from ${t}.` : `${V.length} active weather warning${V.length === 1 ? "" : "s"} · ${G.size} location${G.size === 1 ? "" : "s"} affected · MET Norway, ${t}`, e.stale);
 			} catch (e) {
-				j(`${e instanceof Error ? e.message : "Weather warnings are unavailable."}${B.length ? " · Showing the last warnings received." : ""}`, !0);
+				j(`${e instanceof Error ? e.message : "Weather warnings are unavailable."}${V.length ? " · Showing the last warnings received." : ""}`, !0);
 			} finally {
-				U = !1, Te();
+				W = !1, ke();
 			}
 		}
 	}
-	function He(e) {
-		z = e && !!R, F(), z || (B = [], H = 0, S?.type === "warning" && (S = void 0)), _e(), ne(), Be(), Te(), z && Ve();
+	function Ke(e) {
+		B = e && !!z, I(), B || (V = [], U = 0, S?.type === "warning" && (S = void 0)), be(), oe(), We(), ke(), B && Ge();
 	}
-	let Ue;
+	let qe;
 	a.addEventListener("pointerdown", (e) => {
 		if (e.button !== 0 || e.target.closest(".lm-world-marker, .lm-world-link")) return;
 		let t = e.target.closest(".lm-world-warning")?.dataset.warning;
-		Ue = {
+		qe = {
 			id: e.pointerId,
 			start: {
 				x: e.clientX,
@@ -20118,124 +20121,124 @@ function R_(e) {
 			warning: t
 		}, a.setPointerCapture(e.pointerId), a.classList.add("lm-dragging");
 	}), a.addEventListener("pointermove", (e) => {
-		if (!Ue || e.pointerId !== Ue.id) return;
-		let t = e.clientX - Ue.start.x, n = e.clientY - Ue.start.y;
-		!Ue.moved && Math.hypot(t, n) < 4 || (Ue.moved = !0, x = {
+		if (!qe || e.pointerId !== qe.id) return;
+		let t = e.clientX - qe.start.x, n = e.clientY - qe.start.y;
+		!qe.moved && Math.hypot(t, n) < 4 || (qe.moved = !0, x = {
 			zoom: x.zoom,
 			center: __({
-				x: Ue.center.x - t,
-				y: Ue.center.y - n
-			}, x.zoom, oe().h)
-		}, be());
+				x: qe.center.x - t,
+				y: qe.center.y - n
+			}, x.zoom, ue().h)
+		}, we());
 	});
-	let We = (e) => {
-		Ue && e.pointerId === Ue.id && (!Ue.moved && e.type === "pointerup" && (Ue.warning ? Oe({
+	let Je = (e) => {
+		qe && e.pointerId === qe.id && (!qe.moved && e.type === "pointerup" && (qe.warning ? Me({
 			type: "warning",
-			id: Ue.warning
-		}) : S && Oe(void 0)), Ue = void 0, a.classList.remove("lm-dragging"));
+			id: qe.warning
+		}) : S && Me(void 0)), qe = void 0, a.classList.remove("lm-dragging"));
 	};
-	a.addEventListener("pointerup", We), a.addEventListener("pointercancel", We);
-	let Ge = 0;
+	a.addEventListener("pointerup", Je), a.addEventListener("pointercancel", Je);
+	let Ye = 0;
 	a.addEventListener("wheel", (e) => {
-		if (e.preventDefault(), e.timeStamp - Ge < 180 || e.deltaY === 0) return;
-		Ge = e.timeStamp;
+		if (e.preventDefault(), e.timeStamp - Ye < 180 || e.deltaY === 0) return;
+		Ye = e.timeStamp;
 		let t = a.getBoundingClientRect();
-		Se(e.deltaY < 0 ? 1 : -1, {
+		Ee(e.deltaY < 0 ? 1 : -1, {
 			x: e.clientX - t.left,
 			y: e.clientY - t.top
 		});
 	}, { passive: !1 }), a.addEventListener("dblclick", (e) => {
 		if (e.target.closest(".lm-world-marker, .lm-world-link")) return;
 		let t = a.getBoundingClientRect();
-		Se(e.shiftKey ? -1 : 1, {
+		Ee(e.shiftKey ? -1 : 1, {
 			x: e.clientX - t.left,
 			y: e.clientY - t.top
 		});
 	}), c.addEventListener("click", (e) => {
 		let t = e.target.closest(".lm-world-marker");
-		t?.dataset.site && Oe({
+		t?.dataset.site && Me({
 			type: "site",
 			id: t.dataset.site
 		});
 	});
-	let Ke = (e) => {
+	let Xe = (e) => {
 		let t = e.target.closest(".lm-world-link");
-		t?.dataset.link && Oe({
+		t?.dataset.link && Me({
 			type: "link",
 			id: t.dataset.link
 		});
 	};
-	s.addEventListener("click", Ke), s.addEventListener("keydown", (e) => {
-		(e.key === "Enter" || e.key === " ") && (e.preventDefault(), Ke(e));
+	s.addEventListener("click", Xe), s.addEventListener("keydown", (e) => {
+		(e.key === "Enter" || e.key === " ") && (e.preventDefault(), Xe(e));
 	}), u.addEventListener("input", () => {
-		u.value = r_(u.value), ne();
+		u.value = r_(u.value), oe();
 	}), d.addEventListener("change", () => {
-		ne(), Ce();
+		oe(), De();
 	}), e.addEventListener("click", (t) => {
 		switch (t.target.closest("[data-world]")?.dataset.world) {
 			case "problems":
-				C = !C, Te(), ne(), C && g.length && Ce();
+				C = !C, ke(), oe(), C && g.length && De();
 				break;
 			case "links":
-				w = !w, Te(), pe(), ye();
+				w = !w, ke(), _e(), Ce();
 				break;
 			case "weather":
-				He(!z);
+				Ke(!B);
 				break;
 			case "addresses":
-				I = !I, F(), Te(), ne();
+				L = !L, I(), ke(), oe();
 				break;
 			case "names":
-				L = !L, F(), Te(), ne();
+				R = !R, I(), ke(), oe();
 				break;
 			case "refresh":
-				ze();
+				Ue();
 				break;
 			case "fit":
-				Ce();
+				De();
 				break;
 			case "zoom-in":
-				Se(1);
+				Ee(1);
 				break;
 			case "zoom-out":
-				Se(-1);
+				Ee(-1);
 				break;
 			case "next-down":
-				Re();
+				He();
 				break;
 			case "fullscreen": (document.fullscreenElement ? document.exitFullscreen() : e.requestFullscreen()).catch(() => j("Fullscreen is unavailable in this browser."));
 		}
 	}), document.addEventListener("keydown", (t) => {
 		if (!Og(t, e)) return;
-		let n = (e, t) => xe(x.zoom, {
+		let n = (e, t) => Te(x.zoom, {
 			x: x.center.x + e,
 			y: x.center.y + t
 		}), r = {
 			"/": () => {
 				u.disabled || u.focus();
 			},
-			f: Ce,
-			"+": () => Se(1),
-			"=": () => Se(1),
-			"-": () => Se(-1),
-			d: Re,
+			f: De,
+			"+": () => Ee(1),
+			"=": () => Ee(1),
+			"-": () => Ee(-1),
+			d: He,
 			ArrowLeft: () => n(-120, 0),
 			ArrowRight: () => n(120, 0),
 			ArrowUp: () => n(0, -120),
 			ArrowDown: () => n(0, 120),
 			Escape: () => {
-				S && Oe(void 0);
+				S && Me(void 0);
 			}
 		}[t.key.length === 1 ? t.key.toLowerCase() : t.key];
 		r && (t.preventDefault(), r());
 	}), new ResizeObserver(() => {
-		xe(x.zoom, x.center), !E && g.length && (Ce(), E = !0);
+		Te(x.zoom, x.center), !E && g.length && (De(), E = !0);
 	}).observe(a), setInterval(() => {
-		p && _.length && ae();
+		p && _.length && le();
 	}, 1e4), setInterval(() => {
-		document.hidden || ze();
+		document.hidden || Ue();
 	}, 6e4), setInterval(() => {
-		z && !document.hidden && Ve();
+		B && !document.hidden && Ge();
 	}, P_), e.dataset.debug === "true" && Object.defineProperty(window, "libremapWorldDebug", {
 		value: () => ({
 			zoom: x.zoom,
@@ -20243,12 +20246,12 @@ function R_(e) {
 			markers: g.map((e) => ({
 				id: e.id,
 				name: e.name,
-				label: K(e),
-				text: ue.get(e.id)?.querySelector(".lm-world-label")?.textContent ?? "",
+				label: ee(e),
+				text: me.get(e.id)?.querySelector(".lm-world-label")?.textContent ?? "",
 				count: e.nodes.length,
 				status: e.status,
-				warning: E_(W.get(e.id) ?? []) ?? null,
-				position: se(u_(e, x.zoom))
+				warning: E_(G.get(e.id) ?? []) ?? null,
+				position: de(u_(e, x.zoom))
 			})),
 			links: _.map((e) => ({
 				key: e.key,
@@ -20261,15 +20264,15 @@ function R_(e) {
 				withinSite: Object.fromEntries([...y].map(([e, t]) => [e, t.length])),
 				unlocated: b
 			},
-			warnings: z ? B.map((e) => ({
+			warnings: B ? V.map((e) => ({
 				id: e.id,
 				level: e.level,
-				drawn: !!ge.get(e.id)?.getAttribute("d")
+				drawn: !!ye.get(e.id)?.getAttribute("d")
 			})) : [],
-			tiles: [...ce.values()].map((e) => e.src)
+			tiles: [...fe.values()].map((e) => e.src)
 		}),
 		configurable: !0
-	}), Te(), Ae(), _e(), ze(), z && Ve();
+	}), ke(), Pe(), be(), Ue(), B && Ge();
 }
 //#endregion
 //#region node_modules/elkjs/lib/elk-worker.min.js?worker
