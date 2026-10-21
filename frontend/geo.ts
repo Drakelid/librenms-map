@@ -1,0 +1,54 @@
+// Web Mercator ("slippy map") maths for the world map. World pixel coordinates
+// at zoom z run from 0 to TILE * 2^z on both axes.
+export const TILE=256;
+export const MAX_LAT=85.05112878;
+
+export interface LatLng { lat:number; lng:number }
+export interface Point { x:number; y:number }
+
+export const worldSize=(zoom:number)=>TILE*2**zoom;
+
+export function project({lat,lng}:LatLng, zoom:number):Point {
+  const size=worldSize(zoom);
+  const phi=Math.max(-MAX_LAT,Math.min(MAX_LAT,lat))*Math.PI/180;
+  return {x:(lng+180)/360*size,y:(1-Math.log(Math.tan(phi)+1/Math.cos(phi))/Math.PI)/2*size};
+}
+
+export function unproject({x,y}:Point, zoom:number):LatLng {
+  const size=worldSize(zoom);
+  return {lng:x/size*360-180,lat:Math.atan(Math.sinh(Math.PI*(1-2*y/size)))*180/Math.PI};
+}
+
+/** The highest whole zoom (and its centre) that shows every point inside the viewport. */
+export function fitView(points:LatLng[], width:number, height:number, padding:number, maxZoom:number, singleZoom=10):{zoom:number;center:Point} {
+  if(!points.length) return {zoom:1,center:{x:worldSize(1)/2,y:worldSize(1)/2}};
+  const projected=points.map(p=>project(p,0));
+  const xs=projected.map(p=>p.x), ys=projected.map(p=>p.y);
+  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+  const spanX=maxX-minX, spanY=maxY-minY;
+  const room={x:Math.max(1,width-2*padding),y:Math.max(1,height-2*padding)};
+  const fit=spanX===0 && spanY===0 ? singleZoom
+    : Math.floor(Math.log2(Math.min(spanX ? room.x/spanX : Infinity,spanY ? room.y/spanY : Infinity)));
+  const zoom=Math.max(1,Math.min(maxZoom,fit));
+  const scale=2**zoom;
+  return {zoom,center:{x:(minX+maxX)/2*scale,y:(minY+maxY)/2*scale}};
+}
+
+/** A tile address, or undefined when the template does not yield an http(s) URL. */
+export function tileUrl(template:string, zoom:number, x:number, y:number):string|undefined {
+  const count=2**zoom;
+  const column=((x%count)+count)%count; // Wrap horizontally around the globe.
+  if(y<0 || y>=count) return undefined;
+  const href=template.replace(/\{s\}/g,'abc'[(column+y)%3]).replace(/\{z\}/g,String(zoom)).replace(/\{x\}/g,String(column)).replace(/\{y\}/g,String(y));
+  try {
+    const url=new URL(href);
+    return url.protocol==='https:' || url.protocol==='http:' ? url.href : undefined;
+  } catch { return undefined; }
+}
+
+/** Keep the viewport centre on the map vertically; the map wraps horizontally. */
+export function clampCenter(center:Point, zoom:number, height:number):Point {
+  const size=worldSize(zoom), half=height/2;
+  const y=size<=height ? size/2 : Math.max(half,Math.min(size-half,center.y));
+  return {x:((center.x%size)+size)%size,y};
+}

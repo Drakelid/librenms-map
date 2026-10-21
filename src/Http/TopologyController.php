@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
+use LibreMap\Topology\DeviceLocations;
 use LibreMap\Topology\LibreNmsTopology;
 
 class TopologyController extends Controller
@@ -20,9 +21,20 @@ class TopologyController extends Controller
         return view('libremap::map', ['pagetitle' => 'LibreMap custom maps', 'mode' => 'custom', 'assetVersion' => $this->assetVersion()]);
     }
 
+    public function world(): View
+    {
+        return view('libremap::map', ['pagetitle' => 'LibreMap world map', 'mode' => 'world', 'assetVersion' => $this->assetVersion()]);
+    }
+
     public function topology(Request $request, LibreNmsTopology $topology): JsonResponse
     {
         return response()->json($topology->forUser($request->user()))
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    public function locations(Request $request, DeviceLocations $locations): JsonResponse
+    {
+        return response()->json($locations->forUser($request->user()))
             ->header('Cache-Control', 'private, no-store');
     }
 

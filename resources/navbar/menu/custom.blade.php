@@ -13,6 +13,12 @@
                 <span>Topology Map</span>
             </a>
         </li>
+        <li class="{{ request()->routeIs('libremap.world') ? 'active' : '' }}">
+            <a href="{{ route('libremap.world') }}" title="World Map">
+                <i class="fa fa-globe fa-fw fa-lg" aria-hidden="true"></i>
+                <span>World Map</span>
+            </a>
+        </li>
         <li class="{{ request()->routeIs('libremap.custom') ? 'active' : '' }}">
             <a href="{{ route('libremap.custom') }}" title="Custom Maps">
                 <i class="fa fa-object-group fa-fw fa-lg" aria-hidden="true"></i>

@@ -35,6 +35,8 @@ class NavbarIntegrationTest extends TestCase
         $this->assertStringContainsString('Topology Map', $html);
         $this->assertStringContainsString('href="'.route('libremap.index').'"', $html);
         $this->assertStringContainsString('fa-sitemap', $html);
+        $this->assertStringContainsString('World Map', $html);
+        $this->assertStringContainsString('href="'.route('libremap.world').'"', $html);
         $this->assertStringContainsString('Custom Maps', $html);
         $this->assertStringContainsString('href="'.route('libremap.custom').'"', $html);
     }

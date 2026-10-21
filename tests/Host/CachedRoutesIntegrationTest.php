@@ -25,6 +25,8 @@ class CachedRoutesIntegrationTest extends TestCase
         $this->getJson('/libremap/views')->assertOk()->assertExactJson(['views' => []]);
         $this->getJson('/libremap/custom-maps')->assertOk()->assertExactJson(['maps' => []]);
         $this->get('/libremap/custom')->assertOk()->assertSee('data-mode="custom"', false);
+        $this->get('/libremap/world')->assertOk()->assertSee('data-mode="world"', false);
+        $this->getJson('/libremap/locations')->assertOk()->assertJsonStructure(['locations', 'devices', 'map' => ['tiles', 'center']]);
     }
 
     public function testMapPageRendersWithTheMapsEntry(): void
@@ -52,5 +54,6 @@ class CachedRoutesIntegrationTest extends TestCase
         $this->postJson('/libremap/views', [])->assertNotFound();
         $this->getJson('/libremap/custom-maps')->assertNotFound();
         $this->getJson('/libremap/devices')->assertNotFound();
+        $this->getJson('/libremap/locations')->assertNotFound();
     }
 }

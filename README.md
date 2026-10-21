@@ -8,6 +8,7 @@ An AGG-first topology map for LibreNMS, with a permission-scoped live data endpo
 - [Build assets](#build-assets)
 - [Install on a LibreNMS staging host](#install-on-a-librenms-staging-host)
 - [Saved views and pins](#saved-views-and-pins)
+- [World map](#world-map)
 - [Custom maps](#custom-maps)
 - [Configuration](#configuration)
 - [Measurement and display](#measurement-and-display)
@@ -103,7 +104,7 @@ php artisan optimize:clear
 
 ### Navigation bar
 
-LibreNMS offers plugins no hook inside the Maps dropdown, but its navigation bar includes one optional `menu.custom` view. While libremap is enabled, the package supplies that view and uses JavaScript to add **Topology Map** and **Custom Maps** to the existing **Maps** dropdown. A host's own `resources/views/menu/custom.blade.php` keeps working: LibreMap also renders it. As with routes, clear caches after enabling or disabling the plugin.
+LibreNMS offers plugins no hook inside the Maps dropdown, but its navigation bar includes one optional `menu.custom` view. While libremap is enabled, the package supplies that view and uses JavaScript to add **Topology Map**, **World Map** and **Custom Maps** to the existing **Maps** dropdown. Each LibreMap page also links to the others from its header. A host's own `resources/views/menu/custom.blade.php` keeps working: LibreMap also renders it. As with routes, clear caches after enabling or disabling the plugin.
 
 ### Route cache
 
@@ -192,6 +193,24 @@ php artisan route:clear
 ```
 
 [Host CI](.github/workflows/host.yml) installs the package on the explicit host/database matrix, exercises migration/rollback/reapply, and runs the real-model, permission, persistence, concurrency and cached-route tests. [Frontend CI](.github/workflows/frontend.yml) runs domain tests, type checking, the build, PHP syntax parsing and Chromium regressions.
+
+## World map
+
+**Maps → World Map** (`/libremap/world`) places devices at the coordinates of their LibreNMS location. Each marker is one location, sized by its number of devices and coloured by the worst device status there; locations with a down device pulse. Lines are the discovered links between locations, coloured like the topology map by their busiest link, and dashed red when a link is down. Click a location for its devices and connected locations, a device for its details and LibreNMS link, or a line for each link's interfaces and load.
+
+- Search matches device names, hostnames, sysNames and location names. **Device group** and **Only problems** narrow the map; **Links** hides the lines.
+- Drag to pan, scroll or double-click to zoom (Shift+double-click zooms out). Keys outside text fields: `/` find, `F` fit, `+`/`−` zoom, arrows pan, `D` next location with a down device, `Esc` clear.
+- The map refreshes every 60 seconds and re-judges link staleness every 10 seconds, as the topology map does.
+
+Coordinates come from **LibreNMS locations**: set them on the Locations page or let LibreNMS geocode the location text. As in LibreNMS, a location whose latitude or longitude is zero counts as not placed. Devices without coordinates are listed in the details panel. The server sends only locations of devices the signed-in user may view.
+
+Map tiles follow LibreNMS's own world map (`leaflet.tile_url`, OpenStreetMap by default), so the browser loads tiles from that server as LibreNMS does. Override them in `config/libremap.php`, or set `world_tiles` to `''` for no tiles; devices then show on a plain background:
+
+```php
+'world_tiles' => 'https://tiles.example.net/{z}/{x}/{y}.png', // {s} becomes a, b or c
+'world_attribution' => '© OpenStreetMap contributors',
+'world_max_zoom' => 18,
+```
 
 ## Custom maps
 

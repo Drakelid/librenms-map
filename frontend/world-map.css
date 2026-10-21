@@ -1,0 +1,44 @@
+#libremap .lm-world-wrap { background-image: none; }
+#libremap .lm-world { position: absolute; inset: 0; overflow: hidden; cursor: grab; touch-action: none; user-select: none; outline: none; background: var(--bg); }
+#libremap .lm-world:focus-visible { box-shadow: inset 0 0 0 2px #299e9b; }
+#libremap .lm-world.lm-dragging { cursor: grabbing; }
+#libremap .lm-world-tiles, #libremap .lm-world-markers { position: absolute; inset: 0; }
+#libremap .lm-world-tiles img { position: absolute; left: 0; top: 0; width: 256px; height: 256px; max-width: none; pointer-events: none; }
+#libremap .lm-world-tiles img.lm-tile-failed { visibility: hidden; }
+/* Light map tiles read as a dark map without a second tile source. */
+#libremap.lm-dark .lm-world-tiles img { filter: invert(1) hue-rotate(180deg) brightness(.82) contrast(.92); }
+#libremap .lm-world-links { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+#libremap .lm-world-link { cursor: pointer; outline: none; }
+#libremap .lm-world-hit { stroke: transparent; stroke-width: 14; pointer-events: stroke; }
+#libremap .lm-world-line { stroke-linecap: round; opacity: .85; pointer-events: none; }
+#libremap .lm-world-link:hover .lm-world-line, #libremap .lm-world-link:focus-visible .lm-world-line, #libremap .lm-world-line.lm-selected { opacity: 1; filter: drop-shadow(0 0 3px #fff); }
+#libremap.lm-dark .lm-world-line.lm-selected { filter: drop-shadow(0 0 3px #000); }
+#libremap .lm-world-marker { position: absolute; left: 0; top: 0; display: flex; align-items: center; justify-content: center; width: var(--marker, 16px); height: var(--marker, 16px); padding: 0; border: 0; background: transparent; cursor: pointer; }
+#libremap .lm-world-marker:hover { background: transparent; }
+#libremap .lm-world-dot { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: 50%; border: 2px solid #fff; color: #fff; font-size: 10px; font-weight: 700; box-shadow: 0 1px 4px #0006; }
+#libremap .lm-world-up .lm-world-dot { background: #36b89a; }
+#libremap .lm-world-down .lm-world-dot { background: #e05b65; animation: lm-world-pulse 1.6s ease-out infinite; }
+#libremap .lm-world-unknown .lm-world-dot { background: #8a96a9; }
+#libremap .lm-world-marker.lm-selected .lm-world-dot, #libremap .lm-world-marker:focus-visible .lm-world-dot { box-shadow: 0 0 0 3px #299e9b, 0 1px 4px #0006; }
+#libremap .lm-world-label { position: absolute; left: 50%; top: calc(100% + 4px); transform: translateX(-50%); display: none; padding: 2px 6px; border-radius: 4px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); font-size: 11px; font-weight: 600; white-space: nowrap; pointer-events: none; }
+#libremap .lm-world-named .lm-world-label,
+#libremap .lm-world-marker:hover .lm-world-label,
+#libremap .lm-world-marker:focus-visible .lm-world-label,
+#libremap .lm-world-marker.lm-selected .lm-world-label { display: block; }
+#libremap .lm-world-marker:hover, #libremap .lm-world-marker:focus-visible, #libremap .lm-world-marker.lm-selected { z-index: 2; }
+@keyframes lm-world-pulse { 0% { box-shadow: 0 0 0 0 #e05b6599, 0 1px 4px #0006; } 70% { box-shadow: 0 0 0 10px #e05b6500, 0 1px 4px #0006; } 100% { box-shadow: 0 0 0 0 #e05b6500, 0 1px 4px #0006; } }
+@media (prefers-reduced-motion: reduce) { #libremap .lm-world-down .lm-world-dot { animation: none; } }
+#libremap .lm-world-wrap .lm-map-controls, #libremap .lm-world-wrap .lm-legend, #libremap .lm-world-attribution { z-index: 3; }
+#libremap .lm-world-wrap .lm-legend { padding: 6px 10px; border-radius: 6px; background: color-mix(in srgb, var(--panel) 88%, transparent); }
+#libremap .lm-legend i.lm-world-key { width: 10px; height: 10px; border: 0; border-radius: 50%; }
+#libremap .lm-world-attribution { position: absolute; right: 0; bottom: 0; padding: 2px 6px; font-size: 10px; color: var(--muted); background: color-mix(in srgb, var(--panel) 80%, transparent); }
+#libremap .lm-world-wrap .lm-legend { bottom: 26px; }
+#libremap .lm-world-device { display: flex; align-items: center; gap: 8px; }
+#libremap .lm-world-device i { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+#libremap .lm-world-back { display: block; margin: 0 0 10px; padding: 5px 9px; font-size: 11px; }
+#libremap .lm-world-unlocated { margin-top: 22px; font-size: 12px; color: var(--muted); }
+#libremap .lm-world-unlocated summary { cursor: pointer; color: var(--ink); }
+#libremap .lm-world-unlocated ul { max-height: 240px; overflow: auto; padding-left: 18px; }
+#libremap .lm-world-links-list { list-style: none; padding: 0; margin: 16px 0; font-size: 12px; }
+#libremap .lm-world-links-list li { display: grid; gap: 2px; padding: 8px 0; border-top: 1px solid var(--line); }
+@media (max-width: 720px) { #libremap .lm-world-wrap .lm-legend { display: none; } }

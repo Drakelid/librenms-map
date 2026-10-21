@@ -1,6 +1,7 @@
 import cytoscape, { type Core, type ElementDefinition } from 'cytoscape';
 import { customStyles, rate, statusColor, themeController } from './canvas-style';
 import { exportPng, shortcutAllowed, syncGrid, zoomBy } from './canvas-tools';
+import { mountPageNav } from './page-nav';
 import { addDevice, addShape, clampSize, clip, connect, CUSTOM_LIMITS, emptyDocument, normalizeDocument, removeElement, SHAPE_MAX, SHAPE_MIN } from './custom-map-document';
 import { CustomMapError, httpCustomMapStore, type CustomMapStore } from './custom-map-store';
 import { deviceName, LOAD_COLORS, metric } from './topology';
@@ -23,7 +24,7 @@ const GRID=20, HISTORY_MAX=100;
 export function mountCustomMap(root:HTMLElement) {
   root.innerHTML=`
     <div class="lm-shell lm-custom">
-      <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>CUSTOM MAPS</span></div></div><div class="lm-header-right"><a class="lm-nav" href="#" hidden>Topology map</a><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
+      <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>CUSTOM MAPS</span></div></div><div class="lm-header-right"><nav class="lm-pages" aria-label="LibreMap pages" hidden></nav><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
       <div class="lm-toolbar">
         <label class="lm-select">Map <select aria-label="Custom map"></select></label>
         <button data-cm="new">New map</button><button data-cm="rename">Rename</button><button data-cm="share" aria-pressed="false">Share read-only</button><button data-cm="delete">Delete</button>
@@ -50,9 +51,9 @@ export function mountCustomMap(root:HTMLElement) {
   const deviceInput=$<HTMLInputElement>('.lm-cm-device'), datalist=$<HTMLDataListElement>('#lm-cm-devices');
   const nameDialog=$<HTMLDialogElement>('.lm-cm-name-dialog'), nameInput=nameDialog.querySelector<HTMLInputElement>('input')!;
   const deleteDialog=$<HTMLDialogElement>('.lm-cm-delete-dialog');
-  const back=$<HTMLAnchorElement>('.lm-back'), topologyLink=$<HTMLAnchorElement>('.lm-nav');
+  const back=$<HTMLAnchorElement>('.lm-back');
   if(root.dataset.homeUrl) back.href=root.dataset.homeUrl;
-  if(root.dataset.topologyUrl){topologyLink.href=root.dataset.topologyUrl;topologyLink.hidden=false;}
+  mountPageNav($('.lm-pages'),root,'custom');
 
   const cy:Core=cytoscape({container:$('.lm-canvas'),minZoom:0.15,maxZoom:2.5,selectionType:'single',autoungrabify:true,style:customStyles(root)});
   themeController(root,()=>cy.style(customStyles(root)));

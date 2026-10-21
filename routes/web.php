@@ -17,6 +17,8 @@ Route::middleware(['web', 'auth', EnsurePluginEnabled::class, 'throttle:libremap
     Route::put('/libremap/views/{id}', [ViewController::class, 'update'])->whereUuid('id');
     Route::delete('/libremap/views/{id}', [ViewController::class, 'destroy'])->whereUuid('id');
 
+    Route::get('/libremap/world', [TopologyController::class, 'world'])->name('libremap.world');
+    Route::get('/libremap/locations', [TopologyController::class, 'locations'])->name('libremap.locations');
     Route::get('/libremap/custom', [TopologyController::class, 'custom'])->name('libremap.custom');
     Route::get('/libremap/devices', [CustomMapController::class, 'devices'])->name('libremap.devices');
     Route::get('/libremap/devices/{id}/ports', [CustomMapController::class, 'ports'])->where('id', '[1-9][0-9]{0,9}');

@@ -2,6 +2,8 @@ import cytoscape, { type Core } from 'cytoscape';
 import { rate, themeController, topologyStyles as styles } from './canvas-style';
 import { exportPng, shortcutAllowed, zoomBy } from './canvas-tools';
 import { mountCustomMap } from './custom-map';
+import { mountPageNav } from './page-nav';
+import { mountWorldMap } from './world-map';
 import { layoutGraph, resetLayoutWorker } from './layout';
 import { compactWideRestore, packTierPositions } from './layout-positions';
 import { mountLinkPreview } from './link-preview';
@@ -23,6 +25,7 @@ const ACCESS_LOST=new Set([401,403,404,419]);
 const root = document.querySelector<HTMLElement>('#libremap');
 if (root) {
   if (root.dataset.mode === 'custom') mountCustomMap(root);
+  else if (root.dataset.mode === 'world') mountWorldMap(root);
   else mount(root);
 }
 
@@ -30,7 +33,7 @@ function mount(root: HTMLElement) {
   const demo = root.dataset.demo === 'true';
   root.innerHTML = `
     <div class="lm-shell">
-      <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>NETWORK TOPOLOGY</span></div></div><div class="lm-header-right"><span class="lm-source">${demo ? 'DEMO DATA' : 'LIBRENMS'}</span><button data-action="theme" title="Toggle color theme">◐ <span>Theme</span></button><a class="lm-nav" href="#" hidden>Custom maps</a><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
+      <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>NETWORK TOPOLOGY</span></div></div><div class="lm-header-right"><span class="lm-source">${demo ? 'DEMO DATA' : 'LIBRENMS'}</span><button data-action="theme" title="Toggle color theme">◐ <span>Theme</span></button><nav class="lm-pages" aria-label="LibreMap pages" hidden></nav><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
       <section class="lm-heading"><div><div class="lm-eyebrow">INFRASTRUCTURE / TOPOLOGY</div></div><div class="lm-summary" aria-label="Network summary"></div></section>
       <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device…"></label><label class="lm-select">Site <select aria-label="Site"><option value="">All sites</option></select></label><button data-action="overview">AGG backbone</button><button data-action="other-devices" aria-pressed="false">Show other devices</button><span class="lm-spacer"></span><button data-action="refresh">↻ Refresh</button><button data-action="layout">Re-layout</button><button data-action="export" title="Download the visible map as an image">Export PNG</button><button data-action="fullscreen" title="Fullscreen">⛶</button></div>
       <div class="lm-viewbar"><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><label class="lm-select">AGG root <select aria-label="AGG root"><option value="">All AGG groups</option></select></label><label class="lm-select">Highlight <select aria-label="Highlight hops">${Array.from({length:HOPS_MAX},(_,i)=>`<option value="${i+1}">${i+1} hop${i?'s':''}</option>`).join('')}</select></label><span class="lm-pin-count">0 pinned</span><button data-action="unpin-all">Unpin all</button><div class="lm-views"></div></div>
@@ -45,8 +48,7 @@ function mount(root: HTMLElement) {
   // LibreNMS may be served from a subpath, so never assume "/".
   const back=root.querySelector<HTMLAnchorElement>('.lm-back');
   if(back && root.dataset.homeUrl) back.href=root.dataset.homeUrl;
-  const customLink=root.querySelector<HTMLAnchorElement>('.lm-nav');
-  if(customLink && root.dataset.customUrl && !demo){customLink.href=root.dataset.customUrl;customLink.hidden=false;}
+  if(!demo) mountPageNav(root.querySelector<HTMLElement>('.lm-pages')!,root,'topology');
   const $ = <T extends HTMLElement>(selector:string) => root.querySelector<T>(selector)!;
   const notice = $('.lm-notice');
   const search = $<HTMLInputElement>('[aria-label="Find device"]');

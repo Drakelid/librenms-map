@@ -25,6 +25,14 @@
 #libremap .lm-pin-device, #libremap .lm-focus-device { display: block; width: 100%; margin: 10px 0; font-size: 12px; }
 #libremap .lm-pin-device[aria-pressed="true"] { background: #e6f3f4; color: #176b73; }
 #libremap.lm-dark .lm-pin-device[aria-pressed="true"] { background: #1f4448; color: #9fe0dc; }
+/* Links between the plugin's pages, in every page header. */
+#libremap .lm-pages { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); font-size: 12px; }
+#libremap .lm-pages[hidden] { display: none; }
+#libremap .lm-pages > * { padding: 6px 11px; border-radius: 6px; white-space: nowrap; }
+#libremap .lm-pages a { color: var(--muted); }
+#libremap .lm-pages a:hover { color: var(--ink); background: var(--panel); }
+#libremap .lm-pages [aria-current="page"] { color: var(--ink); background: var(--panel); box-shadow: 0 1px 2px #0002; font-weight: 600; }
+@media (max-width: 720px) { #libremap .lm-pages > * { padding: 5px 7px; } }
 /* The Down count doubles as a "next down device" button. */
 #libremap .lm-summary .lm-summary-down { min-width: 56px; padding: 0; border: 0; background: transparent; text-align: left; color: #c44650; border-radius: 4px; }
 #libremap .lm-summary .lm-summary-down:hover { background: transparent; text-decoration: underline; text-underline-offset: 4px; }
