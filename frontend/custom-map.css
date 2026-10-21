@@ -1,5 +1,4 @@
-#libremap .lm-nav { font-size: 12px; }
-#libremap .lm-custom .lm-toolbar { flex-wrap: wrap; }
+#libremap .lm-nav { font-size: 12px; }#libremap .lm-custom .lm-toolbar { flex-wrap: wrap; }
 #libremap .lm-custom .lm-toolbar select { max-width: 260px; }
 #libremap .lm-editbar input { width: 240px; border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; background: var(--panel); }
 #libremap .lm-legend i.lm-dotted { border-top: 2px dotted var(--muted); }

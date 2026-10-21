@@ -1,5 +1,6 @@
 import cytoscape, { type Core, type ElementDefinition } from 'cytoscape';
 import { customStyles, rate, statusColor, themeController } from './canvas-style';
+import { exportPng, shortcutAllowed, syncGrid, zoomBy } from './canvas-tools';
 import { addDevice, addShape, clampSize, clip, connect, CUSTOM_LIMITS, emptyDocument, normalizeDocument, removeElement, SHAPE_MAX, SHAPE_MIN } from './custom-map-document';
 import { CustomMapError, httpCustomMapStore, type CustomMapStore } from './custom-map-store';
 import { deviceName, LOAD_COLORS, metric } from './topology';
@@ -10,6 +11,8 @@ import './views.css';
 import './custom-map.css';
 
 const NAME_MAX=100;
+// Dragged elements snap to the background grid; undo keeps a bounded history.
+const GRID=20, HISTORY_MAX=100;
 
 /**
  * Hand-drawn maps. The owner places devices, areas and text, and draws lines;
@@ -25,16 +28,19 @@ export function mountCustomMap(root:HTMLElement) {
         <label class="lm-select">Map <select aria-label="Custom map"></select></label>
         <button data-cm="new">New map</button><button data-cm="rename">Rename</button><button data-cm="share" aria-pressed="false">Share read-only</button><button data-cm="delete">Delete</button>
         <span class="lm-spacer"></span>
+        <button data-cm="export" title="Download this map as an image">Export PNG</button>
         <button data-cm="edit" aria-pressed="false">Edit</button><button data-cm="save">Save</button><button data-cm="discard">Discard changes</button>
       </div>
       <div class="lm-viewbar lm-editbar" hidden>
         <label class="lm-select">Device <input class="lm-cm-device" list="lm-cm-devices" aria-label="Device to add" placeholder="Search devices…" autocomplete="off"></label><datalist id="lm-cm-devices"></datalist>
         <button data-cm="add-device">Add device</button><button data-cm="add-text">Add text</button><button data-cm="add-box">Add area</button>
         <button data-cm="connect" aria-pressed="false">Draw line</button><button data-cm="remove">Remove selected</button>
+        <span class="lm-spacer"></span>
+        <button data-cm="undo" title="Undo (Ctrl+Z)">↶ Undo</button><button data-cm="redo" title="Redo (Ctrl+Shift+Z)">↷ Redo</button>
       </div>
       <div class="lm-notice" role="status" aria-live="polite">Loading custom maps…</div>
       <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong class="lm-cm-title">Custom maps</strong><span class="lm-cm-meta"></span></div><div class="lm-canvas" aria-label="Custom network map"></div><div class="lm-empty"></div><div class="lm-map-controls"><button data-cm="zoom-in" aria-label="Zoom in">+</button><button data-cm="zoom-out" aria-label="Zoom out">−</button><button data-cm="fit">Fit</button></div><div class="lm-legend"><span><i style="color:${LOAD_COLORS.normal}"></i>&lt;50%</span><span><i style="color:${LOAD_COLORS.warning}"></i>50–70%</span><span><i style="color:${LOAD_COLORS.high}"></i>&gt;70%</span><span><i class="lm-dashed" style="color:#e05b65"></i>Down</span><span><i class="lm-dashed" style="color:#8a96a9"></i>Disabled / unknown / stale</span><span><i class="lm-dotted"></i>Drawn (no interface)</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
-      <footer><span class="lm-updated">Waiting for data</span><span>Edit to place devices, areas and text · Draw line joins two devices · Bind a line to an interface for live load</span></footer>
+      <footer><span class="lm-updated">Waiting for data</span><span>Edit to place devices, areas and text · Draw line joins two devices · Bind a line to an interface for live load · Keys: F fit · + − zoom · Esc clear · Delete remove · Ctrl+Z undo</span></footer>
       <dialog class="lm-cm-name-dialog" aria-labelledby="lm-cm-name-title"><form><h2 id="lm-cm-name-title">New map</h2><label>Map name<input name="name" aria-label="Map name" required autocomplete="off"></label><div class="lm-dialog-actions"><button type="button" data-cm="cancel-name">Cancel</button><button type="submit">Save</button></div></form></dialog>
       <dialog class="lm-cm-delete-dialog" aria-labelledby="lm-cm-delete-title"><h2 id="lm-cm-delete-title">Delete map?</h2><p></p><div class="lm-dialog-actions"><button data-cm="cancel-delete">Cancel</button><button data-cm="confirm-delete">Delete map</button></div></dialog>
     </div>`;
@@ -66,6 +72,39 @@ export function mountCustomMap(root:HTMLElement) {
   const devices=new Map<string,Device>(), ports=new Map<string,LivePort>(), portLists=new Map<string,Promise<LivePort[]>>();
   let staleAfter=900, clockOffset=0;
   const serverNow=()=>Date.now()/1000+clockOffset;
+  // Serialized documents: the last saved copy decides `dirty`, so undoing back
+  // to it clears the unsaved marker.
+  let savedJson=JSON.stringify(doc), undoStack:string[]=[], redoStack:string[]=[];
+  const resetHistory=()=>{undoStack=[];redoStack=[];};
+  /** Record the document before a change so it can be undone. */
+  let typingField='';
+  function record(before:string){
+    undoStack.push(before);
+    if(undoStack.length>HISTORY_MAX)undoStack.shift();
+    redoStack=[];typingField='';
+  }
+  const checkpoint=()=>record(JSON.stringify(doc));
+  /** Typing in one field is one undo step, not one per keystroke. */
+  function checkpointTyping(field:string){
+    if(typingField===field)return;
+    checkpoint();typingField=field;
+  }
+  function removeSelected(){
+    if(!selected || !editing)return;
+    const before=JSON.stringify(doc);
+    if(!removeElement(doc,selected))return;
+    record(before);
+    selected=undefined;draw();renderDetails();changed();
+  }
+  function restore(from:string[],to:string[],verb:string){
+    const previous=from.pop();
+    if(previous===undefined || !editing)return;
+    to.push(JSON.stringify(doc));typingField='';
+    doc=normalizeDocument(JSON.parse(previous));drawFrom=undefined;
+    draw();renderDetails();changed();message(`${verb}.`);
+  }
+  const undo=()=>restore(undoStack,redoStack,'Undone');
+  const redo=()=>restore(redoStack,undoStack,'Redone');
 
   const message=(text:string,error=false)=>{notice.textContent=text;notice.classList.toggle('lm-error',error);};
   const owned=()=>!!current?.map.owned;
@@ -86,6 +125,8 @@ export function mountCustomMap(root:HTMLElement) {
     button('connect').setAttribute('aria-pressed',String(drawing));button('connect').classList.toggle('lm-active',drawing);
     button('remove').disabled=busy || !selected;
     for(const action of ['add-device','add-text','add-box','connect'])button(action).disabled=busy;
+    button('undo').disabled=busy || !undoStack.length;button('redo').disabled=busy || !redoStack.length;
+    button('export').disabled=busy || !current || !cy.elements().length;
     $('.lm-cm-title').textContent=current ? current.map.name : 'Custom maps';
     $('.lm-cm-meta').textContent=current ? `${current.map.owned ? 'Your map' : `Shared by ${current.map.ownerName ?? 'another user'}`} · ${current.map.shared ? 'shared read-only' : 'private'}${dirty ? ' · unsaved changes' : ''}` : '';
     cy.autoungrabify(!editing || busy);
@@ -151,7 +192,9 @@ export function mountCustomMap(root:HTMLElement) {
   /** Adopt a server copy of the map. `viewport` restores the saved zoom and pan. */
   function adopt(snapshot:CustomMapSnapshot,viewport:boolean){
     const {document:saved,...summary}=snapshot.map;
-    current=snapshot;doc=normalizeDocument(saved);dirty=false;drawFrom=undefined;
+    // Saving keeps the history; opening another map starts a new one.
+    if(current?.map.id!==summary.id)resetHistory();
+    current=snapshot;doc=normalizeDocument(saved);savedJson=JSON.stringify(doc);dirty=false;drawFrom=undefined;
     maps=[summary,...maps.filter(m=>m.id!==summary.id)].sort((a,b)=>a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
     if(!summary.owned)editing=false;
     absorbLive(snapshot);draw();
@@ -162,10 +205,10 @@ export function mountCustomMap(root:HTMLElement) {
     renderList();renderDetails();controls();
   }
   function close(){
-    current=undefined;doc=emptyDocument();dirty=false;editing=false;drawing=false;drawFrom=undefined;selected=undefined;
+    current=undefined;doc=emptyDocument();savedJson=JSON.stringify(doc);resetHistory();dirty=false;editing=false;drawing=false;drawFrom=undefined;selected=undefined;
     history.replaceState(null,'',mapUrl());draw();renderList();renderDetails();controls();
   }
-  function changed(){dirty=true;controls();}
+  function changed(){dirty=JSON.stringify(doc)!==savedJson;controls();}
 
   function mapUrl(id?:string){const url=new URL(location.href);if(id)url.searchParams.set('map',id);else url.searchParams.delete('map');return url.href;}
   const confirmDiscard=()=>!dirty || window.confirm('Discard unsaved changes to this map?');
@@ -232,7 +275,7 @@ export function mountCustomMap(root:HTMLElement) {
   function field(label:string,control:HTMLElement){const wrap=el('label',undefined,'lm-cm-field');wrap.append(el('span',label),control);return wrap;}
   function closeButton(){const b=el('button','×','lm-close');b.setAttribute('aria-label','Close details');b.onclick=()=>choose(undefined);return b;}
   function removeButton(){
-    const b=el('button','Remove from map','lm-cm-remove');b.onclick=()=>{if(selected && removeElement(doc,selected)){selected=undefined;draw();renderDetails();changed();}};return b;
+    const b=el('button','Remove from map','lm-cm-remove');b.onclick=removeSelected;return b;
   }
 
   function renderDetails(){
@@ -273,11 +316,11 @@ export function mountCustomMap(root:HTMLElement) {
     panel.append(el('div',shape.kind==='box' ? 'AREA' : 'TEXT','lm-eyebrow'));
     if(!editing){panel.append(el('h2',shape.text || (shape.kind==='box' ? 'Unnamed area' : 'Empty text')));return;}
     const text=el('textarea');text.value=shape.text;text.rows=3;text.setAttribute('aria-label',shape.kind==='box' ? 'Area label' : 'Text');
-    text.oninput=()=>{shape.text=clip(text.value,CUSTOM_LIMITS.text);if(text.value!==shape.text)text.value=shape.text;cy.getElementById(key).data('label',shape.text);changed();};
+    text.oninput=()=>{checkpointTyping(`text:${key}`);shape.text=clip(text.value,CUSTOM_LIMITS.text);if(text.value!==shape.text)text.value=shape.text;cy.getElementById(key).data('label',shape.text);changed();};
     panel.append(field(shape.kind==='box' ? 'Label' : 'Text',text));
     for(const dimension of ['width','height'] as const){
       const input=el('input');input.type='number';input.min=String(SHAPE_MIN);input.max=String(SHAPE_MAX);input.step='10';input.value=String(shape[dimension]);input.setAttribute('aria-label',dimension==='width' ? 'Width' : 'Height');
-      input.onchange=()=>{shape[dimension]=clampSize(Number(input.value));input.value=String(shape[dimension]);cy.getElementById(key).data(dimension,shape[dimension]);changed();};
+      input.onchange=()=>{checkpoint();shape[dimension]=clampSize(Number(input.value));input.value=String(shape[dimension]);cy.getElementById(key).data(dimension,shape[dimension]);changed();};
       panel.append(field(dimension==='width' ? 'Width' : 'Height',input));
     }
     panel.append(removeButton());
@@ -294,7 +337,7 @@ export function mountCustomMap(root:HTMLElement) {
     rows.prepend(el('dt','Status'),status);
     if(!editing){if(link.label)panel.append(el('p',link.label));panel.append(rows);return;}
     const label=el('input');label.value=link.label;label.setAttribute('aria-label','Line label');label.autocomplete='off';
-    label.oninput=()=>{link.label=clip(label.value,CUSTOM_LIMITS.label);if(label.value!==link.label)label.value=link.label;cy.getElementById(key).data(linkData(link));changed();};
+    label.oninput=()=>{checkpointTyping(`label:${key}`);link.label=clip(label.value,CUSTOM_LIMITS.label);if(label.value!==link.label)label.value=link.label;cy.getElementById(key).data(linkData(link));changed();};
     panel.append(field('Label',label));
     const binding=el('select');binding.setAttribute('aria-label','Interface');binding.disabled=true;
     binding.append(new Option('Loading interfaces…',link.portId ?? ''));
@@ -312,7 +355,7 @@ export function mountCustomMap(root:HTMLElement) {
       binding.replaceChildren(...groups);binding.value=link.portId ?? '';binding.disabled=false;
     // An interface listing failure concerns one device, never the map itself.
     }).catch(error=>{if(binding.isConnected)binding.replaceChildren(new Option('Interfaces unavailable',''));message(error instanceof Error ? error.message : 'Interfaces unavailable.',true);});
-    binding.onchange=()=>{link.portId=binding.value || null;cy.getElementById(key).data(linkData(link));changed();renderDetails();};
+    binding.onchange=()=>{checkpoint();link.portId=binding.value || null;cy.getElementById(key).data(linkData(link));changed();renderDetails();};
   }
 
   // ---- Canvas interaction -------------------------------------------------
@@ -322,8 +365,10 @@ export function mountCustomMap(root:HTMLElement) {
       if(!drawFrom){drawFrom=node.id();node.addClass('lm-connect-source');message('Now select the device at the other end.');return;}
       const from=drawFrom;drawFrom=undefined;cy.nodes().removeClass('lm-connect-source');
       if(from===node.id()){message('Line cancelled.');return;}
+      const before=JSON.stringify(doc);
       const result=connect(doc,from,node.id());
       if(typeof result==='string'){message(result,true);return;}
+      record(before);
       draw();choose(result.key);changed();message('Line drawn. Select another device to draw the next line, or bind this one to an interface.');
       return;
     }
@@ -333,11 +378,17 @@ export function mountCustomMap(root:HTMLElement) {
   cy.on('tap',event=>{if(event.target===cy){if(drawFrom){drawFrom=undefined;cy.nodes().removeClass('lm-connect-source');}choose(undefined);}});
   cy.on('dragfree','node',event=>{
     if(!editing)return;
-    const {x,y}=event.target.position(), key=event.target.id();
-    const item=doc.devices.find(d=>d.key===key) ?? doc.shapes.find(s=>s.key===key);
-    if(item){item.x=x;item.y=y;changed();}
+    const key=event.target.id(), item=doc.devices.find(d=>d.key===key) ?? doc.shapes.find(s=>s.key===key);
+    if(!item)return;
+    // Snap to the background grid so lines and areas align without fiddling.
+    const snapped={x:Math.round(event.target.position().x/GRID)*GRID,y:Math.round(event.target.position().y/GRID)*GRID};
+    event.target.position(snapped);
+    if(item.x===snapped.x && item.y===snapped.y)return;
+    checkpoint();item.x=snapped.x;item.y=snapped.y;changed();
   });
   cy.on('zoom',()=>cy.edges().toggleClass('lm-no-label',cy.zoom()<0.45));
+  const wrap=$('.lm-canvas-wrap'), canvas=$('.lm-canvas');
+  cy.on('pan zoom resize',()=>syncGrid(cy,wrap,canvas,GRID));
 
   // ---- Toolbar ------------------------------------------------------------
   select.addEventListener('change',()=>void open(select.value));
@@ -377,28 +428,37 @@ export function mountCustomMap(root:HTMLElement) {
       case 'edit':void toggleEditing();break;
       case 'save':void save();break;
       case 'discard':
-        if(current && window.confirm('Discard unsaved changes to this map?')){doc=normalizeDocument(current.map.document);dirty=false;drawFrom=undefined;draw();renderDetails();controls();message('Changes discarded.');}
+        if(current && window.confirm('Discard unsaved changes to this map?')){doc=normalizeDocument(current.map.document);resetHistory();dirty=false;drawFrom=undefined;draw();renderDetails();controls();message('Changes discarded.');}
         break;
       case 'add-device':{
         const id=/#([1-9]\d{0,9})\)$/.exec(deviceInput.value.trim())?.[1] ?? (catalog?.some(d=>d.id===deviceInput.value.trim()) ? deviceInput.value.trim() : '');
+        const before=JSON.stringify(doc);
         const result=addDevice(doc,id,center(doc.devices.length));
         if(typeof result==='string'){message(result,true);break;}
+        record(before);
         deviceInput.value='';draw();choose(result.key);changed();message('Device added. Drag it into place.');
         break;
       }
       case 'add-text':case 'add-box':{
+        const before=JSON.stringify(doc);
         const result=addShape(doc,action==='add-text' ? 'text' : 'box',center(doc.shapes.length));
         if(typeof result==='string'){message(result,true);break;}
+        record(before);
         draw();choose(result.key);changed();
         break;
       }
+      case 'undo':undo();break;
+      case 'redo':redo();break;
+      case 'export':
+        if(current)void exportPng(cy,root,current.map.name).then(()=>message('Map image downloaded.'),error=>message(error instanceof Error ? error.message : 'The map image could not be created.',true));
+        break;
       case 'connect':
         drawing=!drawing;drawFrom=undefined;cy.nodes().removeClass('lm-connect-source');controls();
         message(drawing ? 'Select the device where the line starts.' : 'Finished drawing lines.');
         break;
-      case 'remove':if(selected && removeElement(doc,selected)){selected=undefined;draw();renderDetails();changed();}break;
-      case 'zoom-in':cy.zoom({level:cy.zoom()*1.2,renderedPosition:{x:cy.width()/2,y:cy.height()/2}});break;
-      case 'zoom-out':cy.zoom({level:cy.zoom()/1.2,renderedPosition:{x:cy.width()/2,y:cy.height()/2}});break;
+      case 'remove':removeSelected();break;
+      case 'zoom-in':zoomBy(cy,1.2);break;
+      case 'zoom-out':zoomBy(cy,1/1.2);break;
       case 'fit':if(cy.elements().length)cy.fit(cy.elements(),70);break;
     }
   });
@@ -414,14 +474,30 @@ export function mountCustomMap(root:HTMLElement) {
   async function toggleEditing(){
     if(!editing){editing=true;controls();renderDetails();draw();void loadCatalog();return;}
     if(dirty && !await save())return;
-    editing=false;drawing=false;drawFrom=undefined;cy.nodes().removeClass('lm-connect-source');
+    editing=false;drawing=false;drawFrom=undefined;resetHistory();cy.nodes().removeClass('lm-connect-source');
     draw();renderDetails();controls();
   }
   document.addEventListener('keydown',event=>{
-    const target=event.target as HTMLElement;
-    if(!editing || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) || target.isContentEditable || root.querySelector('dialog[open]'))return;
-    if(event.key==='Escape' && (drawFrom || drawing)){drawing=false;drawFrom=undefined;cy.nodes().removeClass('lm-connect-source');controls();message('Finished drawing lines.');}
-    if(event.key==='Delete' && selected && removeElement(doc,selected)){event.preventDefault();selected=undefined;draw();renderDetails();changed();}
+    // Undo and redo use the platform modifier, outside text fields (which keep their own undo).
+    const target=event.target as HTMLElement|null;
+    const typing=!!target && (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) || target.isContentEditable);
+    if((event.ctrlKey || event.metaKey) && !event.altKey && editing && !typing && !root.querySelector('dialog[open]')){
+      const key=event.key.toLowerCase();
+      if(key==='z' && !event.shiftKey){event.preventDefault();undo();}
+      else if((key==='z' && event.shiftKey) || key==='y'){event.preventDefault();redo();}
+      return;
+    }
+    if(!shortcutAllowed(event,root))return;
+    switch(event.key){
+      case 'f':case 'F':if(cy.elements().length){event.preventDefault();cy.fit(cy.elements(),70);}break;
+      case '+':case '=':event.preventDefault();zoomBy(cy,1.2);break;
+      case '-':event.preventDefault();zoomBy(cy,1/1.2);break;
+      case 'Escape':
+        if(drawFrom || drawing){drawing=false;drawFrom=undefined;cy.nodes().removeClass('lm-connect-source');controls();message('Finished drawing lines.');}
+        else if(selected)choose(undefined);
+        break;
+      case 'Delete':if(editing && selected){event.preventDefault();removeSelected();}break;
+    }
   });
   window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
 
@@ -454,7 +530,7 @@ export function mountCustomMap(root:HTMLElement) {
   }),configurable:true});
 
   // ---- Start --------------------------------------------------------------
-  draw();renderList();renderDetails();controls();
+  draw();renderList();renderDetails();controls();syncGrid(cy,wrap,canvas,GRID);
   if(!store){message('Custom maps are unavailable on this page.',true);return;}
   void (async()=>{
     const list=await run(()=>store!.list());

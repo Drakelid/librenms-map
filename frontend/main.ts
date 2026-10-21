@@ -1,5 +1,6 @@
 import cytoscape, { type Core } from 'cytoscape';
 import { rate, themeController, topologyStyles as styles } from './canvas-style';
+import { exportPng, shortcutAllowed, zoomBy } from './canvas-tools';
 import { mountCustomMap } from './custom-map';
 import { layoutGraph, resetLayoutWorker } from './layout';
 import { compactWideRestore, packTierPositions } from './layout-positions';
@@ -31,11 +32,11 @@ function mount(root: HTMLElement) {
     <div class="lm-shell">
       <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>NETWORK TOPOLOGY</span></div></div><div class="lm-header-right"><span class="lm-source">${demo ? 'DEMO DATA' : 'LIBRENMS'}</span><button data-action="theme" title="Toggle color theme">◐ <span>Theme</span></button><a class="lm-nav" href="#" hidden>Custom maps</a><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
       <section class="lm-heading"><div><div class="lm-eyebrow">INFRASTRUCTURE / TOPOLOGY</div></div><div class="lm-summary" aria-label="Network summary"></div></section>
-      <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device…"></label><label class="lm-select">Site <select aria-label="Site"><option value="">All sites</option></select></label><button data-action="overview">AGG backbone</button><button data-action="other-devices" aria-pressed="false">Show other devices</button><span class="lm-spacer"></span><button data-action="refresh">↻ Refresh</button><button data-action="layout">Re-layout</button><button data-action="fullscreen" title="Fullscreen">⛶</button></div>
+      <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device…"></label><label class="lm-select">Site <select aria-label="Site"><option value="">All sites</option></select></label><button data-action="overview">AGG backbone</button><button data-action="other-devices" aria-pressed="false">Show other devices</button><span class="lm-spacer"></span><button data-action="refresh">↻ Refresh</button><button data-action="layout">Re-layout</button><button data-action="export" title="Download the visible map as an image">Export PNG</button><button data-action="fullscreen" title="Fullscreen">⛶</button></div>
       <div class="lm-viewbar"><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><label class="lm-select">AGG root <select aria-label="AGG root"><option value="">All AGG groups</option></select></label><label class="lm-select">Highlight <select aria-label="Highlight hops">${Array.from({length:HOPS_MAX},(_,i)=>`<option value="${i+1}">${i+1} hop${i?'s':''}</option>`).join('')}</select></label><span class="lm-pin-count">0 pinned</span><button data-action="unpin-all">Unpin all</button><div class="lm-views"></div></div>
       <div class="lm-notice" role="status" aria-live="polite">Loading topology…</div>
       <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong>Physical topology</strong><span>AGG → ER · discovered links</span></div><div class="lm-canvas" aria-label="Interactive network topology"></div><div class="lm-empty" hidden></div><div class="lm-map-controls"><button data-action="zoom-in" aria-label="Zoom in">+</button><button data-action="zoom-out" aria-label="Zoom out">−</button><button data-action="fit">Fit</button></div><div class="lm-legend"><span><i style="color:${LOAD_COLORS.normal}"></i>&lt;50%</span><span><i style="color:${LOAD_COLORS.warning}"></i>50–70%</span><span><i style="color:${LOAD_COLORS.high}"></i>&gt;70%</span><span><i class="lm-dashed" style="color:#e05b65"></i>Down</span><span><i class="lm-dashed" style="color:#8a96a9"></i>Disabled / unknown / stale</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
-      <footer><span class="lm-updated">Waiting for data</span><span>Drag to arrange · Scroll to zoom · Hover links for traffic · Click to inspect</span></footer>
+      <footer><span class="lm-updated">Waiting for data</span><span>Drag to arrange · Scroll to zoom · Hover links for traffic · Click to inspect · Keys: / find · F fit · + − zoom · D next down device · Esc clear</span></footer>
     </div>`;
   if (demo) root.querySelector('.lm-back')?.remove();
   // Inside LibreNMS the user's site style decides the theme; no separate toggle.
@@ -116,7 +117,7 @@ function mount(root: HTMLElement) {
   function syncControls(){
     const off=layoutPending || !snapshot;
     search.disabled=off;site.disabled=off;deviceGroup.disabled=off;focus.disabled=off;hops.disabled=off;
-    for(const action of ['layout','zoom-in','zoom-out','fit','overview','other-devices'])$<HTMLButtonElement>(`[data-action="${action}"]`).disabled=off;
+    for(const action of ['layout','zoom-in','zoom-out','fit','overview','other-devices','export'])$<HTMLButtonElement>(`[data-action="${action}"]`).disabled=off;
     root.querySelectorAll<HTMLButtonElement>('.lm-pin-device,.lm-focus-device').forEach(b=>{b.disabled=off;});
     $<HTMLButtonElement>('[data-action="unpin-all"]').disabled=off || pins.size===0;
   }
@@ -257,7 +258,14 @@ function mount(root: HTMLElement) {
     });
     updatePins();
     const summary=$('.lm-summary'); summary.replaceChildren();
-    for (const [value,label] of [[graph.nodes.length,'Devices'],[graph.links.length,'Links'],[graph.nodes.filter(n=>n.role==='AGG').length,'AGG roots'],[graph.nodes.filter(n=>n.status==='down').length,'Down']]) { const item=document.createElement('div'); const strong=document.createElement('strong'); strong.textContent=String(value); const span=document.createElement('span'); span.textContent=String(label); item.append(strong,span); summary.append(item); }
+    const down=graph.nodes.filter(n=>n.status==='down').length;
+    for (const [value,label] of [[graph.nodes.length,'Devices'],[graph.links.length,'Links'],[graph.nodes.filter(n=>n.role==='AGG').length,'AGG roots'],[down,'Down']] as const) {
+      // A non-zero Down count steps through the down devices.
+      const jump=label==='Down' && down>0;
+      const item=document.createElement(jump ? 'button' : 'div'); const strong=document.createElement('strong'); strong.textContent=String(value); const span=document.createElement('span'); span.textContent=label; item.append(strong,span);
+      if(jump){item.className='lm-summary-down';item.dataset.action='next-down';item.title='Select the next down device (D)';item.setAttribute('aria-label',`${down} down. Select the next down device`);}
+      summary.append(item);
+    }
     $('.lm-updated').textContent=`${demo?'Demo snapshot':'Snapshot fetched'} · ${new Date(next.generatedAt*1000).toLocaleTimeString()}`;
     filters(false); renderDetails();views.setAvailable(true);
     if(!initialized)void views.reload();
@@ -326,13 +334,41 @@ site.addEventListener('change',()=>{filters();persist();});deviceGroup.addEventL
       case 'fit':cy.fit(cy.elements(':visible'),70);break;
       case 'layout':layout(Object.fromEntries(cy.nodes().map(n=>({id:n.id(),position:n.position()})).filter(n=>pins.has(n.id)).map(n=>[n.id,n.position])));break;
       case 'unpin-all':pins.clear();updatePins();filters(false);persist();renderDetails();break;
-      case 'zoom-in':cy.zoom({level:cy.zoom()*1.2,renderedPosition:{x:cy.width()/2,y:cy.height()/2}});break;
-      case 'zoom-out':cy.zoom({level:cy.zoom()/1.2,renderedPosition:{x:cy.width()/2,y:cy.height()/2}});break;
+      case 'zoom-in':zoomBy(cy,1.2);break;
+      case 'zoom-out':zoomBy(cy,1/1.2);break;
+      case 'next-down':nextDown();break;
+      case 'export':void exportPng(cy,root,'libremap-topology').then(()=>message('Map image downloaded.'),error=>message(error instanceof Error ? error.message : 'The map image could not be created.',true));break;
       case 'overview':backbone=!backbone;updateBackbone();filters();persist();break;
       case 'other-devices':showOther=!showOther;updateOtherDevices();filters();persist();break;
       case 'theme':theme.toggle();break;
       case 'fullscreen':void (document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen()).catch(()=>message('Fullscreen is unavailable in this browser.'));break;
     }
+  });
+  /** Cycle through visible down devices, selecting and centring each in turn. */
+  let downCursor=-1;
+  function nextDown(){
+    if(!snapshot || layoutPending)return;
+    const down=graph.nodes.filter(n=>n.status==='down');
+    const visible=down.filter(n=>cy.getElementById(n.id).visible());
+    if(!visible.length){message(down.length ? 'Down devices are hidden by the current filters.' : 'No devices are down.');return;}
+    downCursor=(downCursor+1)%visible.length;
+    const node=visible[downCursor];
+    selectNode(node.id);
+    cy.animate({center:{eles:cy.getElementById(node.id)},zoom:Math.max(cy.zoom(),0.8)},{duration:250});
+    message(`Down device ${downCursor+1} of ${visible.length}: ${deviceName(node)}`);
+  }
+  document.addEventListener('keydown',event=>{
+    if(!shortcutAllowed(event,root))return;
+    const clear=()=>{selected=undefined;cy.elements().unselect().removeClass('lm-dim');detailsDefault();};
+    const actions:Record<string,()=>void>={
+      '/':()=>{if(!search.disabled)search.focus();},
+      f:()=>{if(!layoutPending)cy.fit(cy.elements(':visible'),70);},
+      '+':()=>{if(!layoutPending)zoomBy(cy,1.2);},'=':()=>{if(!layoutPending)zoomBy(cy,1.2);},'-':()=>{if(!layoutPending)zoomBy(cy,1/1.2);},
+      d:nextDown,
+      Escape:()=>{if(selected)clear();},
+    };
+    const action=actions[event.key.length===1 ? event.key.toLowerCase() : event.key];
+    if(action){event.preventDefault();action();}
   });
   new ResizeObserver(()=>cy.resize()).observe($('.lm-canvas'));
   syncControls(); detailsDefault(); void refresh();

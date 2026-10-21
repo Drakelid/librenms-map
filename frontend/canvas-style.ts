@@ -35,6 +35,10 @@ export function customStyles(root:HTMLElement):StylesheetStyle[] {
   const {ink,muted,accent}=palette(root);
   return [
     ...topologyStyles(root),
+    // By default edges always sit under nodes, which would bury lines beneath
+    // the areas they cross. Order everything explicitly: areas at the bottom.
+    {selector:'node, edge',style:{'z-index-compare':'manual'}},
+    {selector:'edge',style:{'z-index':4}},
     {selector:'node[kind = "device"]',style:{'z-index':10}},
     {selector:'node[kind = "box"]',style:{height:'data(height)','background-color':accent,'background-opacity':0.05,'border-width':1.5,'border-style':'dashed','border-color':muted,color:muted,'font-size':16,'font-weight':600,'text-valign':'top','text-halign':'center','text-margin-y':30,'text-max-width':'data(width)','z-index':0}},
     {selector:'node[kind = "text"]',style:{shape:'rectangle',height:'data(height)','background-opacity':0,'border-width':0,color:ink,'font-size':18,'font-weight':600,'text-max-width':'data(width)','z-index':5}},

@@ -45,6 +45,7 @@ Open <http://127.0.0.1:5173>. The demo is explicitly labeled and uses illustrati
 - Directional maximum utilization and explicit down/stale/unknown states. Links are blue below 50% load, yellow from 50% and red above 70%, judged on the rounded percentage shown. Down links are red and dashed; administratively disabled, stale and unknown links are grey and dashed. Parallel connections use wider, stable curves so their individual utilization labels remain readable. Load labels are clickable, and inspecting a link keeps a selected device's neighborhood in focus. The topology is fetched every 60 seconds; link states are re-evaluated every 10 seconds from the current snapshot. Neither refresh relayouts the graph.
 - Hovering a physical link on the live LibreNMS page lazily loads the source and destination interfaces' one-day traffic graphs from LibreNMS's authenticated `port_bits` graph endpoint. Moving away closes the preview; no graph images are requested during ordinary map loading or pointer movement that does not dwell on a link.
 - AGG root focus includes same-site peers and discovered ER branches, stopping traversal at neighboring AGG sites. Boundary AGGs remain visible for context.
+- The **Down** count in the summary steps through down devices that the current filters show, selecting and centring each in turn. **Export PNG** downloads every visible element of the map, not only the current viewport, as an image (capped at 8000 px per side). Keyboard shortcuts outside text fields: `/` find, `F` fit, `+`/`−` zoom, `D` next down device, `Esc` clear the selection.
 - Pin/unpin device positions. Pinned devices cannot be dragged and remain fixed during Re-layout; automatic nodes are placed clear of them. Use Unpin all to release them.
 - Browser workspace persistence and private named views stored in LibreNMS. Views capture device-group/root/site/search filters, backbone and other-device visibility, highlight hops, positions, pins, zoom and pan. The explicit demo stores named views in this browser only.
 - Create, update, copy and delete named views. Revision checks prevent stale tabs from overwriting newer saves. Reload views restores the newest saved state before another update.
@@ -199,7 +200,8 @@ php artisan route:clear
 - **Add device** places any device you may view; each device appears at most once per map.
 - **Add area** draws a labelled box, for example around a site; **Add text** places a free note. Set their label and size in the details panel.
 - **Draw line** joins two devices: select the device at each end. A drawn line is dotted until you bind it to an **Interface** of either end device. A bound line shows that interface's live load, down, disabled and stale states with the topology map's colors, measured at that one interface.
-- Drag to arrange, then **Save**. **Done editing** saves pending changes; **Discard changes** reverts to the last save.
+- Drag to arrange; elements snap to the 20 px background grid, which pans and zooms with the map. **Undo**/**Redo** (`Ctrl+Z`, `Ctrl+Shift+Z` or `Ctrl+Y`) step through up to 100 edits; typing in one field counts as one step. `Delete` removes the selection and `Esc` stops drawing or clears it.
+- **Save** when done. **Done editing** saves pending changes; **Discard changes** reverts to the last save. **Export PNG** downloads the map as an image.
 
 Drawn lines are your annotation. They never join the discovered topology, its tiers or its focus filters.
 

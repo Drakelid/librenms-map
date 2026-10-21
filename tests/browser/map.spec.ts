@@ -131,6 +131,30 @@ test('production bundle loads its worker beneath a published asset path',async({
   expect(errors).toEqual([]);
 });
 
+test('the down count, keyboard shortcuts and image export',async({page})=>{
+  await page.goto('/');
+  await expect(page.getByRole('status')).toContainText('Demo topology');
+  // The demo has one down device; the Down count selects and centres it.
+  await page.getByRole('button',{name:'1 down. Select the next down device'}).click();
+  await expect(page.getByRole('heading',{name:'hk-se1er1'})).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('Down device 1 of 1');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('heading',{name:'Follow the connection'})).toBeVisible();
+  await page.keyboard.press('d');
+  await expect(page.getByRole('heading',{name:'hk-se1er1'})).toBeVisible();
+  await page.keyboard.press('/');
+  await expect(page.getByRole('searchbox')).toBeFocused();
+  // Typing in the search box must not trigger shortcuts.
+  await page.keyboard.type('fd');
+  await expect(page.getByRole('searchbox')).toHaveValue('fd');
+  await page.getByRole('searchbox').fill('');
+
+  const download=page.waitForEvent('download');
+  await page.getByRole('button',{name:'Export PNG',exact:true}).click();
+  expect((await download).suggestedFilename()).toMatch(/^libremap-topology-\d{4}-\d{2}-\d{2}\.png$/);
+  await expect(page.getByRole('status')).toContainText('Map image downloaded');
+});
+
 test('dragged positions survive refresh and a full page reload',async({page})=>{
   await page.goto('/');
   await expect(page.getByRole('status')).toContainText('Demo topology');

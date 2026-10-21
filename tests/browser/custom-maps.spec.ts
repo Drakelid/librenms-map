@@ -8,7 +8,7 @@ const catalog:Device[]=[
 ];
 const port:LivePort={id:'11',deviceId:'1',name:'xe-0/0/1',speedBps:1e9,inBps:8e8,outBps:1e8,sampledAt:now(),status:'up'};
 
-type Debug={nodes:{key:string;kind:string;label:string;renderedPosition:{x:number;y:number}}[];edges:{key:string;label:string;state:string;lineStyle:string;midpoint:{x:number;y:number}}[];grabbable:boolean};
+type Debug={nodes:{key:string;kind:string;label:string;position:{x:number;y:number};renderedPosition:{x:number;y:number}}[];edges:{key:string;label:string;state:string;lineStyle:string;midpoint:{x:number;y:number}}[];grabbable:boolean};
 const debug=(page:Page)=>page.evaluate(()=>(window as unknown as {libremapCustomDebug:()=>Debug}).libremapCustomDebug());
 
 /** An in-memory stand-in for the plugin's custom map endpoints. */
@@ -76,6 +76,27 @@ test('an owner draws, binds and saves a custom map',async({page})=>{
   let edges=(await debug(page)).edges;
   expect(edges).toHaveLength(1);
   expect(edges[0]).toMatchObject({state:'drawn',lineStyle:'dotted'});
+
+  // Undo and redo the line from the keyboard.
+  await page.keyboard.press('Control+z');
+  expect((await debug(page)).edges).toHaveLength(0);
+  await page.keyboard.press('Control+Shift+z');
+  expect((await debug(page)).edges).toHaveLength(1);
+  await page.getByRole('button',{name:'Draw line',exact:true}).click();
+
+  // Dragged devices snap to the 20px grid.
+  const dragged=(await debug(page)).nodes.find(n=>n.label.startsWith('rossa1er1'))!;
+  const canvas=(await page.locator('.lm-canvas').boundingBox())!;
+  const from={x:canvas.x+dragged.renderedPosition.x,y:canvas.y+dragged.renderedPosition.y};
+  await page.mouse.move(from.x,from.y);await page.mouse.down();await page.mouse.move(from.x+33,from.y+47,{steps:6});await page.mouse.up();
+  const moved=(await debug(page)).nodes.find(n=>n.key===dragged.key)!;
+  expect(Math.abs(moved.position.x%20)).toBe(0);expect(Math.abs(moved.position.y%20)).toBe(0);
+  await page.getByRole('button',{name:'↶ Undo',exact:true}).click();
+  expect((await debug(page)).nodes.find(n=>n.key===dragged.key)!.position).toEqual(dragged.position);
+  await page.getByRole('button',{name:'↷ Redo',exact:true}).click();
+  // The line crosses the area; it must still be selectable above it.
+  const line=(await debug(page)).edges[0];
+  await page.mouse.click(canvas.x+line.midpoint.x,canvas.y+line.midpoint.y);
 
   // Bind the line to an interface: it now shows that interface's live load.
   await page.getByRole('textbox',{name:'Line label'}).fill('Fibre');
