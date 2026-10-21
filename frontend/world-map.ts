@@ -82,25 +82,31 @@ export function mountWorldMap(root:HTMLElement) {
   let warnings:Warning[]=[], weatherAttribution='', weatherFetchedAt=0, weatherBusy=false;
   const siteWarnings=new Map<string,Warning[]>();
 
-  /**
-   * A location's name without its address: the LibreMap site its devices are
-   * classified into; failing that, its device names when those are shown,
-   * else just its device count.
-   */
-  function siteName(site:Site):string {
+  /** The address when shown, else the LibreMap site its devices are classified into, else nothing. */
+  function shownName(site:Site):string {
     if(showAddresses && site.name.trim()) return site.name.trim();
     const classified=[...new Set(site.nodes.map(n=>n.site).filter(s=>s && s!=='Unclassified'))].sort();
-    if(classified.length) return classified.length>1 ? `${classified[0]} +${classified.length-1}` : classified[0];
-    if(showDeviceNames && site.nodes.length) return deviceNames(site);
-    return `${site.nodes.length} device${site.nodes.length===1 ? '' : 's'}`;
+    return classified.length>1 ? `${classified[0]} +${classified.length-1}` : classified[0] ?? '';
   }
+  /** A location's name for headings, link titles and screen readers. */
+  const siteName=(site:Site)=>shownName(site) || (showDeviceNames && site.nodes.length ? deviceNames(site) : 'Location');
+  /**
+   * With device names hidden, a device is named by its role and position at
+   * its location ("AGG 1", "ER 2"), so the details panel stays usable without
+   * showing a name anywhere on the page.
+   */
+  let aliases=new Map<string,string>();
+  const deviceLabel=(n:MapNode)=>showDeviceNames ? nameOf(n) : aliases.get(n.id) ?? (n.role==='OTHER' ? 'Device' : n.role);
   /** The first few device names at a location; the rest as a count. */
   function deviceNames(site:Site,shown=3):string {
     const names=site.nodes.slice(0,shown).map(nameOf).join(', ');
     return site.nodes.length>shown ? `${names} +${site.nodes.length-shown}` : names;
   }
-  /** The text beside a marker: its device names when asked for, else its name. */
-  const markerLabel=(site:Site)=>showDeviceNames ? deviceNames(site) : siteName(site);
+  /**
+   * The text beside a marker: its device names when asked for, else its name.
+   * A location with neither gets no label; its dot already shows the count.
+   */
+  const markerLabel=(site:Site)=>showDeviceNames ? deviceNames(site) : shownName(site);
 
   // ---- Data ---------------------------------------------------------------
   async function getJson(endpoint:string|undefined,what:string):Promise<unknown> {
@@ -156,8 +162,14 @@ export function mountWorldMap(root:HTMLElement) {
       site.nodes.push(node);siteOf.set(node.id,site);
     }
     sites=[...bySite.values()];
+    aliases=new Map();
     for(const site of sites){
       site.nodes.sort((a,b)=>nameOf(a).localeCompare(nameOf(b),undefined,{numeric:true}));
+      const counts=new Map<string,number>();
+      for(const n of site.nodes){
+        const role=n.role==='OTHER' ? 'Device' : n.role, number=(counts.get(role) ?? 0)+1;
+        counts.set(role,number);aliases.set(n.id,`${role} ${number}`);
+      }
       site.status=site.nodes.some(n=>n.status==='down') ? 'down' : site.nodes.every(n=>n.status==='up') ? 'up' : 'unknown';
     }
     // Draw problem locations last, so they sit on top of healthy neighbours.
@@ -435,17 +447,21 @@ export function mountWorldMap(root:HTMLElement) {
     if(unlocated.length){
       const more=el('details','','lm-world-unlocated');
       more.append(el('summary',`${unlocated.length} device${unlocated.length===1 ? ' has' : 's have'} no coordinates`));
-      const names=el('ul');
-      for(const n of unlocated.slice(0,50)) names.append(el('li',nameOf(n)));
-      if(unlocated.length>50) names.append(el('li',`…and ${unlocated.length-50} more`));
-      more.append(names,el('p','Give these devices a LibreNMS location with coordinates to place them on the map.'));
+      // Unplaced devices have no location to number them by: list them only with names shown.
+      if(showDeviceNames){
+        const names=el('ul');
+        for(const n of unlocated.slice(0,50)) names.append(el('li',nameOf(n)));
+        if(unlocated.length>50) names.append(el('li',`…and ${unlocated.length-50} more`));
+        more.append(names);
+      } else more.append(el('p','Select Device names to list them.'));
+      more.append(el('p','Give these devices a LibreNMS location with coordinates to place them on the map.'));
       panel.append(more);
     }
   }
   function deviceButton(n:MapNode){
     const b=el('button',undefined,'lm-world-device');
     const dot=el('i');dot.style.background=statusColor(n.status);
-    b.append(dot,el('span',nameOf(n)));b.title=n.status;b.onclick=()=>select({type:'device',id:n.id});
+    b.append(dot,el('span',deviceLabel(n)));b.title=n.status;b.onclick=()=>select({type:'device',id:n.id});
     return b;
   }
   function siteDetails(site:Site){
@@ -505,14 +521,15 @@ export function mountWorldMap(root:HTMLElement) {
   function deviceDetails(n:MapNode){
     const site=sites.find(s=>s.nodes.includes(n))!;
     const back=el('button',`← ${siteName(site)}`,'lm-world-back');back.onclick=()=>select({type:'site',id:site.id});
-    panel.append(closeButton(),back,el('div',`${n.role} / DEVICE`,'lm-eyebrow'),el('h2',nameOf(n)),list([
-      ['Status',n.status],...(nameOf(n)!==n.hostname ? [['Hostname',n.hostname] as [string,string]] : []),['Location',siteName(site)],['Site',n.site],
+    panel.append(closeButton(),back,el('div',`${n.role} / DEVICE`,'lm-eyebrow'),el('h2',deviceLabel(n)),list([
+      ['Status',n.status],...(showDeviceNames && nameOf(n)!==n.hostname ? [['Hostname',n.hostname] as [string,string]] : []),['Location',siteName(site)],['Site',n.site],
     ]));
     if(n.url){const url=new URL(n.url,location.href);if(url.origin===location.origin){const a=el('a','Open in LibreNMS ↗','lm-device-link');a.href=url.href;panel.append(a);}}
   }
   /** Each link's load and both interfaces; a far port LibreNMS did not match is marked. */
   function linkRows(links:Link[]){
-    const names=new Map(graph.nodes.map(n=>[n.id,nameOf(n)]));
+    // A role number is only unique within its location, so prefix the location.
+    const names=new Map(sites.flatMap(site=>site.nodes.map(n=>[n.id,showDeviceNames ? nameOf(n) : `${siteName(site)} ${deviceLabel(n)}`] as const)));
     const rows=el('ul',undefined,'lm-world-links-list');
     const now=serverNow(), staleAfter=snapshot?.config.staleAfter ?? 900;
     for(const link of links){

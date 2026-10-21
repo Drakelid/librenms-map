@@ -62,8 +62,10 @@ test('devices are placed at their locations with the links between them',async({
   await page.getByRole('button',{name:'se1: 1 device, 1 down'}).click();
   await expect(page.getByRole('heading',{name:'se1',exact:true})).toBeVisible();
   await expect(page.locator('.lm-details')).not.toContainText('Coordinates');
-  await page.getByRole('button',{name:'hk-se1er1'}).click();
-  await expect(page.getByRole('heading',{name:'hk-se1er1'})).toBeVisible();
+  // Device names are hidden by default: devices are named by role and number.
+  await page.locator('.lm-details').getByRole('button',{name:'ER 1',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'ER 1',exact:true})).toBeVisible();
+  await expect(page.locator('#libremap')).not.toContainText('hk-');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('heading',{name:'Where the network is'})).toBeVisible();
 
@@ -131,11 +133,24 @@ test('device names label the markers only when asked for',async({page})=>{
   // Shown at any zoom, not only once zoomed in.
   await expect(page.locator('.lm-world-markers')).toHaveClass(/lm-world-named/);
   await expect(page.locator('.lm-world-label',{hasText:'hk-se1er1'})).toBeVisible();
+  // With names on, the details panel uses them too.
+  await page.getByRole('button',{name:'rossa1: 6 devices'}).click();
+  await expect(page.locator('.lm-details').getByRole('button',{name:'hk-rossa1agg1'})).toBeVisible();
+  await expect(page.locator('.lm-details')).toContainText('hk-rossa1agg2 ');
 
   await page.reload();
   await expect(page.getByRole('button',{name:'Device names',exact:true})).toHaveAttribute('aria-pressed','true');
   await page.getByRole('button',{name:'Device names',exact:true}).click();
   expect((await text()).rossa1).toBe('rossa1');
+  // Off again: no device name anywhere on the page, including the details and link lists.
+  await page.getByRole('button',{name:'rossa1: 6 devices'}).click();
+  await expect(page.locator('.lm-details').getByRole('button',{name:'AGG 1',exact:true})).toBeVisible();
+  await expect(page.locator('.lm-details')).toContainText('rossa1 AGG 1 ');
+  await expect(page.locator('#libremap')).not.toContainText('hk-');
+  await page.keyboard.press('Escape');
+  await page.locator('.lm-world-unlocated summary').click();
+  await expect(page.locator('.lm-world-unlocated')).toContainText('Select Device names to list them.');
+  await expect(page.locator('#libremap')).not.toContainText('hk-');
 });
 
 test('weather warnings are drawn on request and flag the locations they cover',async({page})=>{
