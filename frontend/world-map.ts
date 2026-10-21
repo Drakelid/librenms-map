@@ -1,6 +1,6 @@
 import { statusColor, themeController } from './canvas-style';
 import { shortcutAllowed } from './canvas-tools';
-import { clampCenter, fitView, project, TILE, tileUrl, worldSize, type Point } from './geo';
+import { clampCenter, fitView, project, TILE, tileUrl, withoutCoordinates, worldSize, type Point } from './geo';
 import { mountPageNav } from './page-nav';
 import { deviceName, LOAD_COLORS, metric, topology } from './topology';
 import { limitFilter } from './view-limits';
@@ -125,7 +125,9 @@ export function mountWorldMap(root:HTMLElement) {
   function parseLocations(value:unknown):Locations {
     if(!object(value) || !Array.isArray(value.locations) || !object(value.devices)) throw new Error('Unexpected locations response.');
     const locations=value.locations.filter((l):l is WorldLocation=>object(l) && typeof l.id==='string' && typeof l.name==='string'
-      && typeof l.lat==='number' && typeof l.lng==='number' && Math.abs(l.lat)<=90 && Math.abs(l.lng)<=180);
+      && typeof l.lat==='number' && typeof l.lng==='number' && Math.abs(l.lat)<=90 && Math.abs(l.lng)<=180)
+      // Shown addresses never repeat the coordinates the text may carry; a text of only coordinates becomes unnamed.
+      .map(l=>({id:l.id,name:withoutCoordinates(l.name),lat:l.lat,lng:l.lng}));
     const devices:Record<string,string>={};
     for(const [id,locationId] of Object.entries(value.devices)) if(typeof locationId==='string') devices[id]=locationId;
     const map=object(value.map) ? value.map : {};

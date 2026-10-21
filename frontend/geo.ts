@@ -46,6 +46,14 @@ export function tileUrl(template:string, zoom:number, x:number, y:number):string
   } catch { return undefined; }
 }
 
+// LibreNMS reads "[lat, lng]" in a location's text as its coordinates.
+const BRACKETED_COORDINATES=/\[\s*[-+]?\d{1,3}(?:\.\d+)?\s*,\s*[-+]?\d{1,3}(?:\.\d+)?\s*\]/g;
+
+/** A location's text without the "[lat, lng]" coordinates LibreNMS lets it carry. */
+export function withoutCoordinates(text:string):string {
+  return text.replace(BRACKETED_COORDINATES,' ').replace(/\s+([,;])/g,'$1').replace(/\s{2,}/g,' ').trim().replace(/^[,;\s]+|[,;\s]+$/g,'');
+}
+
 /** A GeoJSON ring of [lng, lat] points; the first ring of a polygon is its outline, the rest are holes. */
 export type Ring=[number,number][];
 

@@ -10,7 +10,8 @@ const locations={
     {id:'1',name:'Rossa',lat:59.4138,lng:5.268},
     {id:'2',name:'Heiane',lat:58.97,lng:5.733},
     {id:'3',name:'SE',lat:60.39,lng:5.324},
-    {id:'4',name:'Karmsundgata 12, Haugesund',lat:59.43,lng:5.35},
+    // Coordinates in the location text, as LibreNMS allows, are never shown.
+    {id:'4',name:'Karmsundgata 12, Haugesund [59.43,5.35]',lat:59.43,lng:5.35},
   ],
   devices:{'0':'1','1':'1','4':'1','5':'1','6':'1','7':'1','2':'2','3':'2','8':'2','9':'2','14':'3','10':'4'},
   map:{tiles:'https://tiles.test/{z}/{x}/{y}.png',attribution:'© OpenStreetMap contributors',maxZoom:18,center:{lat:0,lng:0,zoom:2}},

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { clampCenter, fitView, project, tileUrl, unproject, worldSize } from '../frontend/geo';
+import { clampCenter, fitView, project, tileUrl, unproject, withoutCoordinates, worldSize } from '../frontend/geo';
 
 const close=(actual:number,expected:number,tolerance=1e-6)=>assert.ok(Math.abs(actual-expected)<=tolerance,`${actual} ≉ ${expected}`);
 
@@ -40,6 +40,16 @@ test('tile URLs wrap horizontally, reject invalid rows and non-web schemes',()=>
   assert.equal(tileUrl('https://tiles.example/{z}/{x}/{y}.png',2,-1,0),'https://tiles.example/2/3/0.png');
   assert.equal(tileUrl('https://tiles.example/{z}/{x}/{y}.png',2,0,4),undefined);
   assert.equal(tileUrl('javascript:{z}{x}{y}',2,0,0),undefined);
+});
+
+test('addresses drop the bracketed coordinates LibreNMS reads from location text',()=>{
+  assert.equal(withoutCoordinates('Karmsundgata 12, Haugesund [59.4138,5.2680]'),'Karmsundgata 12, Haugesund');
+  assert.equal(withoutCoordinates('Rossa [ -59.41 , +5.27 ] substation'),'Rossa substation');
+  assert.equal(withoutCoordinates('Haugesund, [59.41,5.27]'),'Haugesund');
+  assert.equal(withoutCoordinates('[59.41,5.27]'),'');
+  // Other brackets and numbers are part of the address.
+  assert.equal(withoutCoordinates('Rack [B2], Floor 3'),'Rack [B2], Floor 3');
+  assert.equal(withoutCoordinates('Smedasundet 97 (bygg 2)'),'Smedasundet 97 (bygg 2)');
 });
 
 test('the centre stays on the map vertically and wraps horizontally',()=>{
