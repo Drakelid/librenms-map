@@ -28,22 +28,56 @@ export function classify(device: Device, config: Config): Pick<MapNode, 'role' |
   return { role: role.toUpperCase(), site };
 }
 
-// Unknown remote ports are not guessed or merged with known physical ports.
+const portKey = (device: string, port: string) => JSON.stringify([device, port]);
+
+/**
+ * One link per physical connection. LibreNMS records a connection from each
+ * end; reciprocal records with both ports resolved merge by port pair. When
+ * LibreNMS matched the neighbor device but not its port, the record is kept:
+ * it is dropped only when the other end's record already resolves that same
+ * port, and two such records facing each other become one connection.
+ */
 export function normalizeLinks(links: Link[], ids: Set<string>): Link[] {
   const result = new Map<string, Link>();
-  for (const link of links) {
-    if (!ids.has(link.source) || !ids.has(link.target)) continue;
-    const ends = [[link.source, link.sourcePortId], [link.target, link.targetPortId]];
-    const reversed = JSON.stringify(ends[0]) > JSON.stringify(ends[1]);
-    const key = link.sourcePortId && link.targetPortId
-      ? JSON.stringify(reversed ? ends.reverse() : ends) : `unresolved:${link.id}`;
+  const keep = (key: string, link: Link, canonical: boolean) => {
     const existing = result.get(key);
     // Prefer the canonical endpoint's observation, then the freshest sample.
-    const canonical = !reversed;
-    const existingCanonical = existing && JSON.stringify([existing.source, existing.sourcePortId]) <= JSON.stringify([existing.target, existing.targetPortId]);
+    const existingCanonical = existing && portKey(existing.source, existing.sourcePortId) <= portKey(existing.target, existing.targetPortId);
     if (!existing || (canonical && !existingCanonical) || (canonical === existingCanonical && (link.sampledAt ?? 0) > (existing.sampledAt ?? 0))) {
       result.set(key, { ...link, id: key });
     }
+  };
+  const pairKey = (link: Link) => {
+    const ends = [[link.source, link.sourcePortId], [link.target, link.targetPortId]];
+    const reversed = JSON.stringify(ends[0]) > JSON.stringify(ends[1]);
+    return { key: JSON.stringify(reversed ? ends.reverse() : ends), canonical: !reversed };
+  };
+  const unresolved: Link[] = [];
+  for (const link of links) {
+    if (!ids.has(link.source) || !ids.has(link.target)) continue;
+    if (!link.sourcePortId || !link.targetPortId) { unresolved.push(link); continue; }
+    const { key, canonical } = pairKey(link);
+    keep(key, link, canonical);
+  }
+  const resolvedPorts = new Set([...result.values()].flatMap(l => [portKey(l.source, l.sourcePortId), portKey(l.target, l.targetPortId)]));
+  const open = new Map<string, Link[]>();
+  for (const link of unresolved) {
+    // The far end's own record already describes this connection.
+    if (link.sourcePortId && resolvedPorts.has(portKey(link.source, link.sourcePortId))) continue;
+    const devices = JSON.stringify([link.source, link.target].sort());
+    open.set(devices, [...(open.get(devices) ?? []), link]);
+  }
+  for (const group of open.values()) {
+    const forward = group.filter(l => l.source < l.target), backward = group.filter(l => l.source > l.target);
+    // One unmatched record from each end: the same cable, seen from both sides.
+    if (forward.length === 1 && backward.length === 1 && forward[0].sourcePortId && backward[0].sourcePortId) {
+      const [a, b] = [forward[0], backward[0]];
+      const merged = { ...a, targetPortId: b.sourcePortId, targetPort: b.sourcePort };
+      const { key, canonical } = pairKey(merged);
+      keep(key, merged, canonical);
+      continue;
+    }
+    for (const link of group) result.set(`unresolved:${link.id}`, { ...link, id: `unresolved:${link.id}` });
   }
   return [...result.values()].sort((a, b) => a.id.localeCompare(b.id));
 }

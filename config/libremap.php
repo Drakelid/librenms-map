@@ -15,4 +15,11 @@ return [
     'world_tiles' => null,
     'world_attribution' => '© OpenStreetMap contributors',
     'world_max_zoom' => 18,
+    // World map weather warnings from MET Norway (MetAlerts). The LibreNMS
+    // server fetches and caches them; false removes the toggle.
+    'weather_warnings' => true,
+    'weather_lang' => 'en', // 'en' or 'no'
+    // Optional contact for MET Norway's terms of use (an email address or
+    // URL), added to the User-Agent of the server's requests.
+    'weather_contact' => null,
 ];

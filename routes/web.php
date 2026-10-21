@@ -5,6 +5,7 @@ use LibreMap\Http\CustomMapController;
 use LibreMap\Http\EnsurePluginEnabled;
 use LibreMap\Http\TopologyController;
 use LibreMap\Http\ViewController;
+use LibreMap\Http\WeatherController;
 
 // The topology query is expensive; the named limiter (LibreMapServiceProvider)
 // allows well above the 60-second client poll so a stuck tab cannot hammer the
@@ -19,6 +20,7 @@ Route::middleware(['web', 'auth', EnsurePluginEnabled::class, 'throttle:libremap
 
     Route::get('/libremap/world', [TopologyController::class, 'world'])->name('libremap.world');
     Route::get('/libremap/locations', [TopologyController::class, 'locations'])->name('libremap.locations');
+    Route::get('/libremap/weather', [WeatherController::class, 'index'])->name('libremap.weather');
     Route::get('/libremap/custom', [TopologyController::class, 'custom'])->name('libremap.custom');
     Route::get('/libremap/devices', [CustomMapController::class, 'devices'])->name('libremap.devices');
     Route::get('/libremap/devices/{id}/ports', [CustomMapController::class, 'ports'])->where('id', '[1-9][0-9]{0,9}');

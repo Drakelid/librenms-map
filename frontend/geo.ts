@@ -46,6 +46,24 @@ export function tileUrl(template:string, zoom:number, x:number, y:number):string
   } catch { return undefined; }
 }
 
+/** A GeoJSON ring of [lng, lat] points; the first ring of a polygon is its outline, the rest are holes. */
+export type Ring=[number,number][];
+
+function insideRing({lat,lng}:LatLng, ring:Ring):boolean {
+  let inside=false;
+  for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+    const [xi,yi]=ring[i], [xj,yj]=ring[j];
+    if((yi>lat)!==(yj>lat) && lng<(xj-xi)*(lat-yi)/(yj-yi)+xi) inside=!inside;
+  }
+  return inside;
+}
+
+/** Whether a point lies inside a polygon's outline and outside all of its holes. */
+export function insidePolygon(point:LatLng, polygon:Ring[]):boolean {
+  if(!polygon.length || !insideRing(point,polygon[0])) return false;
+  return !polygon.slice(1).some(hole=>insideRing(point,hole));
+}
+
 /** Keep the viewport centre on the map vertically; the map wraps horizontally. */
 export function clampCenter(center:Point, zoom:number, height:number):Point {
   const size=worldSize(zoom), half=height/2;

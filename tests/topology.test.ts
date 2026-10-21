@@ -16,6 +16,20 @@ test('reciprocal observations deduplicate but parallel physical links survive', 
   assert.equal(normalizeLinks([link('a','private')], new Set(['a'])).length, 0);
 });
 
+test('links whose far port LibreNMS did not match are kept once, never doubled', () => {
+  const ids = new Set(['a','b']);
+  const half = (source: string, target: string, sourcePortId: string, id: string): Link => ({ ...link(source, target, sourcePortId, ''), id, targetPort: 'Gi0/1' });
+  // The far end resolved this cable: the half-resolved record adds nothing.
+  assert.equal(normalizeLinks([link('a','b','1','2'), half('b','a','2','x')], ids).length, 1);
+  // A different local port is a different cable.
+  assert.equal(normalizeLinks([link('a','b','1','2'), half('a','b','3','x')], ids).length, 2);
+  // One half-resolved record from each end is one cable with both ports.
+  const merged = normalizeLinks([half('a','b','1','x'), half('b','a','2','y')], ids);
+  assert.equal(merged.length, 1);
+  assert.deepEqual([merged[0].sourcePortId, merged[0].targetPortId, merged[0].targetPort], ['1','2','eth1']);
+  // Two half-resolved records from the same end are two cables.
+  assert.equal(normalizeLinks([half('a','b','1','x'), half('a','b','3','y')], ids).length, 2);
+});
 test('lateral arcs remain separate and stable with reversed observations and input ordering', () => {
   const graph=topology({config,generatedAt:1000,devices:[
     {id:'1',hostname:'site1agg1',status:'up'}, {id:'2',hostname:'site1agg2',status:'up'},

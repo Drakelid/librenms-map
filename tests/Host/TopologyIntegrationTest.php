@@ -105,6 +105,36 @@ class TopologyIntegrationTest extends TestCase
         ]], $result['deviceGroups']);
     }
 
+    public function testLinksWhoseRemotePortIsUnresolvedAreKept(): void
+    {
+        $user = User::factory()->create();
+        [$local, $remote, $hidden] = [Device::factory()->create(), Device::factory()->create(), Device::factory()->create()];
+        $port = Port::factory()->create(['device_id' => $local->device_id, 'deleted' => 0, 'ifOperStatus' => 'up', 'ifAdminStatus' => 'up', 'disabled' => 0]);
+        $user->devicesOwned()->attach([$local->device_id, $remote->device_id]);
+        // LibreNMS matched the neighbor device but not its port.
+        $unmatched = function (Device $neighbor) use ($port): Link {
+            $link = new Link;
+            $link->forceFill([
+                'local_device_id' => $port->device_id, 'local_port_id' => $port->port_id,
+                'remote_device_id' => $neighbor->device_id, 'remote_port_id' => null,
+                'active' => 1, 'protocol' => 'lldp', 'remote_hostname' => 'neighbor',
+                'remote_port' => "aa:bb:cc:dd:ee:ff\n", 'remote_version' => '',
+            ])->save();
+
+            return $link;
+        };
+        $kept = $unmatched($remote);
+        $unmatched($hidden);
+
+        $links = app(LibreNmsTopology::class)->forUser($user)['links'];
+
+        // The neighbor's own name for its port is shown; the unauthorized neighbor stays out.
+        $this->assertSame([(string) $kept->id], array_column($links, 'id'));
+        $this->assertSame('', $links[0]['targetPortId']);
+        $this->assertSame('aa:bb:cc:dd:ee:ff', $links[0]['targetPort']);
+        $this->assertSame('up', $links[0]['status']);
+    }
+
     public function testDeletedEndpointPortsAreOmitted(): void
     {
         $devices = Device::factory()->count(2)->create();

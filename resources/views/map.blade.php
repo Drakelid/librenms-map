@@ -12,6 +12,7 @@
          data-maps-endpoint="{{ route('libremap.custom-maps') }}"
          data-devices-endpoint="{{ route('libremap.devices') }}"
          data-locations-endpoint="{{ route('libremap.locations') }}"
+         @if (config('libremap.weather_warnings', true)) data-weather-endpoint="{{ route('libremap.weather') }}" @endif
          data-topology-url="{{ route('libremap.index') }}"
          data-world-url="{{ route('libremap.world') }}"
          data-custom-url="{{ route('libremap.custom') }}"

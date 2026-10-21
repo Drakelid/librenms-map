@@ -5,6 +5,7 @@ import { mountPageNav } from './page-nav';
 import { deviceName, LOAD_COLORS, metric, topology } from './topology';
 import { limitFilter } from './view-limits';
 import type { Link, MapNode, Snapshot, Topology } from './types';
+import { LEVEL_NAMES, LEVEL_RANK, parseWarnings, WARNING_COLORS, warningPath, warningPeriod, warningsAt, worstLevel, type Warning } from './weather';
 import './style.css';
 import './views.css';
 import './world-map.css';
@@ -14,11 +15,13 @@ interface MapConfig { tiles:string|null; attribution:string; maxZoom:number; cen
 interface Locations { locations:WorldLocation[]; devices:Record<string,string>; map:MapConfig }
 interface Site extends WorldLocation { nodes:MapNode[]; status:'up'|'down'|'unknown' }
 interface SiteLink { key:string; a:Site; b:Site; links:Link[]; color:string; state:string; label:string }
-type Selection={type:'site'|'device'|'link';id:string};
+type Selection={type:'site'|'device'|'link'|'warning';id:string};
 
 const SVG='http://www.w3.org/2000/svg';
 // Marker names show once a map is zoomed in far enough to have room for them.
 const LABEL_ZOOM=7, FIT_PADDING=70, SINGLE_SITE_ZOOM=12, TILE_FAILURE_NOTICE=6;
+// MET Norway updates warnings every few minutes; the server caches for five.
+const WEATHER_REFRESH_MS=5*60_000;
 // Signed out, forbidden, session expired, or the plugin was disabled.
 const ACCESS_LOST=new Set([401,403,404,419]);
 class HttpError extends Error { constructor(message:string,public status:number){super(message);} }
@@ -34,13 +37,13 @@ export function mountWorldMap(root:HTMLElement) {
     <div class="lm-shell lm-world-page">
       <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>WORLD MAP</span></div></div><div class="lm-header-right"><nav class="lm-pages" aria-label="LibreMap pages" hidden></nav><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
       <section class="lm-heading"><div><div class="lm-eyebrow">INFRASTRUCTURE / GEOGRAPHY</div></div><div class="lm-summary" aria-label="Location summary"></div></section>
-      <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device or location…"></label><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><button data-world="problems" aria-pressed="false">Only problems</button><button data-world="links" aria-pressed="true" class="lm-active">Links</button><span class="lm-spacer"></span><button data-world="refresh">↻ Refresh</button><button data-world="fullscreen" title="Fullscreen">⛶</button></div>
+      <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device or location…"></label><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><button data-world="problems" aria-pressed="false">Only problems</button><button data-world="links" aria-pressed="true" class="lm-active">Links</button><button data-world="weather" aria-pressed="false" hidden title="Show MET Norway weather warnings">⚠ Weather warnings</button><button data-world="addresses" aria-pressed="false" title="Show the LibreNMS location text and coordinates">Addresses</button><span class="lm-spacer"></span><button data-world="refresh">↻ Refresh</button><button data-world="fullscreen" title="Fullscreen">⛶</button></div>
       <div class="lm-notice" role="status" aria-live="polite">Loading device locations…</div>
       <main class="lm-workspace"><div class="lm-canvas-wrap lm-world-wrap">
-        <div class="lm-world" tabindex="0" aria-label="World map of device locations. Drag to pan, scroll to zoom."><div class="lm-world-tiles"></div><svg class="lm-world-links"></svg><div class="lm-world-markers"></div></div>
+        <div class="lm-world" tabindex="0" aria-label="World map of device locations. Drag to pan, scroll to zoom."><div class="lm-world-tiles"></div><svg class="lm-world-weather"></svg><svg class="lm-world-links"></svg><div class="lm-world-markers"></div></div>
         <div class="lm-empty" hidden></div>
         <div class="lm-map-controls"><button data-world="zoom-in" aria-label="Zoom in">+</button><button data-world="zoom-out" aria-label="Zoom out">−</button><button data-world="fit">Fit</button></div>
-        <div class="lm-legend"><span><i class="lm-world-key" style="background:${statusColor('up')}"></i>Up</span><span><i class="lm-world-key" style="background:${statusColor('down')}"></i>Down</span><span><i class="lm-world-key" style="background:${statusColor('unknown')}"></i>Unknown</span><span><i style="color:${LOAD_COLORS.normal}"></i>&lt;50%</span><span><i style="color:${LOAD_COLORS.warning}"></i>50–70%</span><span><i style="color:${LOAD_COLORS.high}"></i>&gt;70%</span><span><i class="lm-dashed" style="color:#e05b65"></i>Link down</span></div>
+        <div class="lm-legend"><span><i class="lm-world-key" style="background:${statusColor('up')}"></i>Up</span><span><i class="lm-world-key" style="background:${statusColor('down')}"></i>Down</span><span><i class="lm-world-key" style="background:${statusColor('unknown')}"></i>Unknown</span><span><i style="color:${LOAD_COLORS.normal}"></i>&lt;50%</span><span><i style="color:${LOAD_COLORS.warning}"></i>50–70%</span><span><i style="color:${LOAD_COLORS.high}"></i>&gt;70%</span><span><i class="lm-dashed" style="color:#e05b65"></i>Link down</span>${(['yellow','orange','red'] as const).map(level=>`<span class="lm-world-weather-key" hidden><i class="lm-world-area" style="--area:${WARNING_COLORS[level]}"></i>${LEVEL_NAMES[level]} warning</span>`).join('')}</div>
         <div class="lm-world-attribution" hidden></div>
       </div><aside class="lm-details" aria-label="Selection details"></aside></main>
       <footer><span class="lm-updated">Waiting for data</span><span>Drag to pan · Scroll or double-click to zoom · Click a location to inspect · Keys: / find · F fit · + − zoom · arrows pan · D next problem · Esc clear</span></footer>
@@ -48,6 +51,7 @@ export function mountWorldMap(root:HTMLElement) {
   const $=<T extends Element>(selector:string)=>root.querySelector<T>(selector)!;
   const notice=$<HTMLElement>('.lm-notice'), panel=$<HTMLElement>('.lm-details'), empty=$<HTMLElement>('.lm-empty');
   const viewport=$<HTMLElement>('.lm-world'), tilesEl=$<HTMLElement>('.lm-world-tiles'), svg=$<SVGSVGElement>('.lm-world-links'), markersEl=$<HTMLElement>('.lm-world-markers');
+  const weatherSvg=$<SVGSVGElement>('.lm-world-weather');
   const search=$<HTMLInputElement>('[aria-label="Find device"]'), groupSelect=$<HTMLSelectElement>('[aria-label="Device group"]');
   const button=(action:string)=>$<HTMLButtonElement>(`[data-world="${action}"]`);
   if(root.dataset.homeUrl) $<HTMLAnchorElement>('.lm-back').href=root.dataset.homeUrl;
@@ -56,13 +60,37 @@ export function mountWorldMap(root:HTMLElement) {
 
   let snapshot:Snapshot|undefined, graph:Topology={nodes:[],links:[],deviceGroups:[]}, places:Locations|undefined;
   let sites:Site[]=[], siteLinks:SiteLink[]=[], unlocated:MapNode[]=[];
+  // Visible links that are not lines: both ends at one location, or an end without coordinates.
+  let withinSite=new Map<string,Link[]>(), undrawnUnlocated=0;
   let view={zoom:2,center:{x:worldSize(2)/2,y:worldSize(2)/2}};
   let selected:Selection|undefined, problemsOnly=false, showLinks=true, busy=false, fitted=false, downCursor=-1, tileFailures=0;
   let clockOffset=0;
   const serverNow=()=>Date.now()/1000+clockOffset;
   const message=(text:string,error=false)=>{notice.textContent=text;notice.classList.toggle('lm-error',error);};
   const nameOf=(node:MapNode)=>deviceName(node);
-  const siteName=(site:Site)=>site.name.trim() || 'Unnamed location';
+
+  // Per-viewer display preferences; storage is optional.
+  const prefsKey=`libremap:world:${root.dataset.storageKey ?? 'local'}`;
+  const prefs:Record<string,unknown>=(()=>{try{const value=JSON.parse(localStorage.getItem(prefsKey) ?? '{}');return object(value) ? value : {};}catch{return {};}})();
+  const savePrefs=()=>{try{localStorage.setItem(prefsKey,JSON.stringify({addresses:showAddresses,weather:weatherOn}));}catch{/* Storage is optional. */}};
+  // LibreNMS location text is often a street address: hidden unless asked for.
+  let showAddresses=prefs.addresses===true;
+  const weatherEndpoint=root.dataset.weatherEndpoint;
+  let weatherOn=!!weatherEndpoint && prefs.weather===true;
+  let warnings:Warning[]=[], weatherAttribution='', weatherFetchedAt=0, weatherBusy=false;
+  const siteWarnings=new Map<string,Warning[]>();
+
+  /**
+   * A location's name without its address: the LibreMap site its devices are
+   * classified into, or its device names when they have none.
+   */
+  function siteName(site:Site):string {
+    if(showAddresses && site.name.trim()) return site.name.trim();
+    const classified=[...new Set(site.nodes.map(n=>n.site).filter(s=>s && s!=='Unclassified'))].sort();
+    if(classified.length) return classified.length>1 ? `${classified[0]} +${classified.length-1}` : classified[0];
+    const first=site.nodes[0];
+    return !first ? 'Location' : site.nodes.length>1 ? `${nameOf(first)} +${site.nodes.length-1}` : nameOf(first);
+  }
 
   // ---- Data ---------------------------------------------------------------
   async function getJson(endpoint:string|undefined,what:string):Promise<unknown> {
@@ -105,7 +133,8 @@ export function mountWorldMap(root:HTMLElement) {
     const visible=graph.nodes.filter(n=>{
       if(members && !members.has(n.id)) return false;
       if(problemsOnly && n.status!=='down') return false;
-      return !query || [nameOf(n),n.hostname,n.sysName ?? '',locationOf(n.id)?.name ?? ''].some(text=>text.toLowerCase().includes(query));
+      // Hidden addresses are not searchable either, so results never hint at them.
+      return !query || [nameOf(n),n.hostname,n.sysName ?? '',n.site,showAddresses ? locationOf(n.id)?.name ?? '' : ''].some(text=>text.toLowerCase().includes(query));
     });
     const bySite=new Map<string,Site>(), siteOf=new Map<string,Site>();
     unlocated=[];
@@ -124,24 +153,37 @@ export function mountWorldMap(root:HTMLElement) {
     // Draw problem locations last, so they sit on top of healthy neighbours.
     sites.sort((a,b)=>Number(a.status==='down')-Number(b.status==='down') || a.id.localeCompare(b.id));
     const pairs=new Map<string,SiteLink>();
+    // Links that cannot be a line between two locations are counted, not silently dropped.
+    const visibleIds=new Set(visible.map(n=>n.id));
+    withinSite=new Map();undrawnUnlocated=0;
     for(const link of graph.links){
       const a=siteOf.get(link.source), b=siteOf.get(link.target);
-      if(!a || !b || a===b) continue;
+      if(a && a===b){withinSite.set(a.id,[...(withinSite.get(a.id) ?? []),link]);continue;}
+      if(!a || !b){if(visibleIds.has(link.source) && visibleIds.has(link.target))undrawnUnlocated++;continue;}
       const [first,second]=a.id<b.id ? [a,b] : [b,a], key=`${first.id}|${second.id}`;
       const pair=pairs.get(key) ?? {key,a:first,b:second,links:[],color:'',state:'',label:''};
       pair.links.push(link);pairs.set(key,pair);
     }
     siteLinks=[...pairs.values()];
     judgeLinks();
+    matchWarnings();
     if(selected?.type==='site' && !bySite.has(selected.id)) selected=undefined;
     if(selected?.type==='device' && !siteOf.has(selected.id)) selected=undefined;
     if(selected?.type==='link' && !pairs.has(selected.id)) selected=undefined;
+    if(selected?.type==='warning' && !warnings.some(w=>w.id===selected!.id)) selected=undefined;
     buildMarkers();buildLinks();renderSummary();renderDetails();
     empty.hidden=sites.length>0;
     empty.textContent=!snapshot ? 'Device locations unavailable. Use Refresh to retry.'
       : !(places?.locations.length) ? 'No devices have map coordinates yet. Give devices a LibreNMS location with coordinates to place them here.'
       : 'No located devices match these filters.';
     render();
+  }
+
+  /** Which active warnings cover each visible location. */
+  function matchWarnings(){
+    siteWarnings.clear();
+    if(!weatherOn) return;
+    for(const site of sites){const covering=warningsAt(site,warnings);if(covering.length)siteWarnings.set(site.id,covering);}
   }
 
   /** A connection between locations takes the colour of its worst state, else its busiest link. */
@@ -207,12 +249,18 @@ export function mountWorldMap(root:HTMLElement) {
     markersEl.replaceChildren(...sites.map(site=>{
       const count=site.nodes.length, down=site.nodes.filter(n=>n.status==='down').length;
       const marker=document.createElement('button');
+      const level=worstLevel(siteWarnings.get(site.id) ?? []);
       marker.type='button';marker.className=`lm-world-marker lm-world-${site.status}`;marker.dataset.site=site.id;
-      marker.setAttribute('aria-label',`${siteName(site)}: ${count} device${count===1 ? '' : 's'}${down ? `, ${down} down` : ''}`);
+      marker.setAttribute('aria-label',`${siteName(site)}: ${count} device${count===1 ? '' : 's'}${down ? `, ${down} down` : ''}${level ? `, ${level} weather warning` : ''}`);
       marker.style.setProperty('--marker',`${Math.round(Math.min(36,14+Math.sqrt(count)*4))}px`);
       const dot=document.createElement('span');dot.className='lm-world-dot';dot.textContent=count>1 ? String(count) : '';
       const label=document.createElement('span');label.className='lm-world-label';label.textContent=siteName(site);
-      marker.append(dot,label);markers.set(site.id,marker);
+      marker.append(dot,label);
+      if(level){
+        const badge=document.createElement('span');badge.className='lm-world-badge';badge.textContent='!';badge.style.setProperty('--area',WARNING_COLORS[level]);
+        marker.dataset.warning=level;marker.append(badge);
+      }
+      markers.set(site.id,marker);
       return marker;
     }));
   }
@@ -232,11 +280,41 @@ export function mountWorldMap(root:HTMLElement) {
       g.append(title,hit,line);svg.append(g);lines.set(pair.key,[hit,line]);
     }
   }
+  // Warning areas are drawn in world pixels and shifted as a whole on pan;
+  // their paths are recomputed only when the zoom changes.
+  let weatherLayer:SVGGElement|undefined, weatherZoom=-1;
+  const weatherPaths=new Map<string,SVGPathElement>();
+  function buildWeather(){
+    weatherSvg.replaceChildren();weatherPaths.clear();weatherLayer=undefined;weatherZoom=-1;
+    for(const key of root.querySelectorAll<HTMLElement>('.lm-world-weather-key'))key.hidden=!weatherOn;
+    if(!weatherOn) return;
+    weatherLayer=document.createElementNS(SVG,'g');
+    for(const warning of warnings){
+      const path=document.createElementNS(SVG,'path');
+      path.classList.add('lm-world-warning');path.dataset.warning=warning.id;
+      path.setAttribute('fill-rule','evenodd');path.style.setProperty('--area',WARNING_COLORS[warning.level]);
+      const title=document.createElementNS(SVG,'title');title.textContent=`${LEVEL_NAMES[warning.level]} warning: ${warning.title}${warning.area ? ` · ${warning.area}` : ''}`;
+      path.append(title);weatherLayer.append(path);weatherPaths.set(warning.id,path);
+    }
+    weatherSvg.append(weatherLayer);
+  }
+  function renderWeather(){
+    if(!weatherLayer) return;
+    if(weatherZoom!==view.zoom){
+      for(const warning of warnings)weatherPaths.get(warning.id)?.setAttribute('d',warningPath(warning,view.zoom));
+      weatherZoom=view.zoom;
+    }
+    const {w,h}=size();
+    weatherLayer.setAttribute('transform',`translate(${w/2-view.center.x} ${h/2-view.center.y})`);
+    for(const [id,path] of weatherPaths)path.classList.toggle('lm-selected',selected?.type==='warning' && selected.id===id);
+  }
+
   let frame=0;
   function render(){
     cancelAnimationFrame(frame);frame=0;
     const {w,h}=size();
     renderTiles();
+    renderWeather();
     for(const site of sites){
       const marker=markers.get(site.id);
       if(!marker) continue;
@@ -291,7 +369,9 @@ export function mountWorldMap(root:HTMLElement) {
     const max=places?.map.maxZoom ?? 18, off=!snapshot;
     button('zoom-in').disabled=view.zoom>=max;button('zoom-out').disabled=view.zoom<=1;button('fit').disabled=off;
     search.disabled=off;groupSelect.disabled=off;button('problems').disabled=off;button('links').disabled=off;
-    for(const [action,on] of [['problems',problemsOnly],['links',showLinks]] as const){button(action).classList.toggle('lm-active',on);button(action).setAttribute('aria-pressed',String(on));}
+    button('addresses').disabled=off;
+    button('weather').hidden=!weatherEndpoint;button('weather').disabled=weatherBusy;
+    for(const [action,on] of [['problems',problemsOnly],['links',showLinks],['addresses',showAddresses],['weather',weatherOn]] as const){button(action).classList.toggle('lm-active',on);button(action).setAttribute('aria-pressed',String(on));}
   }
 
   // ---- Summary and details -----------------------------------------------
@@ -307,6 +387,10 @@ export function mountWorldMap(root:HTMLElement) {
       if(jump){item.className='lm-summary-down';item.dataset.world='next-down';item.title='Show the next location with a down device (D)';item.setAttribute('aria-label',`${down} problem sites. Show the next one`);}
       summary.append(item);
     }
+    if(weatherOn){
+      const item=el('div',undefined,'lm-summary-weather');item.append(el('strong',String(siteWarnings.size)),el('span','Under warning'));
+      summary.append(item);
+    }
   }
   function select(next:Selection|undefined){selected=next;renderDetails();schedule();}
   function closeButton(){const b=el('button','×','lm-close');b.setAttribute('aria-label','Close details');b.onclick=()=>select(undefined);return b;}
@@ -315,11 +399,27 @@ export function mountWorldMap(root:HTMLElement) {
     const site=selected?.type==='site' ? sites.find(s=>s.id===selected!.id) : undefined;
     const node=selected?.type==='device' ? sites.flatMap(s=>s.nodes).find(n=>n.id===selected!.id) : undefined;
     const pair=selected?.type==='link' ? siteLinks.find(p=>p.key===selected!.id) : undefined;
+    const warning=selected?.type==='warning' ? warnings.find(w=>w.id===selected!.id) : undefined;
     if(site) return siteDetails(site);
     if(node) return deviceDetails(node);
     if(pair) return linkDetails(pair);
+    if(warning) return warningDetails(warning);
     panel.append(el('div','WORLD MAP','lm-eyebrow'),el('h2','Where the network is'),
       el('p','Each marker is a LibreNMS location, sized by its number of devices and coloured by the worst device status there. Lines are discovered links between locations, coloured by their busiest link.'));
+    const internal=[...withinSite.values()].reduce((total,list)=>total+list.length,0);
+    if(internal || undrawnUnlocated){
+      const parts=[
+        internal ? `${internal} join devices at the same location (listed under that location)` : '',
+        undrawnUnlocated ? `${undrawnUnlocated} reach a device without coordinates` : '',
+      ].filter(Boolean);
+      panel.append(el('p',`${internal+undrawnUnlocated} link${internal+undrawnUnlocated===1 ? ' is' : 's are'} not drawn as lines: ${parts.join('; ')}.`,'lm-hint lm-world-undrawn'));
+    }
+    if(!showAddresses) panel.append(el('p','Locations are named by their LibreMap site or devices. Select Addresses to show the LibreNMS location text and coordinates.','lm-hint'));
+    if(weatherOn){
+      panel.append(el('div',`WEATHER WARNINGS · ${warnings.length}`,'lm-eyebrow lm-world-section'));
+      if(warnings.length) panel.append(warningList(warnings));
+      else panel.append(el('p',weatherFetchedAt ? 'MET Norway has no active warnings.' : 'Loading weather warnings…'));
+    }
     if(unlocated.length){
       const more=el('details','','lm-world-unlocated');
       more.append(el('summary',`${unlocated.length} device${unlocated.length===1 ? ' has' : 's have'} no coordinates`));
@@ -339,9 +439,16 @@ export function mountWorldMap(root:HTMLElement) {
   function siteDetails(site:Site){
     const down=site.nodes.filter(n=>n.status==='down').length;
     panel.append(closeButton(),el('div','LOCATION','lm-eyebrow'),el('h2',siteName(site)),list([
-      ['Devices',String(site.nodes.length)],['Down',String(down)],['Coordinates',`${site.lat.toFixed(5)}, ${site.lng.toFixed(5)}`],
+      ['Devices',String(site.nodes.length)],['Down',String(down)],
+      ...(showAddresses ? [['Coordinates',`${site.lat.toFixed(5)}, ${site.lng.toFixed(5)}`] as [string,string]] : []),
     ]));
+    const covering=siteWarnings.get(site.id) ?? [];
+    if(covering.length) panel.append(el('div','WEATHER WARNINGS HERE','lm-eyebrow lm-world-section'),warningList(covering));
     const devices=el('div',undefined,'lm-device-list');devices.append(...site.nodes.map(deviceButton));panel.append(devices);
+    const internal=withinSite.get(site.id) ?? [];
+    if(internal.length){
+      panel.append(el('div',`LINKS WITHIN THIS LOCATION · ${internal.length}`,'lm-eyebrow lm-world-section'),linkRows(internal));
+    }
     const connected=siteLinks.filter(p=>p.a===site || p.b===site);
     if(connected.length){
       panel.append(el('div','CONNECTED LOCATIONS','lm-eyebrow'));
@@ -354,6 +461,35 @@ export function mountWorldMap(root:HTMLElement) {
       panel.append(others);
     }
   }
+  function warningList(list:Warning[]){
+    const box=el('div',undefined,'lm-device-list lm-world-warnings');
+    // Most severe first; the drawing order is the reverse.
+    for(const warning of [...list].sort((a,b)=>LEVEL_RANK[b.level]-LEVEL_RANK[a.level])){
+      const b=el('button',undefined,'lm-world-device');
+      const dot=el('i');dot.style.background=WARNING_COLORS[warning.level];
+      b.append(dot,el('span',`${warning.title}${warning.area ? ` · ${warning.area}` : ''}`));
+      b.title=`${LEVEL_NAMES[warning.level]} warning`;b.onclick=()=>select({type:'warning',id:warning.id});
+      box.append(b);
+    }
+    return box;
+  }
+  function warningDetails(warning:Warning){
+    const affected=sites.filter(site=>siteWarnings.get(site.id)?.includes(warning));
+    panel.append(closeButton(),el('div',`${LEVEL_NAMES[warning.level].toUpperCase()} WARNING · MET NORWAY`,'lm-eyebrow'),el('h2',warning.title),list([
+      ...(warning.area ? [['Area',warning.area] as [string,string]] : []),['When',warningPeriod(warning)],['Locations affected',String(affected.length)],
+    ]));
+    for(const [label,body] of [['',warning.description],['Consequences',warning.consequences],['Advice',warning.instruction]] as const){
+      if(!body) continue;
+      if(label) panel.append(el('div',label.toUpperCase(),'lm-eyebrow lm-world-section'));
+      panel.append(el('p',body));
+    }
+    if(affected.length){
+      const locations=el('div',undefined,'lm-device-list');
+      for(const site of affected){const b=el('button',siteName(site));b.onclick=()=>{select({type:'site',id:site.id});centreOn(site);};locations.append(b);}
+      panel.append(el('div','AFFECTED LOCATIONS','lm-eyebrow lm-world-section'),locations);
+    }
+    if(warning.web){const a=el('a','Details at MET Norway ↗','lm-device-link');a.href=warning.web;a.target='_blank';a.rel='noopener noreferrer';panel.append(a);}
+  }
   function deviceDetails(n:MapNode){
     const site=sites.find(s=>s.nodes.includes(n))!;
     const back=el('button',`← ${siteName(site)}`,'lm-world-back');back.onclick=()=>select({type:'site',id:site.id});
@@ -362,18 +498,22 @@ export function mountWorldMap(root:HTMLElement) {
     ]));
     if(n.url){const url=new URL(n.url,location.href);if(url.origin===location.origin){const a=el('a','Open in LibreNMS ↗','lm-device-link');a.href=url.href;panel.append(a);}}
   }
-  function linkDetails(pair:SiteLink){
+  /** Each link's load and both interfaces; a far port LibreNMS did not match is marked. */
+  function linkRows(links:Link[]){
     const names=new Map(graph.nodes.map(n=>[n.id,nameOf(n)]));
-    panel.append(closeButton(),el('div','CONNECTIONS','lm-eyebrow'),el('h2',`${siteName(pair.a)} ↔ ${siteName(pair.b)}`),list([['Links',String(pair.links.length)],['Status',pair.label]]));
     const rows=el('ul',undefined,'lm-world-links-list');
     const now=serverNow(), staleAfter=snapshot?.config.staleAfter ?? 900;
-    for(const link of pair.links){
+    for(const link of links){
       const m=metric(link,now,staleAfter);
       const item=el('li');const state=el('strong',m.label);state.style.color=m.color;
-      item.append(state,el('span',`${names.get(link.source) ?? link.source} ${link.sourcePort} ↔ ${names.get(link.target) ?? link.target} ${link.targetPort}`));
+      const far=link.targetPortId ? link.targetPort : `${link.targetPort} (reported by neighbor)`;
+      item.append(state,el('span',`${names.get(link.source) ?? link.source} ${link.sourcePort} ↔ ${names.get(link.target) ?? link.target} ${far}`));
       rows.append(item);
     }
-    panel.append(rows);
+    return rows;
+  }
+  function linkDetails(pair:SiteLink){
+    panel.append(closeButton(),el('div','CONNECTIONS','lm-eyebrow'),el('h2',`${siteName(pair.a)} ↔ ${siteName(pair.b)}`),list([['Links',String(pair.links.length)],['Status',pair.label]]),linkRows(pair.links));
     for(const site of [pair.a,pair.b]){const b=el('button',`Show ${siteName(site)}`,'lm-world-back');b.onclick=()=>{select({type:'site',id:site.id});centreOn(site);};panel.append(b);}
   }
   function nextDown(){
@@ -397,8 +537,7 @@ export function mountWorldMap(root:HTMLElement) {
       const group=groupSelect.value;
       groupSelect.replaceChildren(new Option('All device groups',''),...graph.deviceGroups.map(g=>new Option(g.name,g.id)));
       groupSelect.value=graph.deviceGroups.some(g=>g.id===group) ? group : '';
-      const attribution=$<HTMLElement>('.lm-world-attribution');
-      attribution.textContent=places.map.tiles ? places.map.attribution : '';attribution.hidden=!attribution.textContent;
+      updateAttribution();
       rebuild();syncControls();
       if(!fitted){fit();fitted=true;}
       $<HTMLElement>('.lm-updated').textContent=`Snapshot fetched · ${new Date(snapshot.generatedAt*1000).toLocaleTimeString()}`;
@@ -411,12 +550,39 @@ export function mountWorldMap(root:HTMLElement) {
       rebuild();syncControls();message(text,true);
     }finally{busy=false;button('refresh').disabled=false;}
   }
+  function updateAttribution(){
+    const attribution=$<HTMLElement>('.lm-world-attribution');
+    attribution.textContent=[places?.map.tiles ? places.map.attribution : '',weatherOn ? weatherAttribution || 'Weather warnings © MET Norway' : ''].filter(Boolean).join(' · ');
+    attribution.hidden=!attribution.textContent;
+  }
+  async function refreshWeather(){
+    if(!weatherOn || weatherBusy || !weatherEndpoint) return;
+    weatherBusy=true;syncControls();
+    try{
+      const feed=parseWarnings(await getJson(weatherEndpoint,'weather warning'));
+      if(!weatherOn) return;
+      warnings=feed.warnings;weatherAttribution=feed.attribution;weatherFetchedAt=feed.fetchedAt || Date.now()/1000;
+      buildWeather();rebuild();updateAttribution();
+      const at=new Date(weatherFetchedAt*1000).toLocaleTimeString();
+      message(feed.stale ? `MET Norway is unreachable · Showing the weather warnings from ${at}.` : `${warnings.length} active weather warning${warnings.length===1 ? '' : 's'} · ${siteWarnings.size} location${siteWarnings.size===1 ? '' : 's'} affected · MET Norway, ${at}`,feed.stale);
+    }catch(error){
+      message(`${error instanceof Error ? error.message : 'Weather warnings are unavailable.'}${warnings.length ? ' · Showing the last warnings received.' : ''}`,true);
+    }finally{weatherBusy=false;syncControls();}
+  }
+  function setWeather(on:boolean){
+    weatherOn=on && !!weatherEndpoint;savePrefs();
+    if(!weatherOn){warnings=[];weatherFetchedAt=0;if(selected?.type==='warning')selected=undefined;}
+    buildWeather();rebuild();updateAttribution();syncControls();
+    if(weatherOn)void refreshWeather();
+  }
 
   // ---- Interaction --------------------------------------------------------
-  let drag:{id:number;start:Point;center:Point;moved:boolean}|undefined;
+  let drag:{id:number;start:Point;center:Point;moved:boolean;warning?:string}|undefined;
   viewport.addEventListener('pointerdown',event=>{
     if(event.button!==0 || (event.target as Element).closest('.lm-world-marker, .lm-world-link')) return;
-    drag={id:event.pointerId,start:{x:event.clientX,y:event.clientY},center:{...view.center},moved:false};
+    // Warning areas cover the map; pressing one still pans, and only a click selects it.
+    const warning=(event.target as Element).closest<SVGPathElement>('.lm-world-warning')?.dataset.warning;
+    drag={id:event.pointerId,start:{x:event.clientX,y:event.clientY},center:{...view.center},moved:false,warning};
     viewport.setPointerCapture(event.pointerId);viewport.classList.add('lm-dragging');
   });
   viewport.addEventListener('pointermove',event=>{
@@ -428,8 +594,11 @@ export function mountWorldMap(root:HTMLElement) {
   });
   const endDrag=(event:PointerEvent)=>{
     if(!drag || event.pointerId!==drag.id) return;
-    // A click on empty map clears the selection; a drag never does.
-    if(!drag.moved && event.type==='pointerup' && selected) select(undefined);
+    // A click on a warning area selects it, on empty map clears the selection; a drag does neither.
+    if(!drag.moved && event.type==='pointerup'){
+      if(drag.warning) select({type:'warning',id:drag.warning});
+      else if(selected) select(undefined);
+    }
     drag=undefined;viewport.classList.remove('lm-dragging');
   };
   viewport.addEventListener('pointerup',endDrag);viewport.addEventListener('pointercancel',endDrag);
@@ -464,6 +633,8 @@ export function mountWorldMap(root:HTMLElement) {
     switch(action){
       case 'problems':problemsOnly=!problemsOnly;syncControls();rebuild();if(problemsOnly && sites.length)fit();break;
       case 'links':showLinks=!showLinks;syncControls();buildLinks();render();break;
+      case 'weather':setWeather(!weatherOn);break;
+      case 'addresses':showAddresses=!showAddresses;savePrefs();syncControls();rebuild();break;
       case 'refresh':void refresh();break;
       case 'fit':fit();break;
       case 'zoom-in':zoomBy(1);break;
@@ -488,14 +659,18 @@ export function mountWorldMap(root:HTMLElement) {
   // Re-judge link staleness between fetches on the server's clock.
   setInterval(()=>{if(snapshot && siteLinks.length)recolorLinks();},10000);
   setInterval(()=>{if(!document.hidden)void refresh();},60000);
+  setInterval(()=>{if(weatherOn && !document.hidden)void refreshWeather();},WEATHER_REFRESH_MS);
 
   // Read-only diagnostic hook for browser checks with fixtures that opt in.
   if(root.dataset.debug==='true') Object.defineProperty(window,'libremapWorldDebug',{value:()=>({
     zoom:view.zoom,center:{...view.center},
-    markers:sites.map(site=>({id:site.id,name:site.name,count:site.nodes.length,status:site.status,position:screen(project(site,view.zoom))})),
+    markers:sites.map(site=>({id:site.id,name:site.name,label:siteName(site),count:site.nodes.length,status:site.status,warning:worstLevel(siteWarnings.get(site.id) ?? []) ?? null,position:screen(project(site,view.zoom))})),
     links:siteLinks.map(pair=>({key:pair.key,count:pair.links.length,state:pair.state,label:pair.label,color:pair.color})),
+    undrawn:{withinSite:Object.fromEntries([...withinSite].map(([id,list])=>[id,list.length])),unlocated:undrawnUnlocated},
+    warnings:weatherOn ? warnings.map(w=>({id:w.id,level:w.level,drawn:!!weatherPaths.get(w.id)?.getAttribute('d')})) : [],
     tiles:[...tiles.values()].map(image=>image.src),
   }),configurable:true});
 
-  syncControls();renderDetails();void refresh();
+  syncControls();renderDetails();buildWeather();void refresh();
+  if(weatherOn)void refreshWeather();
 }

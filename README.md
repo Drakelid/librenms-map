@@ -50,7 +50,7 @@ Open <http://127.0.0.1:5173>. The demo is explicitly labeled and uses illustrati
 - Pin/unpin device positions. Pinned devices cannot be dragged and remain fixed during Re-layout; automatic nodes are placed clear of them. Use Unpin all to release them.
 - Browser workspace persistence and private named views stored in LibreNMS. Views capture device-group/root/site/search filters, backbone and other-device visibility, highlight hops, positions, pins, zoom and pan. The explicit demo stores named views in this browser only.
 - Create, update, copy and delete named views. Revision checks prevent stale tabs from overwriting newer saves. Reload views restores the newest saved state before another update.
-- A Composer package integrated with LibreNMS sessions, a **Maps → Topology Map** navigation entry, the plugin menu and permission scopes. Both devices and both ports must be authorized before a link is serialized. Plugin routes are rate limited to 120 requests per minute per user, on a counter separate from other LibreNMS routes.
+- A Composer package integrated with LibreNMS sessions, a **Maps → Topology Map** navigation entry, the plugin menu and permission scopes. Both devices and the measuring port must be authorized before a link is serialized, and so must the far port when LibreNMS has matched it. Plugin routes are rate limited to 120 requests per minute per user, on a counter separate from other LibreNMS routes.
 
 ## Build assets
 
@@ -152,7 +152,7 @@ return [
 ];
 ```
 
-The default role rule requires a site ending in a digit before `agg` or `er`, preventing `server01` from being classified as ER. When the hostname does not match, as for devices added by IP address, the device's sysName is tried next. Map labels use the device's LibreNMS display name; when that resolves to an IP address and a sysName is known, the sysName is shown instead. Search also matches the hostname and sysName. Use overrides for other conventions. Config entries of the wrong type are ignored rather than failing the map. Names classify placement only; links come from active, resolved LibreNMS neighbor records. Unresolved or unauthorized remote endpoints are omitted in this initial slice. LAG grouping, discovery-history retention and manual links are planned.
+The default role rule requires a site ending in a digit before `agg` or `er`, preventing `server01` from being classified as ER. When the hostname does not match, as for devices added by IP address, the device's sysName is tried next. Map labels use the device's LibreNMS display name; when that resolves to an IP address and a sysName is known, the sysName is shown instead. Search also matches the hostname and sysName. Use overrides for other conventions. Config entries of the wrong type are ignored rather than failing the map. Names classify placement only; links come from active LibreNMS neighbor records whose remote device LibreNMS has identified. When it identified the neighbor device but not its port, as often happens with LLDP neighbors that report a description or MAC address as their port, the link is still shown with the port name the neighbor reported, marked as unmatched; a record from the other end that resolves the same cable takes its place. Neighbors LibreNMS has not matched to a device, and unauthorized endpoints, are omitted. LAG grouping, discovery-history retention and manual links are planned.
 
 Exceeding `max_devices` or `max_links` returns an error rather than a partial graph.
 The role-visibility toggle is a display filter and does not weaken these server-side safety limits. A host with 2,048 authorized devices must set `max_devices` above that count (for example, `3000`) in `/opt/librenms/config/libremap.php`, then run `php artisan optimize:clear` as the LibreNMS application user.
@@ -196,9 +196,11 @@ php artisan route:clear
 
 ## World map
 
-**Maps → World Map** (`/libremap/world`) places devices at the coordinates of their LibreNMS location. Each marker is one location, sized by its number of devices and coloured by the worst device status there; locations with a down device pulse. Lines are the discovered links between locations, coloured like the topology map by their busiest link, and dashed red when a link is down. Click a location for its devices and connected locations, a device for its details and LibreNMS link, or a line for each link's interfaces and load.
+**Maps → World Map** (`/libremap/world`) places devices at the coordinates of their LibreNMS location. Each marker is one location, sized by its number of devices and coloured by the worst device status there; locations with a down device pulse. Lines are the discovered links between locations, coloured like the topology map by their busiest link, and dashed red when a link is down. Click a location for its devices and connected locations, a device for its details and LibreNMS link, or a line for each link's interfaces and load. A link between two devices at the same location, or to a device without coordinates, cannot be a line: the details panel counts these, and each location lists its internal links.
 
-- Search matches device names, hostnames, sysNames and location names. **Device group** and **Only problems** narrow the map; **Links** hides the lines.
+- **Addresses are hidden by default.** LibreNMS location text is often a street address, so markers, tooltips, links and details name a location by the LibreMap site of its devices (for example `rossa1`), or by its device names when they have none, and leave out the coordinates. **Addresses** shows the location text and coordinates; while they are hidden, search does not match them either. The choice is remembered in the browser.
+- Search matches device names, hostnames, sysNames and sites. **Device group** and **Only problems** narrow the map; **Links** hides the lines.
+- **⚠ Weather warnings** draws MET Norway's active warnings (wind, rain, snow, ice, storm surge, forest fire and more) as yellow, orange and red areas. Locations inside a warning get a badge and an **Under warning** count; click an area or a flagged location for MET's description, consequences, advice and the affected locations. The toggle is off until selected and remembered in the browser.
 - Drag to pan, scroll or double-click to zoom (Shift+double-click zooms out). Keys outside text fields: `/` find, `F` fit, `+`/`−` zoom, arrows pan, `D` next location with a down device, `Esc` clear.
 - The map refreshes every 60 seconds and re-judges link staleness every 10 seconds, as the topology map does.
 
@@ -210,6 +212,14 @@ Map tiles follow LibreNMS's own world map (`leaflet.tile_url`, OpenStreetMap by 
 'world_tiles' => 'https://tiles.example.net/{z}/{x}/{y}.png', // {s} becomes a, b or c
 'world_attribution' => '© OpenStreetMap contributors',
 'world_max_zoom' => 18,
+```
+
+Weather warnings come from [MET Norway's MetAlerts API](https://api.met.no/weatherapi/metalerts/2.0/documentation) and cover Norway and its waters. The **LibreNMS server** fetches them, never the browser, so the server needs outbound HTTPS to `api.met.no`. Responses are cached for five minutes, as MET asks, and if MET is unreachable the last copy (up to six hours old) is shown with a notice. Requests identify LibreMap in their `User-Agent`; MET's terms ask for a way to contact the operator, which `weather_contact` adds. Warning texts follow `weather_lang`, and `weather_warnings => false` removes the toggle and the endpoint:
+
+```php
+'weather_warnings' => true,
+'weather_lang' => 'en',                  // or 'no'
+'weather_contact' => 'noc@example.net',  // email address or URL
 ```
 
 ## Custom maps

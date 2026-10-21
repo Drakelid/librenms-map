@@ -21,19 +21,27 @@ class LibreNmsTopology
         $deviceIds = $devices->pluck('device_id')->all();
         $maxLinks = max(1, (int) config('libremap.max_links', 10000));
 
-        // Require both known endpoints AND both authorized ports. Do not expose
-        // unresolved neighbor hostnames or infer links from device names.
+        // Both devices must be known and authorized, and the measuring (local)
+        // port authorized and current. Do not expose unresolved neighbor
+        // hostnames or infer links from device names.
+        //
+        // LibreNMS often resolves the neighbor device but not its port (an LLDP
+        // neighbor reporting a description or MAC as its port ID). Requiring a
+        // resolved remote port would silently drop those links, so they are
+        // kept with the port name the neighbor reported. A remote port that is
+        // resolved must still be authorized and current.
         $links = Link::hasAccess($user)
             ->where('active', 1)
             ->whereIntegerInRaw('local_device_id', $deviceIds)
             ->whereIntegerInRaw('remote_device_id', $deviceIds)
             ->whereHas('port', fn ($query) => $query->hasAccess($user)->where('deleted', 0))
-            ->whereHas('remotePort', fn ($query) => $query->hasAccess($user)->where('deleted', 0))
-            ->select(['id', 'local_device_id', 'remote_device_id', 'local_port_id', 'remote_port_id'])
+            ->where(fn ($query) => $query->whereNull('remote_port_id')->orWhere('remote_port_id', 0)
+                ->orWhereHas('remotePort', fn ($query) => $query->hasAccess($user)->where('deleted', 0)))
+            ->select(['id', 'local_device_id', 'remote_device_id', 'local_port_id', 'remote_port_id', 'remote_port'])
             ->orderBy('id')->limit($maxLinks + 1)->get();
         abort_if($links->count() > $maxLinks, 422, 'LibreMap link limit exceeded. Increase libremap.max_links before loading this network.');
 
-        $portIds = $links->pluck('local_port_id')->merge($links->pluck('remote_port_id'))->unique()->all();
+        $portIds = $links->pluck('local_port_id')->merge($links->pluck('remote_port_id'))->filter()->unique()->all();
         $ports = Port::hasAccess($user)->where('deleted', 0)
             ->whereIntegerInRaw('port_id', $portIds)
             ->get(self::PORT_COLUMNS)
@@ -42,10 +50,10 @@ class LibreNmsTopology
         $resultLinks = [];
         foreach ($links as $link) {
             $source = $ports->get($link->local_port_id);
-            $target = $ports->get($link->remote_port_id);
-            if (! $source || ! $target
-                || (int) $source->device_id !== (int) $link->local_device_id
-                || (int) $target->device_id !== (int) $link->remote_device_id) {
+            $resolved = (int) $link->remote_port_id > 0;
+            $target = $resolved ? $ports->get($link->remote_port_id) : null;
+            if (! $source || (int) $source->device_id !== (int) $link->local_device_id
+                || ($resolved && (! $target || (int) $target->device_id !== (int) $link->remote_device_id))) {
                 continue;
             }
 
@@ -54,14 +62,15 @@ class LibreNmsTopology
                 'source' => (string) $link->local_device_id,
                 'target' => (string) $link->remote_device_id,
                 'sourcePort' => $this->portName($source),
-                'targetPort' => $this->portName($target),
+                'targetPort' => $target ? $this->portName($target) : $this->reportedPort($link->remote_port),
                 'sourcePortId' => (string) $source->port_id,
-                'targetPortId' => (string) $target->port_id,
+                // Empty when LibreNMS has not matched the neighbor's port.
+                'targetPortId' => $target ? (string) $target->port_id : '',
                 'speedBps' => $this->number($source->ifSpeed, positive: true),
                 'inBps' => $this->rate($source->ifInOctets_rate),
                 'outBps' => $this->rate($source->ifOutOctets_rate),
                 'sampledAt' => $this->number($source->poll_time, positive: true),
-                'status' => $this->linkStatus($source, $target),
+                'status' => $this->linkStatus($source, $target ?? $source),
             ];
         }
 
@@ -122,6 +131,14 @@ class LibreNmsTopology
     private function portName(Port $port): string
     {
         return (string) ($port->ifName ?: $port->ifDescr ?: $port->port_id);
+    }
+
+    /** The port name a neighbor reported for itself, when LibreNMS could not match it. */
+    private function reportedPort(mixed $name): string
+    {
+        $name = is_string($name) ? trim(preg_replace('/[\x00-\x1F\x7F]+/', ' ', $name)) : '';
+
+        return $name !== '' ? mb_substr($name, 0, 128) : 'unknown port';
     }
 
     /** Return only groups the user may view, with only already-visible members. */
