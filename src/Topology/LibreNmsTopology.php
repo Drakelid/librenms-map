@@ -7,19 +7,19 @@ use App\Models\DeviceGroup;
 use App\Models\Link;
 use App\Models\Port;
 use App\Models\User;
+use Illuminate\Support\Collection;
 
 class LibreNmsTopology
 {
+    // display, ip and overwrite_ip feed the host's Device::displayName().
+    public const DEVICE_COLUMNS = ['device_id', 'hostname', 'sysName', 'display', 'ip', 'overwrite_ip', 'status', 'disabled'];
+    public const PORT_COLUMNS = ['port_id', 'device_id', 'ifName', 'ifDescr', 'ifSpeed', 'ifOperStatus', 'ifAdminStatus', 'disabled', 'ifInOctets_rate', 'ifOutOctets_rate', 'poll_time'];
+
     public function forUser(User $user): array
     {
-        $maxDevices = max(1, (int) config('libremap.max_devices', 2000));
-        $maxLinks = max(1, (int) config('libremap.max_links', 10000));
-        $devices = Device::hasAccess($user)
-            // display, ip and overwrite_ip feed the host's Device::displayName().
-            ->select(['device_id', 'hostname', 'sysName', 'display', 'ip', 'overwrite_ip', 'status', 'disabled'])
-            ->orderBy('device_id')->limit($maxDevices + 1)->get();
-        abort_if($devices->count() > $maxDevices, 422, 'LibreMap device limit exceeded. Increase libremap.max_devices before loading this network.');
+        $devices = $this->devices($user);
         $deviceIds = $devices->pluck('device_id')->all();
+        $maxLinks = max(1, (int) config('libremap.max_links', 10000));
 
         // Require both known endpoints AND both authorized ports. Do not expose
         // unresolved neighbor hostnames or infer links from device names.
@@ -36,7 +36,7 @@ class LibreNmsTopology
         $portIds = $links->pluck('local_port_id')->merge($links->pluck('remote_port_id'))->unique()->all();
         $ports = Port::hasAccess($user)->where('deleted', 0)
             ->whereIntegerInRaw('port_id', $portIds)
-            ->get(['port_id', 'device_id', 'ifName', 'ifDescr', 'ifSpeed', 'ifOperStatus', 'ifAdminStatus', 'disabled', 'ifInOctets_rate', 'ifOutOctets_rate', 'poll_time'])
+            ->get(self::PORT_COLUMNS)
             ->keyBy('port_id');
 
         $resultLinks = [];
@@ -53,8 +53,8 @@ class LibreNmsTopology
                 'id' => (string) $link->id,
                 'source' => (string) $link->local_device_id,
                 'target' => (string) $link->remote_device_id,
-                'sourcePort' => (string) ($source->ifName ?: $source->ifDescr ?: $source->port_id),
-                'targetPort' => (string) ($target->ifName ?: $target->ifDescr ?: $target->port_id),
+                'sourcePort' => $this->portName($source),
+                'targetPort' => $this->portName($target),
                 'sourcePortId' => (string) $source->port_id,
                 'targetPortId' => (string) $target->port_id,
                 'speedBps' => $this->number($source->ifSpeed, positive: true),
@@ -66,15 +66,7 @@ class LibreNmsTopology
         }
 
         return [
-            'devices' => $devices->map(fn (Device $device) => [
-                'id' => (string) $device->device_id,
-                'hostname' => (string) $device->hostname,
-                // Classification falls back to sysName for devices added by IP address.
-                'sysName' => is_string($device->sysName) && $device->sysName !== '' ? $device->sysName : null,
-                'displayName' => $this->displayName($device),
-                'status' => $device->disabled ? 'disabled' : ($device->status === null ? 'unknown' : ($device->status ? 'up' : 'down')),
-                'url' => url('device/device='.(int) $device->device_id.'/'),
-            ])->values()->all(),
+            'devices' => $devices->map(fn (Device $device) => $this->device($device))->values()->all(),
             'links' => $resultLinks,
             'deviceGroups' => $this->deviceGroups($user, $deviceIds),
             'generatedAt' => time(),
@@ -85,6 +77,51 @@ class LibreNmsTopology
                 'overrides' => (object) $this->overrides($deviceIds),
             ],
         ];
+    }
+
+    /** Every device the user may view, failing explicitly above the configured limit. */
+    public function devices(User $user): Collection
+    {
+        $maxDevices = max(1, (int) config('libremap.max_devices', 2000));
+        $devices = Device::hasAccess($user)->select(self::DEVICE_COLUMNS)
+            ->orderBy('device_id')->limit($maxDevices + 1)->get();
+        abort_if($devices->count() > $maxDevices, 422, 'LibreMap device limit exceeded. Increase libremap.max_devices before loading this network.');
+
+        return $devices;
+    }
+
+    /** One device as the client shows it. Never serialize the model itself. */
+    public function device(Device $device): array
+    {
+        return [
+            'id' => (string) $device->device_id,
+            'hostname' => (string) $device->hostname,
+            // Classification falls back to sysName for devices added by IP address.
+            'sysName' => is_string($device->sysName) && $device->sysName !== '' ? $device->sysName : null,
+            'displayName' => $this->displayName($device),
+            'status' => $device->disabled ? 'disabled' : ($device->status === null ? 'unknown' : ($device->status ? 'up' : 'down')),
+            'url' => url('device/device='.(int) $device->device_id.'/'),
+        ];
+    }
+
+    /** One interface's live state, measured at that interface. */
+    public function port(Port $port): array
+    {
+        return [
+            'id' => (string) $port->port_id,
+            'deviceId' => (string) $port->device_id,
+            'name' => $this->portName($port),
+            'speedBps' => $this->number($port->ifSpeed, positive: true),
+            'inBps' => $this->rate($port->ifInOctets_rate),
+            'outBps' => $this->rate($port->ifOutOctets_rate),
+            'sampledAt' => $this->number($port->poll_time, positive: true),
+            'status' => $this->linkStatus($port, $port),
+        ];
+    }
+
+    private function portName(Port $port): string
+    {
+        return (string) ($port->ifName ?: $port->ifDescr ?: $port->port_id);
     }
 
     /** Return only groups the user may view, with only already-visible members. */

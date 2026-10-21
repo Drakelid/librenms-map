@@ -8,6 +8,7 @@ An AGG-first topology map for LibreNMS, with a permission-scoped live data endpo
 - [Build assets](#build-assets)
 - [Install on a LibreNMS staging host](#install-on-a-librenms-staging-host)
 - [Saved views and pins](#saved-views-and-pins)
+- [Custom maps](#custom-maps)
 - [Configuration](#configuration)
 - [Measurement and display](#measurement-and-display)
 - [Verification commands](#verification-commands)
@@ -101,7 +102,7 @@ php artisan optimize:clear
 
 ### Navigation bar
 
-LibreNMS offers plugins no hook inside the Maps dropdown, but its navigation bar includes one optional `menu.custom` view. While libremap is enabled, the package supplies that view and uses JavaScript to append **Topology Map** to the existing **Maps** dropdown. A host's own `resources/views/menu/custom.blade.php` keeps working: LibreMap also renders it. As with routes, clear caches after enabling or disabling the plugin.
+LibreNMS offers plugins no hook inside the Maps dropdown, but its navigation bar includes one optional `menu.custom` view. While libremap is enabled, the package supplies that view and uses JavaScript to add **Topology Map** and **Custom Maps** to the existing **Maps** dropdown. A host's own `resources/views/menu/custom.blade.php` keeps working: LibreMap also renders it. As with routes, clear caches after enabling or disabling the plugin.
 
 ### Route cache
 
@@ -109,13 +110,15 @@ LibreNMS offers plugins no hook inside the Maps dropdown, but its navigation bar
 
 ### Database migration
 
-The migrations add `libremap_views` and `libremap_view_owners`; they do not change LibreNMS topology tables. The owner table supplies one stable lock row per owner so simultaneous creates cannot bypass the 50-view cap, including the first create. Rows remain after deleting the last view. The explicit `--path` runs only this package's migrations on an existing LibreNMS database. These options are supported by [Laravel's migration command](https://github.com/laravel/framework/blob/12.x/src/Illuminate/Database/Console/Migrations/MigrateCommand.php). Apply it through your usual staging/deployment process. If a required table is absent, the affected saved-view operation reports an error while the topology map remains available.
+The migrations add `libremap_views`, `libremap_view_owners` and `libremap_custom_maps`; they do not change LibreNMS topology tables. The owner table supplies one stable lock row per owner so simultaneous creates cannot bypass the 50-view cap, including the first create. Rows remain after deleting the last view. The explicit `--path` runs only this package's migrations on an existing LibreNMS database. These options are supported by [Laravel's migration command](https://github.com/laravel/framework/blob/12.x/src/Illuminate/Database/Console/Migrations/MigrateCommand.php). Apply it through your usual staging/deployment process. If a required table is absent, the affected saved-view operation reports an error while the topology map remains available.
 
 No migration has been run on your LibreNMS server from this workspace.
 
 ### Updating an existing installation
 
 For a Packagist install, rerun `scripts/install.sh`. For a source install, rebuild the assets, remove `public/vendor/libremap`, republish them with `php artisan vendor:publish --tag=libremap-assets --force`, apply any new plugin migration, and clear application caches. The map page adds the published bundle's modification time to its asset URLs, so browsers load the new build instead of a cached one.
+
+Custom maps require the `libremap_custom_maps` migration; until it runs, the Custom Maps page reports that an administrator must run it, and the topology map is unaffected.
 
 This update requires the new owner-lock migration before creating saved views. From the LibreNMS checkout, run `php artisan migrate --path=/opt/libremap/database/migrations --realpath`. Existing saved views are preserved; owner rows are created on demand.
 
@@ -189,6 +192,21 @@ php artisan route:clear
 
 [Host CI](.github/workflows/host.yml) installs the package on the explicit host/database matrix, exercises migration/rollback/reapply, and runs the real-model, permission, persistence, concurrency and cached-route tests. [Frontend CI](.github/workflows/frontend.yml) runs domain tests, type checking, the build, PHP syntax parsing and Chromium regressions.
 
+## Custom maps
+
+**Maps → Custom Maps** (`/libremap/custom`) lets each user draw their own maps next to the discovered topology. Choose **New map**, then **Edit**:
+
+- **Add device** places any device you may view; each device appears at most once per map.
+- **Add area** draws a labelled box, for example around a site; **Add text** places a free note. Set their label and size in the details panel.
+- **Draw line** joins two devices: select the device at each end. A drawn line is dotted until you bind it to an **Interface** of either end device. A bound line shows that interface's live load, down, disabled and stale states with the topology map's colors, measured at that one interface.
+- Drag to arrange, then **Save**. **Done editing** saves pending changes; **Discard changes** reverts to the last save.
+
+Drawn lines are your annotation. They never join the discovered topology, its tiers or its focus filters.
+
+Maps are private until their owner selects **Share read-only**. A shared map appears under **Shared with me** for every signed-in LibreNMS user and can be opened directly with the page address (`?map=<id>`). Only the owner can edit, rename, unshare or delete it, including when another user is an administrator. Each reader sees only the devices and interfaces they may view: other devices, the lines ending on them, and interface bindings they cannot access are removed by the server before the map is sent. Area and text labels are shown to every reader, so do not put information in them that some readers should not see.
+
+A user can own up to 50 maps, each with up to 500 devices, 2,000 lines and 200 areas or text labels. Writes reject devices the owner cannot view, and interfaces that are unavailable or do not belong to one end of their line. Saves are revision-checked: a map changed in another session returns a conflict instead of being overwritten. Open maps refresh live data every 60 seconds without disturbing edits in progress. Maps are deleted with their owner's LibreNMS account.
+
 ## Uninstall
 
 Disable libremap in plugin administration, then remove the package and its repository entry as the LibreNMS application user from `/opt/librenms`:
@@ -203,4 +221,4 @@ For an install made with `scripts/install.sh`, run `./lnms plugin:remove librema
 
 Published files are left in place and can be removed separately after reviewing their paths: assets at `public/vendor/libremap/` and config at `config/libremap.php`.
 
-Both `libremap_views` and `libremap_view_owners` are retained by package removal. Removing `libremap_views` or rolling back its migration deletes saved workspaces and should be a deliberate database maintenance action.
+The `libremap_views`, `libremap_view_owners` and `libremap_custom_maps` tables are retained by package removal. Removing them or rolling back their migrations deletes saved workspaces and custom maps, and should be a deliberate database maintenance action.

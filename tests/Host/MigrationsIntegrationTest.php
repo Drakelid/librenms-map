@@ -17,6 +17,7 @@ class MigrationsIntegrationTest extends TestCase
     {
         $this->assertTrue(Schema::hasColumns('libremap_views', ['id', 'user_id', 'name', 'revision', 'state', 'created_at', 'updated_at']));
         $this->assertTrue(Schema::hasColumns('libremap_view_owners', ['user_id']));
+        $this->assertTrue(Schema::hasColumns('libremap_custom_maps', ['id', 'user_id', 'name', 'shared', 'revision', 'document', 'created_at', 'updated_at']));
         $owner = 9000000001;
         $this->assertSame(1, DB::table('libremap_view_owners')->insertOrIgnore(['user_id' => $owner]));
         $this->assertSame(0, DB::table('libremap_view_owners')->insertOrIgnore(['user_id' => $owner]));

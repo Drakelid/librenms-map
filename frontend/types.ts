@@ -25,3 +25,17 @@ export interface ViewState {
   pan: Position;
 }
 export interface SavedView { id: string; name: string; revision: number; state: ViewState; updatedAt: string }
+
+// Custom maps: positions are card centres in model coordinates.
+export interface CustomDevice { key: string; deviceId: string; x: number; y: number }
+export interface CustomShape { key: string; kind: 'text' | 'box'; x: number; y: number; width: number; height: number; text: string }
+export interface CustomLink { key: string; source: string; target: string; label: string; portId: string | null }
+export interface CustomDocument { devices: CustomDevice[]; shapes: CustomShape[]; links: CustomLink[]; zoom: number; pan: Position }
+export interface CustomMapSummary { id: string; name: string; shared: boolean; owned: boolean; ownerName: string | null; revision: number; updatedAt: string }
+export interface LivePort { id: string; deviceId: string; name: string; speedBps: number | null; inBps: number | null; outBps: number | null; sampledAt: number | null; status: Status }
+export interface CustomMapSnapshot {
+  map: CustomMapSummary & { document: CustomDocument };
+  live: { devices: Record<string, Device>; ports: Record<string, LivePort> };
+  generatedAt: number;
+  config: { staleAfter: number };
+}

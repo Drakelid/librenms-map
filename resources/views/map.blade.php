@@ -6,8 +6,13 @@
 
 @section('content')
     <div id="libremap"
+         data-mode="{{ $mode }}"
          data-endpoint="{{ route('libremap.topology') }}"
          data-views-endpoint="{{ route('libremap.views') }}"
+         data-maps-endpoint="{{ route('libremap.custom-maps') }}"
+         data-devices-endpoint="{{ route('libremap.devices') }}"
+         data-topology-url="{{ route('libremap.index') }}"
+         data-custom-url="{{ route('libremap.custom') }}"
          data-csrf="{{ csrf_token() }}"
          data-home-url="{{ url('/') }}"
          data-storage-key="libremap:{{ auth()->id() }}"

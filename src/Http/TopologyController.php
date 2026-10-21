@@ -12,7 +12,12 @@ class TopologyController extends Controller
 {
     public function index(): View
     {
-        return view('libremap::map', ['pagetitle' => 'LibreMap', 'assetVersion' => $this->assetVersion()]);
+        return view('libremap::map', ['pagetitle' => 'LibreMap', 'mode' => 'topology', 'assetVersion' => $this->assetVersion()]);
+    }
+
+    public function custom(): View
+    {
+        return view('libremap::map', ['pagetitle' => 'LibreMap custom maps', 'mode' => 'custom', 'assetVersion' => $this->assetVersion()]);
     }
 
     public function topology(Request $request, LibreNmsTopology $topology): JsonResponse

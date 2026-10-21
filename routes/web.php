@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use LibreMap\Http\CustomMapController;
 use LibreMap\Http\EnsurePluginEnabled;
 use LibreMap\Http\TopologyController;
 use LibreMap\Http\ViewController;
@@ -15,4 +16,13 @@ Route::middleware(['web', 'auth', EnsurePluginEnabled::class, 'throttle:libremap
     Route::post('/libremap/views', [ViewController::class, 'store']);
     Route::put('/libremap/views/{id}', [ViewController::class, 'update'])->whereUuid('id');
     Route::delete('/libremap/views/{id}', [ViewController::class, 'destroy'])->whereUuid('id');
+
+    Route::get('/libremap/custom', [TopologyController::class, 'custom'])->name('libremap.custom');
+    Route::get('/libremap/devices', [CustomMapController::class, 'devices'])->name('libremap.devices');
+    Route::get('/libremap/devices/{id}/ports', [CustomMapController::class, 'ports'])->where('id', '[1-9][0-9]{0,9}');
+    Route::get('/libremap/custom-maps', [CustomMapController::class, 'index'])->name('libremap.custom-maps');
+    Route::post('/libremap/custom-maps', [CustomMapController::class, 'store']);
+    Route::get('/libremap/custom-maps/{id}', [CustomMapController::class, 'show'])->whereUuid('id');
+    Route::put('/libremap/custom-maps/{id}', [CustomMapController::class, 'update'])->whereUuid('id');
+    Route::delete('/libremap/custom-maps/{id}', [CustomMapController::class, 'destroy'])->whereUuid('id');
 });

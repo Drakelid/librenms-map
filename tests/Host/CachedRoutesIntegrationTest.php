@@ -23,6 +23,8 @@ class CachedRoutesIntegrationTest extends TestCase
         // No manual require of routes: the provider and real route cache must work.
         $this->getJson('/libremap/topology')->assertOk()->assertJsonStructure(['devices', 'links', 'config']);
         $this->getJson('/libremap/views')->assertOk()->assertExactJson(['views' => []]);
+        $this->getJson('/libremap/custom-maps')->assertOk()->assertExactJson(['maps' => []]);
+        $this->get('/libremap/custom')->assertOk()->assertSee('data-mode="custom"', false);
     }
 
     public function testMapPageRendersWithTheMapsEntry(): void
@@ -48,5 +50,7 @@ class CachedRoutesIntegrationTest extends TestCase
         $this->getJson('/libremap/topology')->assertNotFound();
         $this->getJson('/libremap/views')->assertNotFound();
         $this->postJson('/libremap/views', [])->assertNotFound();
+        $this->getJson('/libremap/custom-maps')->assertNotFound();
+        $this->getJson('/libremap/devices')->assertNotFound();
     }
 }

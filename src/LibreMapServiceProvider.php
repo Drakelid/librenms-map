@@ -38,9 +38,9 @@ class LibreMapServiceProvider extends ServiceProvider
         RateLimiter::for('libremap', fn (Request $request) => Limit::perMinute(120)
             ->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip())));
 
-        // Saved views are private to their owner; remove them with the account.
+        // Saved views and custom maps belong to their owner; remove them with the account.
         User::deleted(function (User $user): void {
-            foreach (['libremap_views', 'libremap_view_owners'] as $table) {
+            foreach (['libremap_views', 'libremap_custom_maps', 'libremap_view_owners'] as $table) {
                 if (Schema::hasTable($table)) {
                     DB::table($table)->where('user_id', $user->getKey())->delete();
                 }

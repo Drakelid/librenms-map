@@ -1,0 +1,14 @@
+#libremap .lm-nav { font-size: 12px; }
+#libremap .lm-custom .lm-toolbar { flex-wrap: wrap; }
+#libremap .lm-custom .lm-toolbar select { max-width: 260px; }
+#libremap .lm-editbar input { width: 240px; border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; background: var(--panel); }
+#libremap .lm-legend i.lm-dotted { border-top: 2px dotted var(--muted); }
+#libremap .lm-cm-field { display: block; margin: 16px 0; font-size: 10px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); }
+#libremap .lm-cm-field > span { display: block; margin-bottom: 6px; }
+#libremap .lm-cm-field input,
+#libremap .lm-cm-field select,
+#libremap .lm-cm-field textarea { display: block; width: 100%; max-width: none; padding: 8px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); font: inherit; font-size: 12px; text-transform: none; letter-spacing: normal; }
+#libremap .lm-cm-field textarea { resize: vertical; }
+#libremap .lm-cm-remove { display: block; width: 100%; margin: 18px 0 0; font-size: 12px; color: #c44650; }
+#libremap.lm-dark .lm-cm-remove { color: #f08a93; }
+@media (max-width: 720px) { #libremap .lm-editbar input { width: 100%; } }

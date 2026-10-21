@@ -1,9 +1,11 @@
-import cytoscape, { type Core, type StylesheetStyle } from 'cytoscape';
+import cytoscape, { type Core } from 'cytoscape';
+import { rate, themeController, topologyStyles as styles } from './canvas-style';
+import { mountCustomMap } from './custom-map';
 import { layoutGraph, resetLayoutWorker } from './layout';
 import { compactWideRestore, packTierPositions } from './layout-positions';
 import { mountLinkPreview } from './link-preview';
 import { demoSnapshot } from './demo';
-import { deviceName, lateralOffsets, LOAD_COLORS, metric, PARALLEL_CONNECTION_GAP, topology } from './topology';
+import { deviceName, lateralOffsets, LOAD_COLORS, metric, topology } from './topology';
 import { limitFilter } from './view-limits';
 import { arrangePositions, emptyView, HOPS_MAX, hopNeighborhood, normalizeView, visibleNodes } from './view-state';
 import { demoViewStore, httpViewStore } from './view-store';
@@ -18,13 +20,16 @@ class TopologyError extends Error { constructor(message:string,public status:num
 const ACCESS_LOST=new Set([401,403,404,419]);
 
 const root = document.querySelector<HTMLElement>('#libremap');
-if (root) mount(root);
+if (root) {
+  if (root.dataset.mode === 'custom') mountCustomMap(root);
+  else mount(root);
+}
 
 function mount(root: HTMLElement) {
   const demo = root.dataset.demo === 'true';
   root.innerHTML = `
     <div class="lm-shell">
-      <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>NETWORK TOPOLOGY</span></div></div><div class="lm-header-right"><span class="lm-source">${demo ? 'DEMO DATA' : 'LIBRENMS'}</span><button data-action="theme" title="Toggle color theme">◐ <span>Theme</span></button><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
+      <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>NETWORK TOPOLOGY</span></div></div><div class="lm-header-right"><span class="lm-source">${demo ? 'DEMO DATA' : 'LIBRENMS'}</span><button data-action="theme" title="Toggle color theme">◐ <span>Theme</span></button><a class="lm-nav" href="#" hidden>Custom maps</a><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
       <section class="lm-heading"><div><div class="lm-eyebrow">INFRASTRUCTURE / TOPOLOGY</div></div><div class="lm-summary" aria-label="Network summary"></div></section>
       <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device…"></label><label class="lm-select">Site <select aria-label="Site"><option value="">All sites</option></select></label><button data-action="overview">AGG backbone</button><button data-action="other-devices" aria-pressed="false">Show other devices</button><span class="lm-spacer"></span><button data-action="refresh">↻ Refresh</button><button data-action="layout">Re-layout</button><button data-action="fullscreen" title="Fullscreen">⛶</button></div>
       <div class="lm-viewbar"><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><label class="lm-select">AGG root <select aria-label="AGG root"><option value="">All AGG groups</option></select></label><label class="lm-select">Highlight <select aria-label="Highlight hops">${Array.from({length:HOPS_MAX},(_,i)=>`<option value="${i+1}">${i+1} hop${i?'s':''}</option>`).join('')}</select></label><span class="lm-pin-count">0 pinned</span><button data-action="unpin-all">Unpin all</button><div class="lm-views"></div></div>
@@ -39,6 +44,8 @@ function mount(root: HTMLElement) {
   // LibreNMS may be served from a subpath, so never assume "/".
   const back=root.querySelector<HTMLAnchorElement>('.lm-back');
   if(back && root.dataset.homeUrl) back.href=root.dataset.homeUrl;
+  const customLink=root.querySelector<HTMLAnchorElement>('.lm-nav');
+  if(customLink && root.dataset.customUrl && !demo){customLink.href=root.dataset.customUrl;customLink.hidden=false;}
   const $ = <T extends HTMLElement>(selector:string) => root.querySelector<T>(selector)!;
   const notice = $('.lm-notice');
   const search = $<HTMLInputElement>('[aria-label="Find device"]');
@@ -47,26 +54,7 @@ function mount(root: HTMLElement) {
   const focus = $<HTMLSelectElement>('[aria-label="AGG root"]');
   const hops = $<HTMLSelectElement>('[aria-label="Highlight hops"]');
   const cy: Core = cytoscape({ container:$('.lm-canvas'), minZoom:0.15, maxZoom:2.5, selectionType:'single', style:styles(root) });
-  // LibreNMS toggles `dark` on <html> (live, in its "device" mode) and paints its
-  // page background on <body>; the map adopts both. Elsewhere, such as the demo,
-  // follow the OS preference unless the Theme button overrides it.
-  const systemDark=window.matchMedia('(prefers-color-scheme: dark)');
-  let manualDark:boolean|undefined;
-  let appliedTheme='';
-  function applyTheme(){
-    const dark=hostTheme ? document.documentElement.classList.contains('dark') : manualDark ?? systemDark.matches;
-    const background=hostTheme ? getComputedStyle(document.body).backgroundColor : '';
-    const theme=`${dark}|${background}`;
-    if(theme===appliedTheme)return;
-    appliedTheme=theme;
-    root.classList.toggle('lm-dark',dark);
-    // Only an opaque host color replaces the map's own background.
-    if(/^rgb\(/.test(background))root.style.setProperty('--bg',background);else root.style.removeProperty('--bg');
-    cy.style(styles(root));
-  }
-  applyTheme();
-  if(hostTheme)new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['class']});
-  else systemDark.addEventListener('change',applyTheme);
+  const theme=themeController(root,()=>cy.style(styles(root)));
   let snapshot: Snapshot | undefined;
   const linkPreview=demo ? undefined : mountLinkPreview(root,cy,()=>snapshot?.generatedAt);
   let graph: Topology = { nodes:[], links:[], deviceGroups:[] };
@@ -342,7 +330,7 @@ site.addEventListener('change',()=>{filters();persist();});deviceGroup.addEventL
       case 'zoom-out':cy.zoom({level:cy.zoom()/1.2,renderedPosition:{x:cy.width()/2,y:cy.height()/2}});break;
       case 'overview':backbone=!backbone;updateBackbone();filters();persist();break;
       case 'other-devices':showOther=!showOther;updateOtherDevices();filters();persist();break;
-      case 'theme':manualDark=!root.classList.contains('lm-dark');applyTheme();break;
+      case 'theme':theme.toggle();break;
       case 'fullscreen':void (document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen()).catch(()=>message('Fullscreen is unavailable in this browser.'));break;
     }
   });
@@ -378,26 +366,4 @@ async function topologyFailure(response:Response):Promise<string> {
     if(reason && reason.length<=300)return reason;
   }
   return `LibreNMS returned HTTP ${response.status}`;
-}
-
-function rate(value:number|null) {
-  if(value===null||!Number.isFinite(value)) return 'N/A';
-  return value>=1e9 ? `${(value/1e9).toFixed(2)} Gbps` : value>=1e6 ? `${(value/1e6).toFixed(1)} Mbps` : `${Math.round(value/1e3)} Kbps`;
-}
-/** Canvas colors come from the same CSS variables as the rest of the map. */
-function styles(root:HTMLElement):StylesheetStyle[] {
-  const css=getComputedStyle(root);
-  const color=(name:string,fallback:string)=>css.getPropertyValue(name).trim() || fallback;
-  const panel=color('--panel','#ffffff'), ink=color('--ink','#20324b'), line=color('--line','#e4eaf2');
-  return [
-    {selector:'node',style:{shape:'round-rectangle',width:'data(width)',height:72,'background-color':panel,'border-width':1.5,'border-color':'data(color)',label:'data(label)',color:ink,'font-family':'Inter, Segoe UI, sans-serif','font-size':18,'font-weight':500,'text-wrap':'wrap','text-valign':'center','text-halign':'center','line-height':1.6}},
-    {selector:'node[role = "AGG"]',style:{height:82,'border-width':2.5,'background-color':color('--node-agg','#eef5ff'),'font-weight':700}},
-    {selector:'edge',style:{width:2.4,'curve-style':'bezier','control-point-step-size':PARALLEL_CONNECTION_GAP,'line-color':'data(color)',label:'data(label)','font-size':15,'font-weight':600,color:color('--edge-ink','#4d6077'),'text-background-color':panel,'text-background-opacity':1,'text-background-padding':'4px','text-background-shape':'roundrectangle','text-border-width':1,'text-border-opacity':1,'text-border-color':line,'text-rotation':'none','text-events':'yes'}},
-    {selector:'edge[lateral = 1]',style:{'curve-style':'unbundled-bezier','control-point-distances':'data(curveDistance)','control-point-weights':[0.5]}},
-    // Dashed links carry no current load: down, stale or unknown. Down also sets a solid red >70% link apart.
-    {selector:'edge[state = "down"], edge[state = "stale"], edge[state = "unknown"]',style:{'line-style':'dashed'}},
-    {selector:':selected',style:{'overlay-color':'#55a7ce','overlay-opacity':0.12,'overlay-padding':7}},
-    {selector:'.lm-dim',style:{opacity:0.18}},
-    {selector:'.lm-no-label',style:{label:''}},
-  ];
 }
