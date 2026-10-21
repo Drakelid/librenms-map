@@ -66,6 +66,15 @@ class SavedViewsIntegrationTest extends TestCase
         $this->getJson('/libremap/views')->assertExactJson(['views' => []]);
     }
 
+    public function testRepeatedPinsAreRejected(): void
+    {
+        $device = Device::factory()->create();
+        $payload = $this->payload((string) $device->device_id);
+        $payload['state']['pinned'][] = (string) $device->device_id;
+        $this->actingAs($this->user(admin: true))->postJson('/libremap/views', $payload)
+            ->assertStatus(422)->assertJsonValidationErrors('state.pinned');
+    }
+
     public function testOtherOwnerCannotListUpdateOrDeletePrivateView(): void
     {
         $owner = $this->user();

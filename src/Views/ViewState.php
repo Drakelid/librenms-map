@@ -43,7 +43,8 @@ class ViewState
             'state.positions.*.x' => ['required', $number],
             'state.positions.*.y' => ['required', $number],
             'state.pinned' => ['present', 'array', 'max:'.self::positionLimit()],
-            'state.pinned.*' => ['required', 'string', 'regex:/^[1-9][0-9]{0,9}$/', 'distinct'],
+            // Uniqueness is checked below: Laravel's `distinct` is quadratic at this size.
+            'state.pinned.*' => ['required', 'string', 'regex:/^[1-9][0-9]{0,9}$/'],
             'state.zoom' => ['required', 'numeric', 'min:0.15', 'max:2.5', $number],
             'state.pan' => ['required', 'array:x,y'],
             'state.pan.x' => ['required', $number],
@@ -57,6 +58,9 @@ class ViewState
         }
         if (! array_is_list($data['state']['pinned'])) {
             throw ValidationException::withMessages(['state.pinned' => 'Pinned devices must be a list.']);
+        }
+        if (count(array_unique($data['state']['pinned'])) !== count($data['state']['pinned'])) {
+            throw ValidationException::withMessages(['state.pinned' => 'Pinned devices must not repeat.']);
         }
         $data['name'] = trim($data['name']);
         if ($data['name'] === '') {

@@ -56,6 +56,8 @@ test('hovering a link lazily shows both authenticated one-day interface graphs',
     return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150"></svg>'});
   });
   await load(page,snapshot());
+  // LibreNMS served from a subpath: the back link follows the host's home URL.
+  await expect(page.getByRole('link',{name:'LibreNMS ↗'})).toHaveAttribute('href','/nms');
   expect(graphRequests).toEqual([]);
   const edge=(await edges(page)).find(item=>item.port==='local-a')!;
   const bounds=(await page.locator('.lm-canvas').boundingBox())!;

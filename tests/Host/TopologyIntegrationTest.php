@@ -40,7 +40,8 @@ class TopologyIntegrationTest extends TestCase
         foreach ([
             ['up', 'up', 0, 'up'],
             ['down', 'up', 0, 'down'],
-            ['up', 'down', 0, 'down'],
+            ['up', 'down', 0, 'disabled'],
+            ['down', 'down', 0, 'disabled'],
             ['up', 'up', 1, 'unknown'],
             ['unknown', 'up', 0, 'unknown'],
             [null, 'up', 0, 'unknown'],
@@ -164,11 +165,11 @@ class TopologyIntegrationTest extends TestCase
             $this->assertSame(['id', 'hostname', 'sysName', 'displayName', 'status', 'url'], array_keys($device));
         }
 
-        // A rate at the host column's 32-bit ceiling was clamped, not measured.
-        $local->forceFill(['ifInOctets_rate' => 2147483647])->save();
-        $clamped = collect(app(LibreNmsTopology::class)->forUser(User::factory()->admin()->create())['links'])
+        // The host column is unsigned 64-bit: a 20 Gbit/s reading is real, not clamped.
+        $local->forceFill(['ifInOctets_rate' => 2500000000])->save();
+        $fast = collect(app(LibreNmsTopology::class)->forUser(User::factory()->admin()->create())['links'])
             ->firstWhere('id', (string) $link->id);
-        $this->assertNull($clamped['inBps']);
+        $this->assertSame(20000000000.0, $fast['inBps']);
     }
 
     public function testLabelsUseTheDisplayNameAndPreferSysNameOverAnIpAddress(): void

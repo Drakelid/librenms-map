@@ -14,6 +14,17 @@ test('focused root includes its peer and redundant ER links but stops at neighbo
   assert.equal(branchNodes(graph,null).size,graph.nodes.length);
   assert.equal(branchNodes(graph,'999').size,graph.nodes.length);
 });
+test('a ring shared with another AGG site stops where it turns back toward that site',()=>{
+  const now=Math.floor(Date.now()/1000);
+  const ring=topology({generatedAt:now,config:{prefixes:[],staleAfter:900,overrides:{}},
+    devices:['a1agg1','b1agg1','x1er1','x1er2','x1er3'].map((hostname,i)=>({id:String(i+1),hostname,status:'up'})),
+    // a1agg1 - x1er1 - x1er2 - x1er3 - b1agg1
+    links:[[1,3],[3,4],[4,5],[5,2]].map(([source,target],i)=>({id:String(i+1),source:String(source),target:String(target),sourcePort:'a',targetPort:'b',sourcePortId:String(i*2+1),targetPortId:String(i*2+2),speedBps:null,inBps:null,outBps:null,sampledAt:null,status:'up'})),
+  });
+  // x1er2 is equidistant from both AGGs, so it belongs to both branches.
+  assert.deepEqual([...branchNodes(ring,'1')].sort(),['1','3','4']);
+  assert.deepEqual([...branchNodes(ring,'2')].sort(),['2','4','5']);
+});
 test('search cannot expand beyond explicit site or backbone filters',()=>{
   const ids=visibleNodes(graph,{rootId:null,site:'rossa1',search:'agg1',backbone:true,showOther:false});
   assert.ok(ids.has('0'));

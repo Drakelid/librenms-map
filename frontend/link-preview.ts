@@ -1,6 +1,8 @@
 import type { Core, EdgeSingular } from 'cytoscape';
 
-const GRAPH_WIDTH=300, GRAPH_HEIGHT=150, HOVER_DELAY=180;
+// Each preview renders two RRD graphs on the poller; a longer dwell keeps a
+// mouse sweeping across a dense map from starting a render per link crossed.
+const GRAPH_WIDTH=300, GRAPH_HEIGHT=150, HOVER_DELAY=400;
 
 export function mountLinkPreview(root:HTMLElement,cy:Core,refreshKey:()=>number|undefined):{hide:()=>void} {
   const wrap=root.querySelector<HTMLElement>('.lm-canvas-wrap')!;

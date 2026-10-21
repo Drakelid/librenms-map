@@ -36,7 +36,11 @@ export function normalizeView(value:unknown, graph?:Topology):ViewState {
   return state;
 }
 
-/** Discover a root group's branch without walking through a neighboring AGG site. */
+/**
+ * Discover a root group's branch by walking only away from the AGG tier. A
+ * neighboring AGG stays visible as a boundary but is not entered, and a ring
+ * shared with another AGG site stops where it turns back toward that site.
+ */
 export function branchNodes(graph:Topology, rootId:string|null):Set<string> {
   const root=graph.nodes.find(n=>n.id===rootId && n.role==='AGG');
   if(!root) return new Set(graph.nodes.map(n=>n.id));
@@ -45,11 +49,15 @@ export function branchNodes(graph:Topology, rootId:string|null):Set<string> {
   for(const link of graph.links){adjacency.get(link.source)?.push(link.target);adjacency.get(link.target)?.push(link.source);}
   const queue=graph.nodes.filter(n=>n.role==='AGG' && n.site===root.site).map(n=>n.id);
   const visited=new Set(queue);
-  for(let i=0;i<queue.length;i++) for(const id of adjacency.get(queue[i]) ?? []) {
-    if(visited.has(id)) continue;
-    visited.add(id);
-    const neighbor=nodes.get(id)!;
-    if(neighbor.role!=='AGG' || neighbor.site===root.site) queue.push(id);
+  for(let i=0;i<queue.length;i++) {
+    const tier=nodes.get(queue[i])!.tier;
+    for(const id of adjacency.get(queue[i]) ?? []) {
+      if(visited.has(id)) continue;
+      const neighbor=nodes.get(id)!;
+      if(neighbor.role==='AGG') {visited.add(id);continue;}
+      if(neighbor.tier<=tier) continue;
+      visited.add(id);queue.push(id);
+    }
   }
   return visited;
 }

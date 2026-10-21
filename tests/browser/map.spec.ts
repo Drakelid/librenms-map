@@ -146,6 +146,33 @@ test('dragged positions survive refresh and a full page reload',async({page})=>{
   expect((await read()).position).toEqual(moved.position);
 });
 
+test('dragging inside a focused view does not move the device on the full map',async({page})=>{
+  await page.goto('/');
+  await expect(page.getByRole('status')).toContainText('Demo topology');
+  const nodes=()=>page.evaluate(()=>(window as unknown as {libremapDebug:()=>{nodes:{id:string;position:{x:number;y:number};renderedPosition:{x:number;y:number}}[]}}).libremapDebug().nodes);
+  const baseline=await nodes();
+  await page.getByRole('combobox',{name:'Device group'}).selectOption('101');
+  const target=(await nodes()).find(node=>node.id==='0')!;
+  const bounds=(await page.locator('.lm-canvas').boundingBox())!;
+  const start={x:bounds.x+target.renderedPosition.x,y:bounds.y+target.renderedPosition.y};
+  await page.mouse.move(start.x,start.y); await page.mouse.down(); await page.mouse.move(start.x+36,start.y+28,{steps:8}); await page.mouse.up();
+  await page.getByRole('combobox',{name:'Device group'}).selectOption('');
+  expect((await nodes()).map(node=>node.position)).toEqual(baseline.map(node=>node.position));
+});
+
+test('a transient refresh failure keeps the last snapshot on screen',async({page})=>{
+  let failing=false;
+  await page.route('**/live-test',route=>route.fulfill({contentType:'text/html',body:'<div id="libremap" data-endpoint="/snapshot" data-storage-key="transient-test"></div><script type="module" src="/frontend/main.ts"></script>'}));
+  await page.route('**/snapshot',route=>failing ? route.fulfill({status:503,contentType:'application/json',body:'{}'}) : route.fulfill({json:demoSnapshot()}));
+  await page.goto('/live-test'); await expect(page.getByRole('status')).toContainText('Topology loaded');
+  failing=true; await page.getByRole('button',{name:'Refresh'}).click();
+  await expect(page.getByRole('status')).toContainText('HTTP 503');
+  await expect(page.getByRole('status')).toContainText('Showing the snapshot from');
+  await expect(page.getByRole('button',{name:'◈ hk-rossa1agg1'})).toBeVisible();
+  await expect(page.locator('.lm-summary')).not.toBeEmpty();
+  await expect(page.getByRole('button',{name:'Re-layout',exact:true})).toBeEnabled();
+});
+
 test('device group focus filters membership and persists its selection',async({page})=>{
   await page.goto('/');
   await expect(page.getByRole('status')).toContainText('Demo topology');

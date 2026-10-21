@@ -13,6 +13,10 @@ import './style.css';
 import './link-preview.css';
 import './views.css';
 
+class TopologyError extends Error { constructor(message:string,public status:number){super(message);} }
+// Signed out, forbidden, session expired, or the plugin was disabled.
+const ACCESS_LOST=new Set([401,403,404,419]);
+
 const root = document.querySelector<HTMLElement>('#libremap');
 if (root) mount(root);
 
@@ -25,14 +29,16 @@ function mount(root: HTMLElement) {
       <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device…"></label><label class="lm-select">Site <select aria-label="Site"><option value="">All sites</option></select></label><button data-action="overview">AGG backbone</button><button data-action="other-devices" aria-pressed="false">Show other devices</button><span class="lm-spacer"></span><button data-action="refresh">↻ Refresh</button><button data-action="layout">Re-layout</button><button data-action="fullscreen" title="Fullscreen">⛶</button></div>
       <div class="lm-viewbar"><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><label class="lm-select">AGG root <select aria-label="AGG root"><option value="">All AGG groups</option></select></label><label class="lm-select">Highlight <select aria-label="Highlight hops">${Array.from({length:HOPS_MAX},(_,i)=>`<option value="${i+1}">${i+1} hop${i?'s':''}</option>`).join('')}</select></label><span class="lm-pin-count">0 pinned</span><button data-action="unpin-all">Unpin all</button><div class="lm-views"></div></div>
       <div class="lm-notice" role="status" aria-live="polite">Loading topology…</div>
-      <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong>Physical topology</strong><span>AGG → ER · discovered links</span></div><div class="lm-canvas" aria-label="Interactive network topology"></div><div class="lm-empty" hidden></div><div class="lm-map-controls"><button data-action="zoom-in" aria-label="Zoom in">+</button><button data-action="zoom-out" aria-label="Zoom out">−</button><button data-action="fit">Fit</button></div><div class="lm-legend"><span><i style="color:${LOAD_COLORS.normal}"></i>&lt;50%</span><span><i style="color:${LOAD_COLORS.warning}"></i>50–70%</span><span><i style="color:${LOAD_COLORS.high}"></i>&gt;70%</span><span><i class="lm-dashed" style="color:#e05b65"></i>Down</span><span><i class="lm-dashed" style="color:#8a96a9"></i>Unknown / stale</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
+      <main class="lm-workspace"><div class="lm-canvas-wrap"><div class="lm-canvas-caption"><span class="lm-live-dot"></span><strong>Physical topology</strong><span>AGG → ER · discovered links</span></div><div class="lm-canvas" aria-label="Interactive network topology"></div><div class="lm-empty" hidden></div><div class="lm-map-controls"><button data-action="zoom-in" aria-label="Zoom in">+</button><button data-action="zoom-out" aria-label="Zoom out">−</button><button data-action="fit">Fit</button></div><div class="lm-legend"><span><i style="color:${LOAD_COLORS.normal}"></i>&lt;50%</span><span><i style="color:${LOAD_COLORS.warning}"></i>50–70%</span><span><i style="color:${LOAD_COLORS.high}"></i>&gt;70%</span><span><i class="lm-dashed" style="color:#e05b65"></i>Down</span><span><i class="lm-dashed" style="color:#8a96a9"></i>Disabled / unknown / stale</span></div></div><aside class="lm-details" aria-label="Selection details"></aside></main>
       <footer><span class="lm-updated">Waiting for data</span><span>Drag to arrange · Scroll to zoom · Hover links for traffic · Click to inspect</span></footer>
     </div>`;
   if (demo) root.querySelector('.lm-back')?.remove();
   // Inside LibreNMS the user's site style decides the theme; no separate toggle.
   const hostTheme = root.dataset.hostTheme === 'true';
   if (hostTheme) root.querySelector('[data-action="theme"]')?.remove();
-  else if(root.dataset.homeUrl) root.querySelector<HTMLAnchorElement>('.lm-back')!.href=root.dataset.homeUrl;
+  // LibreNMS may be served from a subpath, so never assume "/".
+  const back=root.querySelector<HTMLAnchorElement>('.lm-back');
+  if(back && root.dataset.homeUrl) back.href=root.dataset.homeUrl;
   const $ = <T extends HTMLElement>(selector:string) => root.querySelector<T>(selector)!;
   const notice = $('.lm-notice');
   const search = $<HTMLInputElement>('[aria-label="Find device"]');
@@ -280,15 +286,22 @@ function mount(root: HTMLElement) {
         const endpoint=new URL(root.dataset.endpoint,location.href);
         if(endpoint.origin!==location.origin) throw new Error('Topology endpoint must use the same origin');
         const response=await fetch(endpoint,{credentials:'same-origin',headers:{Accept:'application/json'},signal:AbortSignal.timeout(20000)});
-        if(response.status===429) throw new Error('Too many topology requests. The map will retry on the next refresh.');
-        if(!response.ok) throw new Error(await topologyFailure(response));
+        if(response.status===429) throw new TopologyError('Too many topology requests. The map will retry on the next refresh.',429);
+        if(!response.ok) throw new TopologyError(await topologyFailure(response),response.status);
         const data=await response.json();
         if(!Array.isArray(data.devices)||!Array.isArray(data.links)||!data.config) throw new Error('Unexpected topology response');
         apply(data);
       }
     } catch(error) {
+      const text=error instanceof Error?error.message:'Unable to load topology';
+      // A transient failure (network, timeout, rate limit, server error) keeps the
+      // last authorized snapshot on screen; its links turn STALE as it ages.
+      if(snapshot && !(error instanceof TopologyError && ACCESS_LOST.has(error.status))){
+        message(`${text} · Showing the snapshot from ${new Date(snapshot.generatedAt*1000).toLocaleTimeString()}.`,true);
+        return;
+      }
       linkPreview?.hide();
-      // Permissions may have changed. Do not leave previously authorized graph data on screen.
+      // Access may have been revoked. Do not leave previously authorized graph data on screen.
       cy.elements().remove(); graph={nodes:[],links:[],deviceGroups:[]}; basePositions={};focusedPacking=false;selected=undefined; snapshot=undefined; layoutRequest++; clearTimeout(layoutTimer); detailsDefault();
       setLayoutPending(false);clearTimeout(viewportTimer);clearTimeout(searchTimer);
       // Clear the on-screen pins, but reload the stored workspace rather than
@@ -297,14 +310,15 @@ function mount(root: HTMLElement) {
       pins.clear();initialWorkspace=readWorkspace();saved=initialWorkspace.positions;initialized=false;
       site.replaceChildren(new Option('All sites',''));deviceGroup.replaceChildren(new Option('All device groups',''));focus.replaceChildren(new Option('All AGG groups',''));views.setAvailable(false);updatePins();
       $('.lm-summary').replaceChildren(); $('.lm-empty').hidden=false; $('.lm-empty').textContent='Topology unavailable. Use Refresh to retry.';
-      message(error instanceof Error?error.message:'Unable to load topology',true);
+      message(text,true);
     } finally { busy=false; }
   }
   cy.on('tap','node',event=>selectNode(event.target.id()));
   // Inspecting a link keeps a selected device's neighborhood in focus; the link and its ends join it.
   cy.on('tap','edge',event=>{selected={type:'link',id:event.target.data('linkId')};event.target.union(event.target.connectedNodes()).removeClass('lm-dim');renderDetails();});
   cy.on('tap',event=>{if(event.target===cy){selected=undefined;cy.elements().removeClass('lm-dim');detailsDefault();}});
-  cy.on('dragfree','node',event=>{basePositions[event.target.id()]={...event.target.position()};persist();});
+  // Focused coordinates are presentational; only a full-map drag moves a device's anchor.
+  cy.on('dragfree','node',event=>{if(!focusedPacking){basePositions[event.target.id()]={...event.target.position()};persist();}});
   cy.on('zoom',()=>cy.edges().toggleClass('lm-no-label',cy.zoom()<0.45));
   cy.on('pan zoom',()=>{
     if(!snapshot || layoutPending)return;

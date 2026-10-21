@@ -10,10 +10,6 @@ use App\Models\User;
 
 class LibreNmsTopology
 {
-    // LibreNMS stores port octet rates in a signed 32-bit column. A value at its
-    // ceiling (about 17 Gbit/s) was clamped by the database, not measured.
-    private const RATE_COLUMN_MAX = 2147483647;
-
     public function forUser(User $user): array
     {
         $maxDevices = max(1, (int) config('libremap.max_devices', 2000));
@@ -159,17 +155,24 @@ class LibreNmsTopology
         return is_finite($number) && ($positive ? $number > 0 : $number >= 0) ? $number : null;
     }
 
+    /** LibreNMS stores octet rates as unsigned 64-bit, so high-capacity links are real readings. */
     private function rate(mixed $octets): ?float
     {
         $rate = $this->number($octets);
 
-        return $rate === null || $rate >= self::RATE_COLUMN_MAX ? null : $rate * 8;
+        return $rate === null ? null : $rate * 8;
     }
 
     private function linkStatus(Port $source, Port $target): string
     {
+        // An administratively shut port is intentional, not a fault.
         foreach ([$source, $target] as $port) {
-            if ($this->portStatus($port->ifOperStatus) === 'down' || $this->portStatus($port->ifAdminStatus) === 'down') {
+            if ($this->portStatus($port->ifAdminStatus) === 'down') {
+                return 'disabled';
+            }
+        }
+        foreach ([$source, $target] as $port) {
+            if ($this->portStatus($port->ifOperStatus) === 'down') {
                 return 'down';
             }
         }
