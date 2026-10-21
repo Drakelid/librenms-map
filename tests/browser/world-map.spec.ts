@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { demoSnapshot } from '../../frontend/demo';
 
-type Debug={zoom:number;markers:{id:string;name:string;label:string;count:number;status:string;warning:string|null}[];links:{key:string;count:number;state:string}[];undrawn:{withinSite:Record<string,number>;unlocated:number};warnings:{id:string;level:string;drawn:boolean}[];tiles:string[]};
+type Debug={zoom:number;markers:{id:string;name:string;label:string;text:string;count:number;status:string;warning:string|null}[];links:{key:string;count:number;state:string}[];undrawn:{withinSite:Record<string,number>;unlocated:number};warnings:{id:string;level:string;drawn:boolean}[];tiles:string[]};
 const debug=(page:Page)=>page.evaluate(()=>(window as unknown as {libremapWorldDebug:()=>Debug}).libremapWorldDebug());
 
 // The demo network placed at four sites; devices 11, 12, 13 and 15 have no coordinates.
@@ -111,6 +111,31 @@ test('addresses appear only when asked for, and the choice is remembered',async(
   await expect(page.locator('.lm-details')).toContainText('60.39000, 5.32400');
   await page.reload();
   await expect(page.getByRole('button',{name:'Addresses',exact:true})).toHaveAttribute('aria-pressed','true');
+});
+
+test('device names label the markers only when asked for',async({page})=>{
+  await open(page);
+  const text=async()=>Object.fromEntries((await debug(page)).markers.map(m=>[m.label,m.text]));
+  // Off by default: markers carry their site, and no device name is on the map.
+  expect(await text()).toEqual({rossa1:'rossa1',heiane1:'heiane1',se1:'se1',kvala1:'kvala1'});
+  await expect(page.locator('.lm-world-markers')).not.toContainText('hk-');
+
+  const toggle=page.getByRole('button',{name:'Device names',exact:true});
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed','true');
+  expect(await text()).toEqual({
+    rossa1:'hk-rossa1agg1, hk-rossa1agg2, hk-rossa1er1 +3',
+    heiane1:'hk-heiane1agg1, hk-heiane1agg2, hk-heiane1er1 +1',
+    se1:'hk-se1er1',kvala1:'hk-kvala1er1',
+  });
+  // Shown at any zoom, not only once zoomed in.
+  await expect(page.locator('.lm-world-markers')).toHaveClass(/lm-world-named/);
+  await expect(page.locator('.lm-world-label',{hasText:'hk-se1er1'})).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole('button',{name:'Device names',exact:true})).toHaveAttribute('aria-pressed','true');
+  await page.getByRole('button',{name:'Device names',exact:true}).click();
+  expect((await text()).rossa1).toBe('rossa1');
 });
 
 test('weather warnings are drawn on request and flag the locations they cover',async({page})=>{

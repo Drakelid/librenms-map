@@ -37,7 +37,7 @@ export function mountWorldMap(root:HTMLElement) {
     <div class="lm-shell lm-world-page">
       <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>WORLD MAP</span></div></div><div class="lm-header-right"><nav class="lm-pages" aria-label="LibreMap pages" hidden></nav><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
       <section class="lm-heading"><div><div class="lm-eyebrow">INFRASTRUCTURE / GEOGRAPHY</div></div><div class="lm-summary" aria-label="Location summary"></div></section>
-      <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device or location…"></label><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><button data-world="problems" aria-pressed="false">Only problems</button><button data-world="links" aria-pressed="true" class="lm-active">Links</button><button data-world="weather" aria-pressed="false" hidden title="Show MET Norway weather warnings">⚠ Weather warnings</button><button data-world="addresses" aria-pressed="false" title="Show the LibreNMS location text and coordinates">Addresses</button><span class="lm-spacer"></span><button data-world="refresh">↻ Refresh</button><button data-world="fullscreen" title="Fullscreen">⛶</button></div>
+      <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device or location…"></label><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><button data-world="problems" aria-pressed="false">Only problems</button><button data-world="links" aria-pressed="true" class="lm-active">Links</button><button data-world="weather" aria-pressed="false" hidden title="Show MET Norway weather warnings">⚠ Weather warnings</button><button data-world="names" aria-pressed="false" title="Label locations with the names of their devices">Device names</button><button data-world="addresses" aria-pressed="false" title="Show the LibreNMS location text and coordinates">Addresses</button><span class="lm-spacer"></span><button data-world="refresh">↻ Refresh</button><button data-world="fullscreen" title="Fullscreen">⛶</button></div>
       <div class="lm-notice" role="status" aria-live="polite">Loading device locations…</div>
       <main class="lm-workspace"><div class="lm-canvas-wrap lm-world-wrap">
         <div class="lm-world" tabindex="0" aria-label="World map of device locations. Drag to pan, scroll to zoom."><div class="lm-world-tiles"></div><svg class="lm-world-weather"></svg><svg class="lm-world-links"></svg><div class="lm-world-markers"></div></div>
@@ -72,9 +72,11 @@ export function mountWorldMap(root:HTMLElement) {
   // Per-viewer display preferences; storage is optional.
   const prefsKey=`libremap:world:${root.dataset.storageKey ?? 'local'}`;
   const prefs:Record<string,unknown>=(()=>{try{const value=JSON.parse(localStorage.getItem(prefsKey) ?? '{}');return object(value) ? value : {};}catch{return {};}})();
-  const savePrefs=()=>{try{localStorage.setItem(prefsKey,JSON.stringify({addresses:showAddresses,weather:weatherOn}));}catch{/* Storage is optional. */}};
+  const savePrefs=()=>{try{localStorage.setItem(prefsKey,JSON.stringify({addresses:showAddresses,deviceNames:showDeviceNames,weather:weatherOn}));}catch{/* Storage is optional. */}};
   // LibreNMS location text is often a street address: hidden unless asked for.
   let showAddresses=prefs.addresses===true;
+  // Device names stay off the map itself unless asked for; the details panel still lists them.
+  let showDeviceNames=prefs.deviceNames===true;
   const weatherEndpoint=root.dataset.weatherEndpoint;
   let weatherOn=!!weatherEndpoint && prefs.weather===true;
   let warnings:Warning[]=[], weatherAttribution='', weatherFetchedAt=0, weatherBusy=false;
@@ -82,15 +84,23 @@ export function mountWorldMap(root:HTMLElement) {
 
   /**
    * A location's name without its address: the LibreMap site its devices are
-   * classified into, or its device names when they have none.
+   * classified into; failing that, its device names when those are shown,
+   * else just its device count.
    */
   function siteName(site:Site):string {
     if(showAddresses && site.name.trim()) return site.name.trim();
     const classified=[...new Set(site.nodes.map(n=>n.site).filter(s=>s && s!=='Unclassified'))].sort();
     if(classified.length) return classified.length>1 ? `${classified[0]} +${classified.length-1}` : classified[0];
-    const first=site.nodes[0];
-    return !first ? 'Location' : site.nodes.length>1 ? `${nameOf(first)} +${site.nodes.length-1}` : nameOf(first);
+    if(showDeviceNames && site.nodes.length) return deviceNames(site);
+    return `${site.nodes.length} device${site.nodes.length===1 ? '' : 's'}`;
   }
+  /** The first few device names at a location; the rest as a count. */
+  function deviceNames(site:Site,shown=3):string {
+    const names=site.nodes.slice(0,shown).map(nameOf).join(', ');
+    return site.nodes.length>shown ? `${names} +${site.nodes.length-shown}` : names;
+  }
+  /** The text beside a marker: its device names when asked for, else its name. */
+  const markerLabel=(site:Site)=>showDeviceNames ? deviceNames(site) : siteName(site);
 
   // ---- Data ---------------------------------------------------------------
   async function getJson(endpoint:string|undefined,what:string):Promise<unknown> {
@@ -254,7 +264,7 @@ export function mountWorldMap(root:HTMLElement) {
       marker.setAttribute('aria-label',`${siteName(site)}: ${count} device${count===1 ? '' : 's'}${down ? `, ${down} down` : ''}${level ? `, ${level} weather warning` : ''}`);
       marker.style.setProperty('--marker',`${Math.round(Math.min(36,14+Math.sqrt(count)*4))}px`);
       const dot=document.createElement('span');dot.className='lm-world-dot';dot.textContent=count>1 ? String(count) : '';
-      const label=document.createElement('span');label.className='lm-world-label';label.textContent=siteName(site);
+      const label=document.createElement('span');label.className='lm-world-label';label.textContent=markerLabel(site);
       marker.append(dot,label);
       if(level){
         const badge=document.createElement('span');badge.className='lm-world-badge';badge.textContent='!';badge.style.setProperty('--area',WARNING_COLORS[level]);
@@ -324,7 +334,9 @@ export function mountWorldMap(root:HTMLElement) {
       if(!outside) marker.style.transform=`translate(${p.x}px,${p.y}px) translate(-50%,-50%)`;
       marker.classList.toggle('lm-selected',selected?.type==='site' && selected.id===site.id || selected?.type==='device' && site.nodes.some(n=>n.id===selected!.id));
     }
-    markersEl.classList.toggle('lm-world-named',view.zoom>=LABEL_ZOOM);
+    // Labels show once zoomed in, or always when the viewer asked for device names.
+    markersEl.classList.toggle('lm-world-named',view.zoom>=LABEL_ZOOM || showDeviceNames);
+    markersEl.classList.toggle('lm-world-device-names',showDeviceNames);
     const world=worldSize(view.zoom);
     for(const pair of siteLinks){
       const pairLines=lines.get(pair.key);
@@ -369,9 +381,9 @@ export function mountWorldMap(root:HTMLElement) {
     const max=places?.map.maxZoom ?? 18, off=!snapshot;
     button('zoom-in').disabled=view.zoom>=max;button('zoom-out').disabled=view.zoom<=1;button('fit').disabled=off;
     search.disabled=off;groupSelect.disabled=off;button('problems').disabled=off;button('links').disabled=off;
-    button('addresses').disabled=off;
+    button('addresses').disabled=off;button('names').disabled=off;
     button('weather').hidden=!weatherEndpoint;button('weather').disabled=weatherBusy;
-    for(const [action,on] of [['problems',problemsOnly],['links',showLinks],['addresses',showAddresses],['weather',weatherOn]] as const){button(action).classList.toggle('lm-active',on);button(action).setAttribute('aria-pressed',String(on));}
+    for(const [action,on] of [['problems',problemsOnly],['links',showLinks],['addresses',showAddresses],['names',showDeviceNames],['weather',weatherOn]] as const){button(action).classList.toggle('lm-active',on);button(action).setAttribute('aria-pressed',String(on));}
   }
 
   // ---- Summary and details -----------------------------------------------
@@ -635,6 +647,7 @@ export function mountWorldMap(root:HTMLElement) {
       case 'links':showLinks=!showLinks;syncControls();buildLinks();render();break;
       case 'weather':setWeather(!weatherOn);break;
       case 'addresses':showAddresses=!showAddresses;savePrefs();syncControls();rebuild();break;
+      case 'names':showDeviceNames=!showDeviceNames;savePrefs();syncControls();rebuild();break;
       case 'refresh':void refresh();break;
       case 'fit':fit();break;
       case 'zoom-in':zoomBy(1);break;
@@ -664,7 +677,7 @@ export function mountWorldMap(root:HTMLElement) {
   // Read-only diagnostic hook for browser checks with fixtures that opt in.
   if(root.dataset.debug==='true') Object.defineProperty(window,'libremapWorldDebug',{value:()=>({
     zoom:view.zoom,center:{...view.center},
-    markers:sites.map(site=>({id:site.id,name:site.name,label:siteName(site),count:site.nodes.length,status:site.status,warning:worstLevel(siteWarnings.get(site.id) ?? []) ?? null,position:screen(project(site,view.zoom))})),
+    markers:sites.map(site=>({id:site.id,name:site.name,label:siteName(site),text:markers.get(site.id)?.querySelector('.lm-world-label')?.textContent ?? '',count:site.nodes.length,status:site.status,warning:worstLevel(siteWarnings.get(site.id) ?? []) ?? null,position:screen(project(site,view.zoom))})),
     links:siteLinks.map(pair=>({key:pair.key,count:pair.links.length,state:pair.state,label:pair.label,color:pair.color})),
     undrawn:{withinSite:Object.fromEntries([...withinSite].map(([id,list])=>[id,list.length])),unlocated:undrawnUnlocated},
     warnings:weatherOn ? warnings.map(w=>({id:w.id,level:w.level,drawn:!!weatherPaths.get(w.id)?.getAttribute('d')})) : [],

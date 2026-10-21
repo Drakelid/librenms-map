@@ -36,6 +36,8 @@
 #libremap .lm-world-marker:focus-visible .lm-world-label,
 #libremap .lm-world-marker.lm-selected .lm-world-label { display: block; }
 #libremap .lm-world-marker:hover, #libremap .lm-world-marker:focus-visible, #libremap .lm-world-marker.lm-selected { z-index: 2; }
+/* Device name labels wrap instead of running across neighbouring markers. */
+#libremap .lm-world-device-names .lm-world-label { width: max-content; max-width: 220px; white-space: normal; text-align: center; font-weight: 500; line-height: 1.35; }
 @keyframes lm-world-pulse { 0% { box-shadow: 0 0 0 0 #e05b6599, 0 1px 4px #0006; } 70% { box-shadow: 0 0 0 10px #e05b6500, 0 1px 4px #0006; } 100% { box-shadow: 0 0 0 0 #e05b6500, 0 1px 4px #0006; } }
 @media (prefers-reduced-motion: reduce) { #libremap .lm-world-down .lm-world-dot { animation: none; } }
 #libremap .lm-world-wrap .lm-map-controls, #libremap .lm-world-wrap .lm-legend, #libremap .lm-world-attribution { z-index: 3; }
