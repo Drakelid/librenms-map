@@ -22,9 +22,10 @@ export function mountPageNav(nav:HTMLElement, root:HTMLElement, current:Page):vo
       nav.append(here);
       continue;
     }
-    const url=new URL(root.dataset[key]!,location.href);
-    if(url.origin!==location.origin) continue;
-    const link=document.createElement('a');link.href=url.href;link.textContent=label;
+    // Resolve only to check the origin; keep the host's URL as written.
+    const href=root.dataset[key]!;
+    if(new URL(href,location.href).origin!==location.origin) continue;
+    const link=document.createElement('a');link.href=href;link.textContent=label;
     nav.append(link);
   }
 }
