@@ -1,0 +1,56 @@
+name: Release
+
+# Run from Actions → Release → Run workflow. Builds dist/ from source, runs the
+# checks, commits the built assets to main and tags the release, so a tag can
+# never ship a stale JavaScript bundle. Packagist picks the tag up from there.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, without the leading v (for example 1.1.1)'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency: release
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      # Passed through the environment, never interpolated into scripts.
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Validate version
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Version must look like 1.2.3"; exit 1; }
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::Tag v$VERSION already exists. Published tags are never moved; choose a new version."
+            exit 1
+          fi
+      - run: npm ci
+      - name: Set package version
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+      - run: npm test
+      # Vite empties dist/ first, so a renamed worker chunk replaces the old one.
+      - run: npm run build
+      - run: node tests/php-syntax.cjs
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - name: Commit the built assets and tag the release
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A dist package.json package-lock.json
+          git diff --cached --quiet || git commit -m "chore: release v$VERSION with rebuilt assets"
+          git tag -a "v$VERSION" -m "v$VERSION"
+          git push origin HEAD:main "v$VERSION"
