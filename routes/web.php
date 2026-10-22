@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use LibreMap\Http\CustomMapController;
 use LibreMap\Http\EnsurePluginEnabled;
+use LibreMap\Http\PowerOutageController;
 use LibreMap\Http\TopologyController;
 use LibreMap\Http\ViewController;
 use LibreMap\Http\WeatherController;
@@ -21,6 +22,9 @@ Route::middleware(['web', 'auth', EnsurePluginEnabled::class, 'throttle:libremap
     Route::get('/libremap/world', [TopologyController::class, 'world'])->name('libremap.world');
     Route::get('/libremap/locations', [TopologyController::class, 'locations'])->name('libremap.locations');
     Route::get('/libremap/weather', [WeatherController::class, 'index'])->name('libremap.weather');
+    Route::get('/libremap/power/outages', [PowerOutageController::class, 'outages'])->name('libremap.power');
+    Route::get('/libremap/power/outage-at', [PowerOutageController::class, 'outageAt'])->name('libremap.power.at');
+    Route::get('/libremap/power/health', [PowerOutageController::class, 'health'])->name('libremap.power.health');
     Route::get('/libremap/custom', [TopologyController::class, 'custom'])->name('libremap.custom');
     Route::get('/libremap/devices', [CustomMapController::class, 'devices'])->name('libremap.devices');
     Route::get('/libremap/devices/{id}/ports', [CustomMapController::class, 'ports'])->where('id', '[1-9][0-9]{0,9}');

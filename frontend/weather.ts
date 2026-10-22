@@ -1,4 +1,4 @@
-import { insidePolygon, project, type LatLng, type Ring } from './geo';
+import { insidePolygon, pathData, type LatLng, type Ring } from './geo';
 
 export type WarningLevel='yellow'|'orange'|'red';
 export interface Warning {
@@ -63,10 +63,7 @@ export const worstLevel=(list:Warning[]):WarningLevel|undefined => list.reduce<W
 
 /** An SVG path in world pixels at `zoom`; holes cut out with the even-odd rule. */
 export function warningPath(warning:Warning, zoom:number):string {
-  return warning.polygons.map(polygon=>polygon.map(ring=>'M'+ring.map(([lng,lat])=>{
-    const p=project({lat,lng},zoom);
-    return `${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
-  }).join('L')+'Z').join('')).join('');
+  return warning.polygons.map(polygon=>polygon.map(ring=>pathData(ring,zoom,true)).join('')).join('');
 }
 
 /** "Mon 21 Oct, 14:00 – Tue 22 Oct, 06:00" in the viewer's locale and time zone. */

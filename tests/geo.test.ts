@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { clampCenter, fitView, project, tileUrl, unproject, withoutCoordinates, worldSize } from '../frontend/geo';
+import { clampCenter, fitView, pathData, project, tileUrl, unproject, withoutCoordinates, worldSize } from '../frontend/geo';
 
 const close=(actual:number,expected:number,tolerance=1e-6)=>assert.ok(Math.abs(actual-expected)<=tolerance,`${actual} ≉ ${expected}`);
 
@@ -56,4 +56,21 @@ test('the centre stays on the map vertically and wraps horizontally',()=>{
   assert.deepEqual(clampCenter({x:-10,y:-500},2,400),{x:worldSize(2)-10,y:200});
   // A world smaller than the viewport is centred.
   assert.deepEqual(clampCenter({x:10,y:0},1,800),{x:10,y:256});
+});
+
+test('paths drop points that share a pixel, but keep small shapes whole',()=>{
+  // A detailed ring: 1,000 points along a 1°×1° square.
+  const ring:[number,number][]=[];
+  for(let i=0;i<250;i++)ring.push([5+i/250,60]);
+  for(let i=0;i<250;i++)ring.push([6,60+i/250]);
+  for(let i=0;i<250;i++)ring.push([6-i/250,61]);
+  for(let i=0;i<=250;i++)ring.push([5,61-i/250]);
+  const points=(d:string)=>d.split(/[ML]/).filter(Boolean).length;
+  assert.ok(points(pathData(ring,5,true))<ring.length/4,'simplified when zoomed out');
+  assert.equal(points(pathData(ring,16,true)),ring.length,'every point kept when zoomed in');
+  assert.match(pathData(ring,5,true),/^M[\d. L]+Z$/);
+  // A shape smaller than a pixel is drawn in full rather than vanishing.
+  const tiny:[number,number][]=[[5,60],[5.0001,60],[5.0001,60.0001],[5,60]];
+  assert.equal(points(pathData(tiny,2,true)),4);
+  assert.match(pathData([[5,60],[5.0001,60.0001]],2,false),/^M[\d. ]+L[\d. ]+$/);
 });

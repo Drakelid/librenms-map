@@ -66,6 +66,25 @@ function insideRing({lat,lng}:LatLng, ring:Ring):boolean {
   return inside;
 }
 
+/**
+ * A ring or line as SVG path data in world pixels at `zoom`. Points within
+ * `tolerance` pixels of the last one kept are dropped, so a detailed coast is
+ * not drawn with thousands of points per pixel when zoomed out. A shape too
+ * small to keep its form is drawn in full; it has few pixels anyway.
+ */
+export function pathData(points:Ring, zoom:number, closed:boolean, tolerance=0.75):string {
+  const projected=points.map(([lng,lat])=>project({lat,lng},zoom));
+  const xy=(p:Point)=>`${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+  const kept:Point[]=[];
+  projected.forEach((p,i)=>{
+    const last=kept[kept.length-1];
+    if(last && i<projected.length-1 && Math.abs(p.x-last.x)<tolerance && Math.abs(p.y-last.y)<tolerance) return;
+    kept.push(p);
+  });
+  const shape=kept.length>=(closed ? 4 : 2) ? kept : projected;
+  return 'M'+shape.map(xy).join('L')+(closed ? 'Z' : '');
+}
+
 /** Whether a point lies inside a polygon's outline and outside all of its holes. */
 export function insidePolygon(point:LatLng, polygon:Ring[]):boolean {
   if(!polygon.length || !insideRing(point,polygon[0])) return false;

@@ -203,6 +203,7 @@ php artisan route:clear
 - The world map names a device by its **hostname**; when the hostname is only an IP address (a device added by IP), by its **sysName**; and without a sysName, by that **IP address**. A device's details list the identifiers not used as its name.
 - Search matches device names, hostnames, sysNames and sites. **Device group** and **Only problems** narrow the map; **Links** hides the lines.
 - **⚠ Weather warnings** draws MET Norway's active warnings (wind, rain, snow, ice, storm surge, forest fire and more) as yellow, orange and red areas. Locations inside a warning get a badge and an **Under warning** count; click an area or a flagged location for MET's description, consequences, advice and the affected locations. The toggle is off until selected and remembered in the browser.
+- **⚡ Power outages** draws the outages on the Norwegian grid operators' outage maps (Fagne, BKK, Glitre Nett, Lyse Elnett / L-nett), read through [DRIFT](#power-outages-drift). Current outages are solid areas and planned outages dashed ones. Affected lines are drawn as strokes, and outages known only by a point as dots. Locations inside an outage area get a ⚡ badge and an **In outage area** count. Click an outage for its operator, municipality, customers affected, times, state and reason. Select a location to ask DRIFT whether that place is inside or near an outage. **"No outage on the grid operators' maps" only means nothing is on those maps there; it does not confirm the power is on.** The status line shows when DRIFT last read the maps ("Maps read at …") and names any map that is stale or failed to read. The toggle appears only when DRIFT is configured; it is off until selected and remembered in the browser.
 - Drag to pan, scroll or double-click to zoom (Shift+double-click zooms out). Keys outside text fields: `/` find, `F` fit, `+`/`−` zoom, arrows pan, `D` next location with a down device, `Esc` clear.
 - The map refreshes every 60 seconds and re-judges link staleness every 10 seconds, as the topology map does.
 
@@ -223,6 +224,28 @@ Weather warnings come from [MET Norway's MetAlerts API](https://api.met.no/weath
 'weather_lang' => 'en',                  // or 'no'
 'weather_contact' => 'noc@example.net',  // email address or URL
 ```
+
+### Power outages (DRIFT)
+
+Power outages come from DRIFT's power-outage API. Set two values in the LibreNMS host's `.env` (`/opt/librenms/.env`), then run `php artisan config:clear` (or `optimize:clear`):
+
+```sh
+DRIFT_POWER_API_URL=http://drift.example.net:8080/api/power-outages
+DRIFT_API_TOKEN=<a DRIFT API token>
+```
+
+| Setting | Meaning |
+| --- | --- |
+| `DRIFT_POWER_API_URL` | DRIFT's power-outage API base URL, ending in `/api/power-outages`. Without it the toggle and the `/libremap/power/*` endpoints are removed. |
+| `DRIFT_API_TOKEN` | A DRIFT API token, sent as `Authorization: Bearer …`. Keep it in `.env` or your secrets store. Never put it in `config/libremap.php` or commit it. |
+
+The **LibreNMS server** calls DRIFT, never the browser, so it needs network access to the DRIFT host. The token stays on the server: it is not sent to browsers or put in the page, and it is not logged or used in cache keys. Browsers call LibreMap's own `/libremap/power/outages`, `/libremap/power/outage-at` and `/libremap/power/health`.
+
+DRIFT reads the operators' maps every five minutes. LibreMap caches each answer for 60 seconds and the world map refreshes outages every five minutes. Requests time out after 30 seconds. A network error or a 503 is retried once; a 400 or 401 is not. Errors are explicit:
+
+- "The DRIFT token is missing or wrong." means the token is missing or wrong.
+- "The outage service is unavailable…" means DRIFT or its outage service cannot be reached.
+- "DRIFT rejected the request: …" passes on DRIFT's reason for rejecting a parameter.
 
 ## Custom maps
 

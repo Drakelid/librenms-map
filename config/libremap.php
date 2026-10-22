@@ -22,4 +22,12 @@ return [
     // Optional contact for MET Norway's terms of use (an email address or
     // URL), added to the User-Agent of the server's requests.
     'weather_contact' => null,
+    // World map power outages from DRIFT's power-outage API (Fagne, BKK,
+    // Glitre Nett, Lyse Elnett). Set both in LibreNMS's .env, never here:
+    //   DRIFT_POWER_API_URL=http://drift.example.net:8080/api/power-outages
+    //   DRIFT_API_TOKEN=<a DRIFT API token>
+    // The LibreNMS server calls DRIFT; the token never reaches browsers.
+    // Without a URL the toggle and the endpoints are removed.
+    'drift_url' => env('DRIFT_POWER_API_URL'),
+    'drift_token' => env('DRIFT_API_TOKEN'),
 ];

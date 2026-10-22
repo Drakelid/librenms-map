@@ -2,6 +2,10 @@
 #libremap .lm-world { position: absolute; inset: 0; overflow: hidden; cursor: grab; touch-action: none; user-select: none; outline: none; background: var(--bg); }
 #libremap .lm-world:focus-visible { box-shadow: inset 0 0 0 2px #299e9b; }
 #libremap .lm-world.lm-dragging { cursor: grabbing; }
+/* Every layer sits in one pane that panning moves on the compositor; its contents are laid out only on zoom, resize or rebuild. */
+#libremap .lm-world-pane { position: absolute; inset: 0; will-change: transform; }
+/* While dragging, nothing under the pointer needs hit-testing or hover repaints. */
+#libremap .lm-world.lm-dragging .lm-world-pane * { pointer-events: none; }
 #libremap .lm-world-tiles, #libremap .lm-world-markers { position: absolute; inset: 0; }
 #libremap .lm-world-tiles img { position: absolute; left: 0; top: 0; width: 256px; height: 256px; max-width: none; pointer-events: none; }
 #libremap .lm-world-tiles img.lm-tile-failed { visibility: hidden; }
@@ -14,6 +18,22 @@
 #libremap .lm-world-warning.lm-selected { fill-opacity: .36; stroke-width: 3; }
 #libremap .lm-legend i.lm-world-area { width: 14px; height: 10px; border: 1.5px solid var(--area); border-radius: 2px; background: color-mix(in srgb, var(--area) 25%, transparent); }
 #libremap .lm-world-weather-key[hidden] { display: none; }
+/* Power outage areas, lines and points, above the warnings. Planned ones are dashed and lighter. */
+#libremap .lm-world-power { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+#libremap .lm-world-outage { fill: var(--area); fill-opacity: .28; stroke: var(--area); stroke-width: 1.5; stroke-opacity: .9; pointer-events: visiblePainted; cursor: pointer; }
+#libremap .lm-world-outage.lm-world-planned { fill-opacity: .14; stroke-dasharray: 6 4; }
+#libremap .lm-world-outage-lines { fill: none; stroke-width: 4; stroke-linecap: round; pointer-events: visibleStroke; }
+#libremap .lm-world-outage-point { fill-opacity: .7; stroke: #fff; }
+#libremap .lm-world-outage:hover { fill-opacity: .4; }
+#libremap .lm-world-outage.lm-selected { fill-opacity: .45; stroke-width: 3; }
+#libremap .lm-world-outage-lines.lm-selected { stroke-width: 6; }
+#libremap .lm-legend i.lm-world-area.lm-world-planned { border-style: dashed; }
+#libremap .lm-world-power-key[hidden] { display: none; }
+#libremap .lm-world-power-badge { right: auto; left: -7px; color: #fff; font-size: 9px; }
+#libremap .lm-world-power-status p, #libremap .lm-world-power-here p { margin: 4px 0; }
+#libremap .lm-world-verdict { font-weight: 600; }
+#libremap .lm-world-in_outage_area { color: #c2255c; }
+#libremap .lm-world-near_outage { color: #b8590b; }
 #libremap .lm-world-badge { position: absolute; right: -7px; top: -7px; display: flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: var(--area); border: 1.5px solid #fff; color: #1b1b1b; font-size: 10px; font-weight: 800; line-height: 1; box-shadow: 0 1px 3px #0006; pointer-events: none; }
 #libremap .lm-world-section { margin-top: 22px; }
 #libremap .lm-world-warnings { margin-top: 10px; }
@@ -25,9 +45,11 @@
 #libremap.lm-dark .lm-world-line.lm-selected { filter: drop-shadow(0 0 3px #000); }
 #libremap .lm-world-marker { position: absolute; left: 0; top: 0; display: flex; align-items: center; justify-content: center; width: var(--marker, 16px); height: var(--marker, 16px); padding: 0; border: 0; background: transparent; cursor: pointer; }
 #libremap .lm-world-marker:hover { background: transparent; }
-#libremap .lm-world-dot { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: 50%; border: 2px solid #fff; color: #fff; font-size: 10px; font-weight: 700; box-shadow: 0 1px 4px #0006; }
+#libremap .lm-world-dot { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: 50%; border: 2px solid #fff; color: #fff; font-size: 10px; font-weight: 700; box-shadow: 0 1px 4px #0006; }
 #libremap .lm-world-up .lm-world-dot { background: #36b89a; }
-#libremap .lm-world-down .lm-world-dot { background: #e05b65; animation: lm-world-pulse 1.6s ease-out infinite; }
+#libremap .lm-world-down .lm-world-dot { background: #e05b65; }
+/* The pulse animates only transform and opacity, so it runs on the compositor without repainting the map. */
+#libremap .lm-world-down .lm-world-dot::after { content: ''; position: absolute; inset: -2px; border-radius: 50%; box-shadow: 0 0 0 3px #e05b6599; animation: lm-world-pulse 1.6s ease-out infinite; pointer-events: none; }
 #libremap .lm-world-unknown .lm-world-dot { background: #8a96a9; }
 #libremap .lm-world-marker.lm-selected .lm-world-dot, #libremap .lm-world-marker:focus-visible .lm-world-dot { box-shadow: 0 0 0 3px #299e9b, 0 1px 4px #0006; }
 #libremap .lm-world-label { position: absolute; left: 50%; top: calc(100% + 4px); transform: translateX(-50%); display: none; padding: 2px 6px; border-radius: 4px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); font-size: 11px; font-weight: 600; white-space: nowrap; pointer-events: none; }
@@ -39,8 +61,8 @@
 #libremap .lm-world-marker:hover, #libremap .lm-world-marker:focus-visible, #libremap .lm-world-marker.lm-selected { z-index: 2; }
 /* Device name labels wrap instead of running across neighbouring markers. */
 #libremap .lm-world-device-names .lm-world-label { width: max-content; max-width: 220px; white-space: normal; text-align: center; font-weight: 500; line-height: 1.35; }
-@keyframes lm-world-pulse { 0% { box-shadow: 0 0 0 0 #e05b6599, 0 1px 4px #0006; } 70% { box-shadow: 0 0 0 10px #e05b6500, 0 1px 4px #0006; } 100% { box-shadow: 0 0 0 0 #e05b6500, 0 1px 4px #0006; } }
-@media (prefers-reduced-motion: reduce) { #libremap .lm-world-down .lm-world-dot { animation: none; } }
+@keyframes lm-world-pulse { 0% { transform: scale(1); opacity: 1; } 70% { transform: scale(1.8); opacity: 0; } 100% { transform: scale(1.8); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { #libremap .lm-world-down .lm-world-dot::after { animation: none; display: none; } }
 #libremap .lm-world-wrap .lm-map-controls, #libremap .lm-world-wrap .lm-legend, #libremap .lm-world-attribution { z-index: 3; }
 #libremap .lm-world-wrap .lm-legend { padding: 6px 10px; border-radius: 6px; background: color-mix(in srgb, var(--panel) 88%, transparent); }
 #libremap .lm-legend i.lm-world-key { width: 10px; height: 10px; border: 0; border-radius: 50%; }

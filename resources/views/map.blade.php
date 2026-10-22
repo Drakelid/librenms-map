@@ -13,6 +13,7 @@
          data-devices-endpoint="{{ route('libremap.devices') }}"
          data-locations-endpoint="{{ route('libremap.locations') }}"
          @if (config('libremap.weather_warnings', true)) data-weather-endpoint="{{ route('libremap.weather') }}" @endif
+         @if (\LibreMap\Power\DriftPowerOutages::enabled()) data-power-endpoint="{{ route('libremap.power') }}" data-power-at-endpoint="{{ route('libremap.power.at') }}" data-power-health-endpoint="{{ route('libremap.power.health') }}" @endif
          data-topology-url="{{ route('libremap.index') }}"
          data-world-url="{{ route('libremap.world') }}"
          data-custom-url="{{ route('libremap.custom') }}"
