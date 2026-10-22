@@ -386,7 +386,8 @@ test('every link line can be clicked, and shows the load in each direction',asyn
   expect(graphs).toEqual([]);
   await details.getByText('Traffic, last 24 hours').first().click();
   await expect(details.locator('.lm-world-load-graph img').first()).toBeVisible();
-  expect(graphs.length).toBe(1);
+  // The image takes its size, and so counts as visible, before its request is sent: wait for the request.
+  await expect.poll(()=>graphs.length).toBe(1);
   expect(new URL(graphs[0]).searchParams.get('type')).toBe('port_bits');
 
   // A down link says why it has no load.
@@ -434,8 +435,9 @@ test('the map stays on Norway, and a location outside it is listed instead of pl
     const marker=await page.locator('.lm-world-marker[data-site="3"]').boundingBox();
     return marker ? Math.round(Math.hypot(marker.x+marker.width/2-(box.x+box.width/2),marker.y+marker.height/2-(box.y+box.height/2))) : Infinity;
   }).toBeLessThan(3);
+  // Far enough to reach the limit: from Bergen to past Norway's northern edge is about 5,000 px at this zoom.
   for(let i=0;i<40;i++)await page.keyboard.press('ArrowLeft');
-  for(let i=0;i<20;i++)await page.keyboard.press('ArrowUp');
+  for(let i=0;i<80;i++)await page.keyboard.press('ArrowUp');
   expect(await insideNorway()).toBe(true);
   const west=await area();
   expect(Math.abs(west.center.x-west.low.x)).toBeLessThan(2);
