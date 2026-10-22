@@ -207,7 +207,7 @@ php artisan route:clear
 - Drag to pan, scroll or double-click to zoom (Shift+double-click zooms out). Keys outside text fields: `/` find, `F` fit, `+`/`−` zoom, arrows pan, `D` next location with a down device, `Esc` clear.
 - The map refreshes every 60 seconds and re-judges link staleness every 10 seconds, as the topology map does.
 
-Coordinates come from **LibreNMS locations**: set them on the Locations page or let LibreNMS geocode the location text. The map stays within mainland Norway: it cannot be panned or zoomed out beyond it, and **Fit** uses only locations inside it, or shows all of Norway when there are none. A device whose location lies outside (usually a wrong coordinate or geocode) is not placed; it is counted as **Outside map area** and listed in the details panel so the location can be corrected. Set `world_bounds` to another box, or to `null` for the whole world:
+Coordinates come from **LibreNMS locations**: set them on the Locations page or let LibreNMS geocode the location text. The map stays within mainland Norway: it can be panned a little past its edges (a fifth of the map's height) so the coast is never on the edge of the screen, but no further, and zooming out stops where all of Norway is in view; and **Fit** uses only locations inside it, or shows all of Norway when there are none. A device whose location lies outside (usually a wrong coordinate or geocode) is not placed; it is counted as **Outside map area** and listed in the details panel so the location can be corrected. Set `world_bounds` to another box, or to `null` for the whole world:
 
 ```php
 'world_bounds' => ['south' => 57.8, 'west' => 4.3, 'north' => 71.3, 'east' => 31.3], // or null

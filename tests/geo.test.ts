@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { clampCenter, clampToBounds, fitView, insideBounds, minZoomFor, pathData, project, tileUrl, unproject, withoutCoordinates, worldSize } from '../frontend/geo';
+import { areaPadding, clampCenter, clampToBounds, fitView, insideBounds, minZoomFor, pathData, project, tileUrl, unproject, withoutCoordinates, worldSize } from '../frontend/geo';
 
 const close=(actual:number,expected:number,tolerance=1e-6)=>assert.ok(Math.abs(actual-expected)<=tolerance,`${actual} ≉ ${expected}`);
 
@@ -100,4 +100,13 @@ test('the view stays inside the map area, and cannot zoom out past it',()=>{
   const centred=clampToBounds(project({lat:64.18,lng:-51.72},min),min,w,h,norway);
   const a=project({lat:norway.north,lng:norway.west},min), b=project({lat:norway.south,lng:norway.east},min);
   close(centred.x,(a.x+b.x)/2);close(centred.y,(a.y+b.y)/2);
+});
+
+test('panning leaves room around the map area',()=>{
+  const norway={south:57.8,west:4.3,north:71.3,east:31.3}, zoom=7, w=1000, h=520, pad=areaPadding(w,h);
+  assert.equal(pad,104);
+  const nw=project({lat:norway.north,lng:norway.west},zoom);
+  // Pushed far west, the view's left edge stops `pad` pixels beyond Norway's western edge.
+  const west=clampToBounds(project({lat:64.18,lng:-51.72},zoom),zoom,w,h,norway,pad);
+  close(west.x-w/2,nw.x-pad);
 });

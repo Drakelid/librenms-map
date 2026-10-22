@@ -1,6 +1,6 @@
 import { statusColor, themeController } from './canvas-style';
 import { shortcutAllowed } from './canvas-tools';
-import { clampCenter, clampToBounds, fitView, insideBounds, minZoomFor, project, TILE, tileUrl, withoutCoordinates, worldSize, type Bounds, type Point } from './geo';
+import { areaPadding, clampCenter, clampToBounds, fitView, insideBounds, minZoomFor, project, TILE, tileUrl, withoutCoordinates, worldSize, type Bounds, type Point } from './geo';
 import { portGraphUrl } from './link-preview';
 import { mountPageNav } from './page-nav';
 import { deviceName, directions, formatBps, LOAD_COLORS, metric, topology } from './topology';
@@ -533,7 +533,7 @@ export function mountWorldMap(root:HTMLElement) {
    */
   function keepInArea(center:Point,zoom:number):Point {
     const {w,h}=size(), bounds=places?.map.bounds, clamped=clampCenter(center,zoom,h);
-    return bounds ? clampToBounds(clamped,zoom,w,h,bounds) : clamped;
+    return bounds ? clampToBounds(clamped,zoom,w,h,bounds,areaPadding(w,h)) : clamped;
   }
   function setView(zoom:number,center:Point){
     const max=places?.map.maxZoom ?? 18;

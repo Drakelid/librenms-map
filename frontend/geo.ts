@@ -96,13 +96,17 @@ export interface Bounds { south:number; west:number; north:number; east:number }
 
 export const insideBounds=(p:LatLng, b:Bounds|null|undefined)=>!b || (p.lat>=b.south && p.lat<=b.north && p.lng>=b.west && p.lng<=b.east);
 
+/** Room around the map area when panning: a fifth of the viewport's shorter side, so a coast never sits on the edge of the screen. */
+export const areaPadding=(width:number, height:number)=>Math.round(Math.min(width,height)*.2);
+
 /**
  * The view centre (world pixels at `zoom`) moved just enough that a `width`
- * by `height` viewport stays inside the bounds; centred on an axis where the
- * bounds are narrower than the viewport.
+ * by `height` viewport stays inside the bounds, grown by `padding` pixels on
+ * every side; centred on an axis where that is narrower than the viewport.
  */
-export function clampToBounds(center:Point, zoom:number, width:number, height:number, b:Bounds):Point {
+export function clampToBounds(center:Point, zoom:number, width:number, height:number, b:Bounds, padding=0):Point {
   const nw=project({lat:b.north,lng:b.west},zoom), se=project({lat:b.south,lng:b.east},zoom);
+  nw.x-=padding;nw.y-=padding;se.x+=padding;se.y+=padding;
   const axis=(c:number,low:number,high:number,half:number)=>high-low<=2*half ? (low+high)/2 : Math.max(low+half,Math.min(high-half,c));
   return {x:axis(center.x,nw.x,se.x,width/2),y:axis(center.y,nw.y,se.y,height/2)};
 }

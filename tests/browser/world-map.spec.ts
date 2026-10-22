@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { demoSnapshot } from '../../frontend/demo';
-import { minZoomFor, project } from '../../frontend/geo';
+import { areaPadding, minZoomFor, project } from '../../frontend/geo';
 
 type Debug={zoom:number;markers:{id:string;name:string;label:string;text:string;count:number;status:string;warning:string|null}[];links:{key:string;count:number;state:string}[];undrawn:{withinSite:Record<string,number>;unlocated:number};warnings:{id:string;level:string;drawn:boolean}[];tiles:string[]};
 const debug=(page:Page)=>page.evaluate(()=>(window as unknown as {libremapWorldDebug:()=>Debug}).libremapWorldDebug());
@@ -414,17 +414,25 @@ test('the map stays on Norway, and a location outside it is listed instead of pl
   await expect(page.locator('.lm-summary')).toContainText('1Outside map area');
   await expect(page.locator('.lm-details')).toContainText('1 device is outside the map area');
 
-  // However far the view is pushed west, its left edge stops at Norway's western edge.
+  // However far the view is pushed west, its left edge stops a little beyond Norway's western
+  // edge: room enough that the coast is not on the edge of the screen, and no further.
   const box=(await page.locator('.lm-world').boundingBox())!;
-  const insideNorway=async()=>{
+  const pad=areaPadding(Math.round(box.width),Math.round(box.height));
+  const area=async()=>{
     const {zoom,center}=await state();
     const nw=project({lat:norway.north,lng:norway.west},zoom), se=project({lat:norway.south,lng:norway.east},zoom);
-    const fits=(low:number,high:number,c:number,half:number)=>high-low<=2*half ? Math.abs(c-(low+high)/2)<1 : c-half>=low-1 && c+half<=high+1;
-    return fits(nw.x,se.x,center.x,box.width/2) && fits(nw.y,se.y,center.y,box.height/2);
+    return {center,low:{x:nw.x-pad,y:nw.y-pad},high:{x:se.x+pad,y:se.y+pad}};
+  };
+  const insideNorway=async()=>{
+    const {center,low,high}=await area();
+    const fits=(lo:number,hi:number,c:number,half:number)=>hi-lo<=2*half ? Math.abs(c-(lo+hi)/2)<1 : c-half>=lo-1 && c+half<=hi+1;
+    return fits(low.x,high.x,center.x,box.width/2) && fits(low.y,high.y,center.y,box.height/2);
   };
   for(let i=0;i<40;i++)await page.keyboard.press('ArrowLeft');
   for(let i=0;i<20;i++)await page.keyboard.press('ArrowUp');
   expect(await insideNorway()).toBe(true);
+  const west=await area();
+  expect(Math.abs(west.center.x-box.width/2-west.low.x)).toBeLessThan(2);
   // Dragging cannot take it there either.
   await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
   await page.mouse.move(box.x+box.width-5,box.y+box.height-5,{steps:5});await page.mouse.up();
