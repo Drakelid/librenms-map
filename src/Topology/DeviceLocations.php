@@ -85,6 +85,8 @@ class DeviceLocations
                 'zoom' => max(1, min(18, (int) $this->librenmsConfig('leaflet.default_zoom', 2))),
             ],
             'bounds' => $this->bounds(),
+            // The shape the view must stay on within the bounds; only 'norway' is known.
+            'outline' => config('libremap.world_outline', 'norway') === 'norway' ? 'norway' : null,
         ];
     }
 

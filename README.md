@@ -207,10 +207,11 @@ php artisan route:clear
 - Drag to pan, scroll or double-click to zoom (Shift+double-click zooms out). Keys outside text fields: `/` find, `F` fit, `+`/`−` zoom, arrows pan, `D` next location with a down device, `Esc` clear.
 - The map refreshes every 60 seconds and re-judges link staleness every 10 seconds, as the topology map does.
 
-Coordinates come from **LibreNMS locations**: set them on the Locations page or let LibreNMS geocode the location text. The map stays around mainland Norway: any place in Norway, the outermost coast included, can be centred, with room beyond its edges, but the view goes no further, and zooming out stops where all of Norway is in view; and **Fit** uses only locations inside it, or shows all of Norway when there are none. A device whose location lies outside (usually a wrong coordinate or geocode) is not placed; it is counted as **Outside map area** and listed in the details panel so the location can be corrected. Set `world_bounds` to another box, or to `null` for the whole world:
+Coordinates come from **LibreNMS locations**: set them on the Locations page or let LibreNMS geocode the location text. The map stays on mainland Norway: any place in Norway, the outermost coast included, can be centred, and the view can go a margin beyond the coast (a fifth of the map's height) or a location, but not out over the open sea or Sweden that Norway's bounding box also covers; and zooming out stops where all of Norway is in view; and **Fit** uses only locations inside it, or shows all of Norway when there are none. A device whose location lies outside (usually a wrong coordinate or geocode) is not placed; it is counted as **Outside map area** and listed in the details panel so the location can be corrected. Set `world_bounds` to another box, or to `null` for the whole world:
 
 ```php
 'world_bounds' => ['south' => 57.8, 'west' => 4.3, 'north' => 71.3, 'east' => 31.3], // or null
+'world_outline' => 'norway', // follow Norway's outline inside the box; null for the box alone
 ```
  As in LibreNMS, a location whose latitude or longitude is zero counts as not placed. Devices without coordinates are listed in the details panel. The server sends only locations of devices the signed-in user may view.
 

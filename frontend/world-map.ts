@@ -1,6 +1,6 @@
 import { statusColor, themeController } from './canvas-style';
 import { shortcutAllowed } from './canvas-tools';
-import { areaPadding, clampCenter, clampToBounds, fitView, insideBounds, minZoomFor, project, TILE, tileUrl, withoutCoordinates, worldSize, type Bounds, type Point } from './geo';
+import { areaPadding, clampCenter, clampToBounds, fitView, insideBounds, keepNear, minZoomFor, NORWAY_OUTLINE, project, TILE, tileUrl, withoutCoordinates, worldSize, type Bounds, type Point } from './geo';
 import { portGraphUrl } from './link-preview';
 import { mountPageNav } from './page-nav';
 import { deviceName, directions, formatBps, LOAD_COLORS, metric, topology } from './topology';
@@ -13,7 +13,7 @@ import './views.css';
 import './world-map.css';
 
 interface WorldLocation { id:string; name:string; lat:number; lng:number }
-interface MapConfig { tiles:string|null; attribution:string; maxZoom:number; center:{lat:number;lng:number;zoom:number}; bounds:Bounds|null }
+interface MapConfig { tiles:string|null; attribution:string; maxZoom:number; center:{lat:number;lng:number;zoom:number}; bounds:Bounds|null; outline:'norway'|null }
 interface Locations { locations:WorldLocation[]; devices:Record<string,string>; map:MapConfig }
 interface Site extends WorldLocation { nodes:MapNode[]; status:'up'|'down'|'unknown' }
 interface SiteLink { key:string; a:Site; b:Site; links:Link[]; color:string; state:string; label:string }
@@ -179,6 +179,7 @@ export function mountWorldMap(root:HTMLElement) {
       maxZoom:Math.max(1,Math.min(19,Math.round(number(map.maxZoom,18)))),
       center:{lat:number(center.lat,0),lng:number(center.lng,0),zoom:Math.max(1,Math.min(18,Math.round(number(center.zoom,2))))},
       bounds:parseBounds(map.bounds),
+      outline:map.outline==='norway' ? 'norway' : null,
     }};
   }
 
@@ -537,11 +538,19 @@ export function mountWorldMap(root:HTMLElement) {
    * view stays inside the map area, so it can never drift off to another part of the world.
    */
   function keepInArea(center:Point,zoom:number):Point {
-    const {w,h}=size(), bounds=places?.map.bounds, clamped=clampCenter(center,zoom,h);
-    // Room for half a viewport, and a margin, beyond each edge: the centre can rest on any place in the
-    // area, the outermost coast included, with the margin of sea or land beyond it.
-    const room=areaPadding(w,h);
-    return bounds ? clampToBounds(clamped,zoom,w,h,bounds,{x:w/2+room,y:h/2+room}) : clamped;
+    const {w,h}=size(), bounds=places?.map.bounds, room=areaPadding(w,h);
+    let kept=clampCenter(center,zoom,h);
+    if(!bounds) return kept;
+    // Norway runs diagonally, so most of its box is open sea or Sweden: the centre must also stay on
+    // Norway, or within the margin of its coast, a location or an outage pin. Zoomed in, the box
+    // alone let the view rest over open water, with nothing on screen.
+    if(places?.map.outline==='norway'){
+      const pins=powerOn ? outages.flatMap(o=>o.anchor ? [{lng:o.anchor[0],lat:o.anchor[1]}] : []) : [];
+      kept=keepNear(kept,zoom,NORWAY_OUTLINE,[...sites,...pins],room);
+    }
+    // Room for half a viewport, and a margin, beyond each edge of the box: the centre can rest on any
+    // place in it, the outermost coast included, with the margin beyond.
+    return clampToBounds(kept,zoom,w,h,bounds,{x:w/2+room,y:h/2+room});
   }
   function setView(zoom:number,center:Point){
     const max=places?.map.maxZoom ?? 18;

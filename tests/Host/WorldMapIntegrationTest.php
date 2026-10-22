@@ -75,7 +75,11 @@ class WorldMapIntegrationTest extends TestCase
     {
         $this->actingAs(User::factory()->create(['enabled' => 1]));
         $this->getJson('/libremap/locations')->assertOk()
-            ->assertJsonPath('map.bounds', ['south' => 57.8, 'west' => 4.3, 'north' => 71.3, 'east' => 31.3]);
+            ->assertJsonPath('map.bounds', ['south' => 57.8, 'west' => 4.3, 'north' => 71.3, 'east' => 31.3])
+            ->assertJsonPath('map.outline', 'norway');
+
+        config(['libremap.world_outline' => null]);
+        $this->getJson('/libremap/locations')->assertOk()->assertJsonPath('map.outline', null);
 
         config(['libremap.world_bounds' => null]);
         $this->getJson('/libremap/locations')->assertOk()->assertJsonPath('map.bounds', null);

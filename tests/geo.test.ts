@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { areaPadding, clampCenter, clampToBounds, fitView, insideBounds, minZoomFor, pathData, project, tileUrl, unproject, withoutCoordinates, worldSize } from '../frontend/geo';
+import { areaPadding, clampCenter, clampToBounds, fitView, insideBounds, insidePolygon, keepNear, minZoomFor, NORWAY_OUTLINE, pathData, project, tileUrl, unproject, withoutCoordinates, worldSize } from '../frontend/geo';
 
 const close=(actual:number,expected:number,tolerance=1e-6)=>assert.ok(Math.abs(actual-expected)<=tolerance,`${actual} ≉ ${expected}`);
 
@@ -121,4 +121,25 @@ test('with room for half a viewport, any place in the area can be the centre',()
   // Far west, the centre stops the margin beyond Norway's western edge.
   const nw=project({lat:norway.north,lng:norway.west},zoom);
   close(clampToBounds(project({lat:64.18,lng:-51.72},zoom),zoom,w,h,norway,room).x,nw.x-areaPadding(w,h));
+});
+
+test('the view stays on Norway itself, not the sea or Sweden its box also covers',()=>{
+  const zoom=9, margin=104;
+  // Places in Norway are inside the outline, and stay the centre.
+  for(const [lat,lng] of [[59.41,5.27],[60.39,5.32],[59.91,10.75],[58.72,9.23],[63.43,10.39],[69.65,18.96],[70.07,29.75]]){
+    assert.equal(insidePolygon({lat,lng},[NORWAY_OUTLINE]),true,`${lat},${lng}`);
+    const at=project({lat,lng},zoom);
+    assert.deepEqual(keepNear(at,zoom,NORWAY_OUTLINE,[],margin),at);
+  }
+  // Out in the Norwegian Sea, in the box's north-west corner: pulled back to the margin of the coast.
+  const sea=project({lat:70.5,lng:6},zoom), kept=keepNear(sea,zoom,NORWAY_OUTLINE,[],margin);
+  assert.ok(Math.hypot(kept.x-sea.x,kept.y-sea.y)>1000);
+  assert.deepEqual(keepNear(kept,zoom,NORWAY_OUTLINE,[],margin+1),kept); // Now within the margin.
+  // Stockholm, in Sweden but inside the box, is not Norway either.
+  assert.equal(insidePolygon({lat:59.33,lng:18.07},[NORWAY_OUTLINE]),false);
+  // An island location outside the simplified outline can still be centred.
+  const rost={lat:67.5,lng:12.05}, island=project(rost,zoom);
+  assert.deepEqual(keepNear(island,zoom,NORWAY_OUTLINE,[rost],margin),island);
+  // No outline and no places: anywhere.
+  assert.deepEqual(keepNear(sea,zoom,null,[],margin),sea);
 });

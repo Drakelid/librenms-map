@@ -19,6 +19,10 @@ return [
     // beyond it, and locations outside it are listed rather than placed.
     // Mainland Norway by default; null shows the whole world.
     'world_bounds' => ['south' => 57.8, 'west' => 4.3, 'north' => 71.3, 'east' => 31.3],
+    // Within those bounds, keep the view on mainland Norway's outline (or near
+    // a location), not over the open sea or Sweden the box also covers.
+    // 'norway', or null to use the box alone (for example with other bounds).
+    'world_outline' => 'norway',
     // World map weather warnings from MET Norway (MetAlerts). The LibreNMS
     // server fetches and caches them; false removes the toggle.
     'weather_warnings' => true,

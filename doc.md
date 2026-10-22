@@ -132,7 +132,7 @@ The details panel always shows a selected location's and device's real names.
 
 === The map area: Norway ===
 
-The map stays around mainland Norway. Any place in Norway, the outermost coast included, can be put in the middle of the map, with sea or neighbouring land around it, but you cannot pan further away, and zooming out stops where all of Norway is in view. **Fit** (##F##) shows all your located devices, or all of Norway when no devices match the filters.
+The map stays on mainland Norway. Any place in Norway, the outermost coast included, can be put in the middle of the map, with some sea or neighbouring land around it, but you cannot pan out over the open sea or into Sweden, and zooming out stops where all of Norway is in view. **Fit** (##F##) shows all your located devices, or all of Norway when no devices match the filters.
 
 * Devices **without coordinates** are counted as **No coordinates** and listed in the details panel.
 * Devices whose location lies **outside Norway** are not placed on the map. They are counted as **Outside map area** and listed in the details panel. This is usually a wrong coordinate or geocode: correct the device's location in LibreNMS to place it.

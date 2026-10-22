@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { demoSnapshot } from '../../frontend/demo';
-import { areaPadding, minZoomFor, project } from '../../frontend/geo';
+import { areaPadding, keepNear, minZoomFor, NORWAY_OUTLINE, project } from '../../frontend/geo';
 
 type Debug={zoom:number;markers:{id:string;name:string;label:string;text:string;count:number;status:string;warning:string|null}[];links:{key:string;count:number;state:string}[];undrawn:{withinSite:Record<string,number>;unlocated:number};warnings:{id:string;level:string;drawn:boolean}[];tiles:string[]};
 const debug=(page:Page)=>page.evaluate(()=>(window as unknown as {libremapWorldDebug:()=>Debug}).libremapWorldDebug());
@@ -400,7 +400,7 @@ test('the map stays on Norway, and a location outside it is listed instead of pl
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   const norway={south:57.8,west:4.3,north:71.3,east:31.3};
   // Kvala's device geocoded to Nuuk, Greenland, as a wrong LibreNMS location can be.
-  const located={...locations,locations:locations.locations.map(l=>l.id==='4' ? {...l,name:'Nuuk',lat:64.18,lng:-51.72} : l),map:{...locations.map,tiles:null,bounds:norway}};
+  const located={...locations,locations:locations.locations.map(l=>l.id==='4' ? {...l,name:'Nuuk',lat:64.18,lng:-51.72} : l),map:{...locations.map,tiles:null,bounds:norway,outline:'norway'}};
   await page.route('**/world-page',route=>route.fulfill({contentType:'text/html',body:'<div id="libremap" data-mode="world" data-debug="true" data-storage-key="world-norway" data-endpoint="/world-topology" data-locations-endpoint="/world-locations" data-topology-url="/topology" data-custom-url="/custom"></div><script type="module" src="/frontend/main.ts"></script>'}));
   await page.route('**/world-topology',route=>route.fulfill({json:demoSnapshot()}));
   await page.route('**/world-locations',route=>route.fulfill({json:located}));
@@ -435,17 +435,25 @@ test('the map stays on Norway, and a location outside it is listed instead of pl
     const marker=await page.locator('.lm-world-marker[data-site="3"]').boundingBox();
     return marker ? Math.round(Math.hypot(marker.x+marker.width/2-(box.x+box.width/2),marker.y+marker.height/2-(box.y+box.height/2))) : Infinity;
   }).toBeLessThan(3);
-  // Far enough to reach the limit: from Bergen to past Norway's northern edge is about 5,000 px at this zoom.
+  // Pushed far north-west, into the Norwegian Sea that Norway's box also covers, the centre stays
+  // within the margin of Norway's coast: never out over open water with nothing on screen.
+  const onNorway=async()=>{
+    const {zoom,center}=await state();
+    const kept=keepNear(center,zoom,NORWAY_OUTLINE,[],pad+2);
+    return Math.hypot(kept.x-center.x,kept.y-center.y)<1;
+  };
   for(let i=0;i<40;i++)await page.keyboard.press('ArrowLeft');
   for(let i=0;i<80;i++)await page.keyboard.press('ArrowUp');
   expect(await insideNorway()).toBe(true);
+  expect(await onNorway()).toBe(true);
+  // The box alone would have let it reach the corner, far out at sea.
   const west=await area();
-  expect(Math.abs(west.center.x-west.low.x)).toBeLessThan(2);
-  expect(Math.abs(west.center.y-west.low.y)).toBeLessThan(2);
+  expect(Math.hypot(west.center.x-west.low.x,west.center.y-west.low.y)).toBeGreaterThan(500);
   // Dragging cannot take it there either.
   await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
   await page.mouse.move(box.x+box.width-5,box.y+box.height-5,{steps:5});await page.mouse.up();
   expect(await insideNorway()).toBe(true);
+  expect(await onNorway()).toBe(true);
 
   // Zooming out stops where all of Norway is in view.
   for(let i=0;i<20;i++)await page.keyboard.press('-');
