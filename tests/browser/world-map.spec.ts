@@ -304,3 +304,39 @@ test('power outages mark their areas with pins and flag the locations inside or 
   await expect.poll(()=>offCentre('Fagne:1')).toBeLessThan(2);
   expect(errors).toEqual([]);
 });
+
+test('hundreds of outages scroll inside the sidebar instead of lengthening the page',async({page})=>{
+  const evidence={source:'DRIFT',observed_at:new Date().toISOString(),limitations:[]};
+  // 250 small outages far from every location, and one at Rossa.
+  const box=(lng:number,lat:number)=>[[[lng,lat],[lng+.001,lat],[lng+.001,lat+.001],[lng,lat+.001],[lng,lat]]];
+  const outages=Array.from({length:250},(_,i)=>({id:`BKK:${i}`,kind:i%5 ? 'current' : 'planned',provider:'BKK',municipality:`Kommune ${i}`,customers:i,polygons:[box(7+i/100,61)],lines:[],point:null}));
+  outages.push({id:'Fagne:rossa',kind:'current',provider:'Fagne',municipality:'Haugesund',customers:42,polygons:[box(5.2675,59.4133)],lines:[],point:null});
+  await page.route('**/world-page',route=>route.fulfill({contentType:'text/html',body:'<div id="libremap" data-mode="world" data-storage-key="world-long" data-endpoint="/world-topology" data-locations-endpoint="/world-locations" data-power-endpoint="/world-power" data-power-health-endpoint="/world-power-health" data-topology-url="/topology" data-custom-url="/custom"></div><script type="module" src="/frontend/main.ts"></script>'}));
+  await page.route('**/world-topology',route=>route.fulfill({json:demoSnapshot()}));
+  await page.route('**/world-locations',route=>route.fulfill({json:{...locations,map:{...locations.map,tiles:null}}}));
+  await page.route('**/world-power',route=>route.fulfill({json:{count:251,complete:true,evidence,skipped:{},outages}}));
+  await page.route('**/world-power-health',route=>route.fulfill({json:{status:'ok',poll_seconds:300,providers:{}}}));
+  await page.goto('/world-page');
+  await expect(page.getByRole('status')).toContainText('12 devices at 4 locations');
+  const pageHeight=()=>page.evaluate(()=>document.documentElement.scrollHeight);
+  const before=await pageHeight();
+
+  await page.getByRole('button',{name:'⚡ Power outages',exact:true}).click();
+  const details=page.locator('.lm-details');
+  await expect(details).toContainText('201 current · 50 planned');
+  // Only the outage at a located device is listed up front; the rest are folded away.
+  await expect(details.locator('.lm-world-outages').first().getByRole('button')).toHaveCount(1);
+  await expect(details.getByRole('button',{name:'Fagne · Haugesund · 42 customers',exact:true})).toBeVisible();
+  expect(await pageHeight()).toBe(before);
+
+  // Opened, the full list scrolls in its own box, current outages first.
+  await details.getByText('All outages (251)').click();
+  const list=details.locator('.lm-world-outage-all .lm-world-outages');
+  await expect(list.getByRole('button')).toHaveCount(201);
+  expect(await list.evaluate(e=>e.scrollHeight>e.clientHeight)).toBe(true);
+  await details.getByRole('button',{name:'Planned (50)'}).click();
+  await expect(details.locator('.lm-world-outage-all .lm-world-outages').getByRole('button')).toHaveCount(50);
+  // The choice and the open list survive a re-render, and the page is still the same length.
+  await expect(details.locator('.lm-world-outage-all')).toHaveAttribute('open','');
+  expect(await pageHeight()).toBe(before);
+});

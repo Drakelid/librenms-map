@@ -96,6 +96,8 @@ export function mountWorldMap(root:HTMLElement) {
   let powerOn=!!powerEndpoint && prefs.power===true;
   let outages:Outage[]=[], powerEvidence:Evidence|undefined, powerComplete=true, powerHealth:PowerHealth|undefined, powerBusy=false;
   let powerSkipped:Record<string,number>={}, outageCursor=-1;
+  // The sidebar's full outage list: folded until opened, and showing current outages first.
+  let powerListOpen=false, powerListKind:'current'|'planned'|'all'='current';
   // Locations inside an outage area, and those within NEAR_KM of one.
   const siteOutages=new Map<string,Outage[]>(), siteNear=new Map<string,NearOutage[]>(), siteChecks=new Map<string,SiteCheck>();
 
@@ -624,7 +626,7 @@ export function mountWorldMap(root:HTMLElement) {
     }
     if(powerOn){
       panel.append(el('div',`POWER OUTAGES · ${outages.length}`,'lm-eyebrow lm-world-section'));
-      if(outages.length) panel.append(outageList(outages));
+      if(outages.length) panel.append(...powerOverview());
       else panel.append(el('p',powerEvidence ? 'No outages on the grid operators\' maps. This does not confirm the power is on everywhere.' : 'Loading power outages…'));
       panel.append(powerStatus());
     }
@@ -701,10 +703,38 @@ export function mountWorldMap(root:HTMLElement) {
     }
     if(warning.web){const a=el('a','Details at MET Norway ↗','lm-device-link');a.href=warning.web;a.target='_blank';a.rel='noopener noreferrer';panel.append(a);}
   }
+  /**
+   * Totals, the outages that touch the map's locations, and the full list
+   * folded away: there can be hundreds, and listing them all made the page
+   * as long as the list.
+   */
+  function powerOverview():HTMLElement[] {
+    const current=outages.filter(o=>o.kind==='current'), planned=outages.filter(o=>o.kind==='planned');
+    const customers=current.reduce((total,o)=>total+(o.customers ?? 0),0);
+    const parts:HTMLElement[]=[el('p',`${current.length} current · ${planned.length} planned${customers ? ` · ${customers.toLocaleString()} customers affected now` : ''}`,'lm-world-power-totals')];
+    const touching=new Set<Outage>();
+    for(const list of siteOutages.values())for(const o of list)touching.add(o);
+    for(const list of siteNear.values())for(const n of list)touching.add(n.outage);
+    parts.push(el('div',`AT YOUR LOCATIONS · ${touching.size}`,'lm-eyebrow lm-world-section'));
+    parts.push(touching.size ? outageList([...touching]) : el('p',`None of these outages is at or within ${NEAR_KM} km of a located device.`));
+    const all=el('details','','lm-world-outage-all');
+    all.open=powerListOpen;all.addEventListener('toggle',()=>{powerListOpen=all.open;});
+    all.append(el('summary',`All outages (${outages.length})`));
+    const filters=el('div',undefined,'lm-world-outage-filters');
+    for(const [kind,label] of [['current',`Current (${current.length})`],['planned',`Planned (${planned.length})`],['all','All']] as const){
+      const b=el('button',label);b.setAttribute('aria-pressed',String(powerListKind===kind));b.classList.toggle('lm-active',powerListKind===kind);
+      b.onclick=()=>{powerListKind=kind;renderDetails();};
+      filters.append(b);
+    }
+    const shown=powerListKind==='all' ? outages : powerListKind==='current' ? current : planned;
+    all.append(filters,shown.length ? outageList(shown) : el('p',`No ${powerListKind} outages.`));
+    parts.push(all);
+    return parts;
+  }
   function outageList(list:Outage[]){
     const box=el('div',undefined,'lm-device-list lm-world-outages');
-    // Current first; the drawing order is the reverse.
-    for(const outage of [...list].sort((a,b)=>Number(b.kind==='current')-Number(a.kind==='current'))){
+    // Current first, then by customers affected; the drawing order is the reverse.
+    for(const outage of [...list].sort((a,b)=>Number(b.kind==='current')-Number(a.kind==='current') || (b.customers ?? 0)-(a.customers ?? 0))){
       const b=el('button',undefined,'lm-world-device');
       const dot=el('i');dot.style.background=OUTAGE_COLORS[outage.kind];
       b.append(dot,el('span',`${outage.provider}${outage.municipality ? ` · ${outage.municipality}` : ''}${outage.customers!==null ? ` · ${outage.customers} customers` : ''}`));
