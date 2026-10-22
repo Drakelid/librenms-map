@@ -31,6 +31,8 @@ class PowerOutagesIntegrationTest extends TestCase
         $manager->shouldReceive('pluginEnabled')->with('libremap')->andReturn(true);
         $this->app->instance(PluginManagerInterface::class, $manager);
         require __DIR__.'/../../routes/web.php';
+        // The provider registers the views only when the plugin was enabled at boot; here it is enabled afterwards.
+        $this->app['view']->addNamespace('libremap', __DIR__.'/../../resources/views');
         config(['libremap.drift_url' => self::BASE.'/', 'libremap.drift_token' => self::TOKEN]);
         Cache::flush();
         Sleep::fake();
@@ -88,11 +90,11 @@ class PowerOutagesIntegrationTest extends TestCase
 
         // An unknown kind is dropped; IDs are made unique across operators.
         $this->assertSame(['BKK:1001', 'Fagne:77', 'outage-2'], array_column($outages, 'id'));
-        $this->assertSame([[[[5.0, 60.0], [6.0, 60.0], [6.0, 61.0], [5.0, 61.0], [5.0, 60.0]]]], $outages[0]['polygons']);
-        $this->assertSame([[[5.1, 59.4], [5.3, 59.5]]], $outages[1]['lines']);
+        $this->assertEquals([[[[5.0, 60.0], [6.0, 60.0], [6.0, 61.0], [5.0, 61.0], [5.0, 60.0]]]], $outages[0]['polygons']);
+        $this->assertEquals([[[5.1, 59.4], [5.3, 59.5]]], $outages[1]['lines']);
         $this->assertSame('planned', $outages[1]['kind']);
         // A Point geometry places an outage whose properties give no point.
-        $this->assertSame([10.2, 59.7], $outages[2]['point']);
+        $this->assertEquals([10.2, 59.7], $outages[2]['point']);
         $this->assertSame(120, $outages[0]['customers']);
         $this->assertSame('2026-10-22T09:40:00+00:00', $outages[0]['start']);
         $this->assertNull($outages[0]['reason']);

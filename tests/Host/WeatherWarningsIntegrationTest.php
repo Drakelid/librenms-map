@@ -23,6 +23,8 @@ class WeatherWarningsIntegrationTest extends TestCase
         $manager->shouldReceive('pluginEnabled')->with('libremap')->andReturn(true);
         $this->app->instance(PluginManagerInterface::class, $manager);
         require __DIR__.'/../../routes/web.php';
+        // The provider registers the views only when the plugin was enabled at boot; here it is enabled afterwards.
+        $this->app['view']->addNamespace('libremap', __DIR__.'/../../resources/views');
         Cache::forget('libremap:metalerts:en');
         Cache::forget('libremap:metalerts:no');
         $this->actingAs(User::factory()->create(['enabled' => 1]));
@@ -61,7 +63,7 @@ class WeatherWarningsIntegrationTest extends TestCase
         $this->assertNull($warnings[0]['web']);
         $this->assertSame('Strong wind', $warnings[1]['title']);
         $this->assertSame('Power outages are likely.', $warnings[1]['consequences']);
-        $this->assertSame([[[[5.0, 60.0], [6.0, 60.0], [6.0, 61.0], [5.0, 61.0], [5.0, 60.0]]]], $warnings[1]['polygons']);
+        $this->assertEquals([[[[5.0, 60.0], [6.0, 60.0], [6.0, 61.0], [5.0, 61.0], [5.0, 60.0]]]], $warnings[1]['polygons']);
         // Only what the map shows is passed on.
         $this->assertSame(['id', 'level', 'event', 'title', 'area', 'description', 'instruction', 'consequences', 'start', 'end', 'web', 'marine', 'polygons'], array_keys($warnings[1]));
 

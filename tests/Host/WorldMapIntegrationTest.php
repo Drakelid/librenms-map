@@ -22,6 +22,8 @@ class WorldMapIntegrationTest extends TestCase
         $manager->shouldReceive('pluginEnabled')->with('libremap')->andReturn(true);
         $this->app->instance(PluginManagerInterface::class, $manager);
         require __DIR__.'/../../routes/web.php';
+        // The provider registers the views only when the plugin was enabled at boot; here it is enabled afterwards.
+        $this->app['view']->addNamespace('libremap', __DIR__.'/../../resources/views');
     }
 
     private function location(string $name, ?float $lat, ?float $lng): int
