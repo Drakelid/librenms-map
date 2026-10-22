@@ -19463,12 +19463,15 @@ function S_(e, t, n, r, i, a = 0) {
 	}, t), s = f_({
 		lat: i.south,
 		lng: i.east
-	}, t);
-	o.x -= a, o.y -= a, s.x += a, s.y += a;
-	let c = (e, t, n, r) => n - t <= 2 * r ? (t + n) / 2 : Math.max(t + r, Math.min(n - r, e));
+	}, t), c = typeof a == "number" ? {
+		x: a,
+		y: a
+	} : a;
+	o.x -= c.x, o.y -= c.y, s.x += c.x, s.y += c.y;
+	let l = (e, t, n, r) => n - t <= 2 * r ? (t + n) / 2 : Math.max(t + r, Math.min(n - r, e));
 	return {
-		x: c(e.x, o.x, s.x, n / 2),
-		y: c(e.y, o.y, s.y, r / 2)
+		x: l(e.x, o.x, s.x, n / 2),
+		y: l(e.y, o.y, s.y, r / 2)
 	};
 }
 function C_(e, t, n, r) {
@@ -20296,8 +20299,11 @@ function Ev(e) {
 		return e && t && n ? Math.max(1, C_(e, t, n, _?.map.maxZoom ?? 18)) : 1;
 	}
 	function lt(e, t) {
-		let { w: n, h: r } = Me(), i = _?.map.bounds, a = w_(e, t, r);
-		return i ? S_(a, t, n, r, i, x_(n, r)) : a;
+		let { w: n, h: r } = Me(), i = _?.map.bounds, a = w_(e, t, r), o = x_(n, r);
+		return i ? S_(a, t, n, r, i, {
+			x: n / 2 + o,
+			y: r / 2 + o
+		}) : a;
 	}
 	function ut(e, t) {
 		let n = _?.map.maxZoom ?? 18;
