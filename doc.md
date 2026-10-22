@@ -255,6 +255,7 @@ The token stays on the server: it is never sent to browsers or written to logs. 
 Further settings are in ##config/libremap.php##:
 
 * ##world_bounds##: the World Map's area, mainland Norway by default; ##null## shows the whole world.
+* ##world_outline##: keeps the World Map on Norway's shape rather than its whole box (##norway##, or ##null## for the box alone).
 * ##prefixes## and ##overrides##: name prefixes to ignore, and devices whose role (AGG, ER) or site is set by hand.
 * ##weather_warnings##, ##weather_lang## and ##weather_contact##: MET Norway weather warnings.
 * ##world_tiles##: the background map server.
