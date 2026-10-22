@@ -9,6 +9,13 @@ test('naming handles prefixes, domains, peer roots and overrides', () => {
   assert.equal(classify({ id:'1', hostname:'rossa1er1', status:'up' }, config).role, 'ER');
   assert.equal(classify({ id:'1', hostname:'server01', status:'up' }, config).role, 'OTHER');
   assert.deepEqual(classify({ id:'1', hostname:'server01', status:'up' }, { ...config, overrides: { '1': { role:'agg', site:'manual' } } }), { role:'AGG', site:'manual' });
+  // A "-" or "_" may separate the site, role and number.
+  for (const [hostname, role, site] of [['name1-agg1','AGG','name1'],['name2er1','ER','name2'],['name2-er1','ER','name2'],['hk-name1_agg2','AGG','name1'],['name1-agg-1','AGG','name1'],['bryne-3-er-2.example.net','ER','bryne-3']] as const) {
+    assert.deepEqual(classify({ id:'1', hostname, status:'up' }, config), { role, site }, hostname);
+  }
+  // Names that only contain the letters are not roles: no site number before them, or no role number after.
+  for (const hostname of ['router2', 'fileserver1', 'name1-agg', 'name1-er-x', 'aggregator1'])
+    assert.equal(classify({ id:'1', hostname, status:'up' }, config).role, 'OTHER', hostname);
 });
 test('reciprocal observations deduplicate but parallel physical links survive', () => {
   const links = normalizeLinks([link('a','b'), link('b','a','2','1'), link('a','b','3','4')], new Set(['a','b']));

@@ -1,7 +1,10 @@
 import type { Config, Device, Link, MapNode, Snapshot, Topology } from './types';
 
 // The numbered site boundary avoids false positives such as "server01".
-const ROLE_NAME = /^(?<site>.+?\d)(?<role>agg|er)(?<number>\d+)$/;
+// A numbered site, the role and its number, optionally separated by "-" or "_":
+// rossa1agg1, rossa1-agg1, rossa1_er2, rossa1-agg-1. The site must end in its
+// number, so names that merely contain the letters (server01, router2) are not roles.
+const ROLE_NAME = /^(?<site>.+?\d)[-_]?(?<role>agg|er)[-_]?(?<number>\d+)$/;
 export const PARALLEL_CONNECTION_GAP = 90;
 
 function nameParts(name: string, prefixes: string[]) {
