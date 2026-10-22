@@ -538,7 +538,10 @@ export function mountWorldMap(root:HTMLElement) {
    */
   function keepInArea(center:Point,zoom:number):Point {
     const {w,h}=size(), bounds=places?.map.bounds, clamped=clampCenter(center,zoom,h);
-    return bounds ? clampToBounds(clamped,zoom,w,h,bounds,areaPadding(w,h)) : clamped;
+    // Room for half a viewport, and a margin, beyond each edge: the centre can rest on any place in the
+    // area, the outermost coast included, with the margin of sea or land beyond it.
+    const room=areaPadding(w,h);
+    return bounds ? clampToBounds(clamped,zoom,w,h,bounds,{x:w/2+room,y:h/2+room}) : clamped;
   }
   function setView(zoom:number,center:Point){
     const max=places?.map.maxZoom ?? 18;

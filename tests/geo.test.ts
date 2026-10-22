@@ -110,3 +110,15 @@ test('panning leaves room around the map area',()=>{
   const west=clampToBounds(project({lat:64.18,lng:-51.72},zoom),zoom,w,h,norway,pad);
   close(west.x-w/2,nw.x-pad);
 });
+
+test('with room for half a viewport, any place in the area can be the centre',()=>{
+  const norway={south:57.8,west:4.3,north:71.3,east:31.3}, zoom=8, w=1000, h=520;
+  const room={x:w/2+areaPadding(w,h),y:h/2+areaPadding(w,h)};
+  // Utsira, on Norway's western edge, stays the centre; edge-only room would push it to the left.
+  const utsira=project({lat:59.31,lng:4.88},zoom);
+  assert.deepEqual(clampToBounds(utsira,zoom,w,h,norway,room),utsira);
+  assert.ok(clampToBounds(utsira,zoom,w,h,norway,areaPadding(w,h)).x>utsira.x);
+  // Far west, the centre stops the margin beyond Norway's western edge.
+  const nw=project({lat:norway.north,lng:norway.west},zoom);
+  close(clampToBounds(project({lat:64.18,lng:-51.72},zoom),zoom,w,h,norway,room).x,nw.x-areaPadding(w,h));
+});

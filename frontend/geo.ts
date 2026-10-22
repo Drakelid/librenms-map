@@ -102,11 +102,13 @@ export const areaPadding=(width:number, height:number)=>Math.round(Math.min(widt
 /**
  * The view centre (world pixels at `zoom`) moved just enough that a `width`
  * by `height` viewport stays inside the bounds, grown by `padding` pixels on
- * every side; centred on an axis where that is narrower than the viewport.
+ * every side (or per axis); centred on an axis where that is narrower than
+ * the viewport.
  */
-export function clampToBounds(center:Point, zoom:number, width:number, height:number, b:Bounds, padding=0):Point {
+export function clampToBounds(center:Point, zoom:number, width:number, height:number, b:Bounds, padding:number|Point=0):Point {
   const nw=project({lat:b.north,lng:b.west},zoom), se=project({lat:b.south,lng:b.east},zoom);
-  nw.x-=padding;nw.y-=padding;se.x+=padding;se.y+=padding;
+  const pad=typeof padding==='number' ? {x:padding,y:padding} : padding;
+  nw.x-=pad.x;nw.y-=pad.y;se.x+=pad.x;se.y+=pad.y;
   const axis=(c:number,low:number,high:number,half:number)=>high-low<=2*half ? (low+high)/2 : Math.max(low+half,Math.min(high-half,c));
   return {x:axis(center.x,nw.x,se.x,width/2),y:axis(center.y,nw.y,se.y,height/2)};
 }

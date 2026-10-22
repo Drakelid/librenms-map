@@ -414,8 +414,8 @@ test('the map stays on Norway, and a location outside it is listed instead of pl
   await expect(page.locator('.lm-summary')).toContainText('1Outside map area');
   await expect(page.locator('.lm-details')).toContainText('1 device is outside the map area');
 
-  // However far the view is pushed west, its left edge stops a little beyond Norway's western
-  // edge: room enough that the coast is not on the edge of the screen, and no further.
+  // The view's centre can rest on any place in Norway, the outermost coast included, and a margin
+  // beyond it; however far the view is pushed west, the centre stops at that margin and no further.
   const box=(await page.locator('.lm-world').boundingBox())!;
   const pad=areaPadding(Math.round(box.width),Math.round(box.height));
   const area=async()=>{
@@ -425,14 +425,21 @@ test('the map stays on Norway, and a location outside it is listed instead of pl
   };
   const insideNorway=async()=>{
     const {center,low,high}=await area();
-    const fits=(lo:number,hi:number,c:number,half:number)=>hi-lo<=2*half ? Math.abs(c-(lo+hi)/2)<1 : c-half>=lo-1 && c+half<=hi+1;
-    return fits(low.x,high.x,center.x,box.width/2) && fits(low.y,high.y,center.y,box.height/2);
+    return center.x>=low.x-1 && center.x<=high.x+1 && center.y>=low.y-1 && center.y<=high.y+1;
   };
+  // SE, in Bergen on the west coast (1° from Norway's western edge), goes to the middle of the map.
+  await page.keyboard.press('d');
+  await expect(page.getByRole('status')).toContainText('Problem location 1 of 1');
+  await expect.poll(async()=>{
+    const marker=await page.locator('.lm-world-marker[data-site="3"]').boundingBox();
+    return marker ? Math.round(Math.hypot(marker.x+marker.width/2-(box.x+box.width/2),marker.y+marker.height/2-(box.y+box.height/2))) : Infinity;
+  }).toBeLessThan(3);
   for(let i=0;i<40;i++)await page.keyboard.press('ArrowLeft');
   for(let i=0;i<20;i++)await page.keyboard.press('ArrowUp');
   expect(await insideNorway()).toBe(true);
   const west=await area();
-  expect(Math.abs(west.center.x-box.width/2-west.low.x)).toBeLessThan(2);
+  expect(Math.abs(west.center.x-west.low.x)).toBeLessThan(2);
+  expect(Math.abs(west.center.y-west.low.y)).toBeLessThan(2);
   // Dragging cannot take it there either.
   await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
   await page.mouse.move(box.x+box.width-5,box.y+box.height-5,{steps:5});await page.mouse.up();
