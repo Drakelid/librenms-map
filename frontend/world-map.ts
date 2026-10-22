@@ -525,6 +525,8 @@ export function mountWorldMap(root:HTMLElement) {
     setView(target.zoom,target.center);
   }
   function centreOn(site:Site){
+    // Centre on the viewport as it is now, not as it was last measured.
+    measure();
     const zoom=Math.max(view.zoom,Math.min(places?.map.maxZoom ?? 18,LABEL_ZOOM+1));
     setView(zoom,project(site,zoom));
   }
@@ -797,6 +799,7 @@ export function mountWorldMap(root:HTMLElement) {
     const b=outage.bounds;
     const points=b ? [{lat:b.minLat,lng:b.minLng},{lat:b.maxLat,lng:b.maxLng}] : outage.anchor ? [{lat:outage.anchor[1],lng:outage.anchor[0]}] : [];
     if(!points.length) return;
+    measure();
     const {w,h}=size();
     // A tiny area is not zoomed in further than street level.
     const target=fitView(points,w,h,FIT_PADDING,Math.min(places?.map.maxZoom ?? 18,15),14);
@@ -1035,6 +1038,9 @@ export function mountWorldMap(root:HTMLElement) {
     const action=actions[event.key.length===1 ? event.key.toLowerCase() : event.key];
     if(action){event.preventDefault();action();}
   });
+  // The viewport clips the map but can still be scrolled by the browser, for example to show
+  // a focused marker near its edge. That would shift everything the view maths places; undo it.
+  viewport.addEventListener('scroll',()=>{if(viewport.scrollLeft || viewport.scrollTop){viewport.scrollLeft=0;viewport.scrollTop=0;}});
   new ResizeObserver(()=>{measure();setView(view.zoom,view.center);if(!fitted && sites.length){fit();fitted=true;}}).observe(viewport);
   // Re-judge link staleness between fetches on the server's clock.
   setInterval(()=>{if(snapshot && siteLinks.length)recolorLinks();},10000);

@@ -339,4 +339,26 @@ test('hundreds of outages scroll inside the sidebar instead of lengthening the p
   // The choice and the open list survive a re-render, and the page is still the same length.
   await expect(details.locator('.lm-world-outage-all')).toHaveAttribute('open','');
   expect(await pageHeight()).toBe(before);
+
+  // Selecting centres the selection in the map, and the map's centre is on screen: a long
+  // sidebar used to stretch the map, leaving its centre below the window.
+  const placement=async(target:import('@playwright/test').Locator)=>{
+    const box=await target.boundingBox(), map=await page.locator('.lm-world').boundingBox(), height=await page.evaluate(()=>innerHeight);
+    if(!box || !map) return {off:Infinity,onScreen:false};
+    const x=box.x+box.width/2, y=box.y+box.height/2;
+    return {off:Math.round(Math.hypot(x-(map.x+map.width/2),y-(map.y+map.height/2))),onScreen:y>=0 && y<=height};
+  };
+  await page.locator('.lm-summary').getByRole('button',{name:/inside an outage area/}).click();
+  await expect(details.locator('.lm-world-outage-banner')).toContainText('INSIDE A POWER OUTAGE AREA');
+  await expect.poll(async()=>(await placement(page.locator('.lm-world-marker[data-site="1"]'))).off).toBeLessThan(3);
+  expect((await placement(page.locator('.lm-world-marker[data-site="1"]'))).onScreen).toBe(true);
+  // The full list is still open from before.
+  await page.getByRole('button',{name:'Close details'}).click();
+  await expect(details.locator('.lm-world-outage-all')).toHaveAttribute('open','');
+  await details.locator('.lm-world-outage-all .lm-world-outages button').first().click();
+  await page.getByRole('button',{name:'Show on the map'}).click();
+  const pin=page.locator('.lm-world-outage-pin.lm-selected circle');
+  await expect.poll(async()=>(await placement(pin)).off).toBeLessThan(3);
+  expect((await placement(pin)).onScreen).toBe(true);
+  expect(await pageHeight()).toBe(before);
 });
