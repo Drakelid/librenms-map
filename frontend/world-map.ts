@@ -97,8 +97,7 @@ export function mountWorldMap(root:HTMLElement) {
   let outages:Outage[]=[], powerEvidence:Evidence|undefined, powerComplete=true, powerHealth:PowerHealth|undefined, powerBusy=false;
   let powerSkipped:Record<string,number>={}, outageCursor=-1;
   // Locations inside an outage area, and those within NEAR_KM of one.
-  const siteOutages=new Map<string,Outage[]>(), siteNear=new Map<string,NearOutage[]>(), siteChecks=new Map<string,SiteCheck>();|undefined, powerComplete=true, powerHealth:PowerHealth|undefined, powerBusy=false;
-  const siteOutages=new Map<string,Outage[]>(), siteChecks=new Map<string,SiteCheck>();
+  const siteOutages=new Map<string,Outage[]>(), siteNear=new Map<string,NearOutage[]>(), siteChecks=new Map<string,SiteCheck>();
 
   // Naming has two audiences. The map itself (marker labels, their screen
   // reader text, link tooltips) follows the Addresses and Device names

@@ -4,15 +4,14 @@ export type OutageKind='current'|'planned';
 export type Verdict='in_outage_area'|'near_outage'|'no_known_outage';
 export interface Outage {
   id:string; provider:string; kind:OutageKind;
-  state:string|  point:[number,number]|null; polygons:Ring[][]; lines:Ring[];
+  state:string|null; type:string|null; municipality:string|null; customers:number|null;
+  text:string|null; gridLevel:string|null; reason:string|null;
+  start:string|null; expectedEnd:string|null; endedAt:string|null;
+  point:[number,number]|null; polygons:Ring[][]; lines:Ring[];
   // Where the outage's pin goes, so even an area too small to see at this zoom is marked.
   anchor:[number,number]|null;
   // The server could not draw this outage's shape (too detailed) and placed it at a point instead.
   shapeDropped:boolean;
-  distanceKm:number|null; type:string|null; municipality:string|null; customers:number|null;
-  text:string|null; gridLevel:string|null; reason:string|null;
-  start:string|null; expectedEnd:string|null; endedAt:string|null;
-  point:[number,number]|null; polygons:Ring[][]; lines:Ring[];
   distanceKm:number|null;
   bounds:{minLat:number;maxLat:number;minLng:number;maxLng:number}|null;
 }
