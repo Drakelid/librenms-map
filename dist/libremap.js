@@ -19455,21 +19455,23 @@ function v_(e, t, n, r = .75) {
 function y_(e, t) {
 	return !t.length || !__(e, t[0]) ? !1 : !t.slice(1).some((t) => __(e, t));
 }
-var b_ = (e, t) => !t || e.lat >= t.south && e.lat <= t.north && e.lng >= t.west && e.lng <= t.east;
-function x_(e, t, n, r, i) {
-	let a = f_({
+var b_ = (e, t) => !t || e.lat >= t.south && e.lat <= t.north && e.lng >= t.west && e.lng <= t.east, x_ = (e, t) => Math.round(Math.min(e, t) * .2);
+function S_(e, t, n, r, i, a = 0) {
+	let o = f_({
 		lat: i.north,
 		lng: i.west
-	}, t), o = f_({
+	}, t), s = f_({
 		lat: i.south,
 		lng: i.east
-	}, t), s = (e, t, n, r) => n - t <= 2 * r ? (t + n) / 2 : Math.max(t + r, Math.min(n - r, e));
+	}, t);
+	o.x -= a, o.y -= a, s.x += a, s.y += a;
+	let c = (e, t, n, r) => n - t <= 2 * r ? (t + n) / 2 : Math.max(t + r, Math.min(n - r, e));
 	return {
-		x: s(e.x, a.x, o.x, n / 2),
-		y: s(e.y, a.y, o.y, r / 2)
+		x: c(e.x, o.x, s.x, n / 2),
+		y: c(e.y, o.y, s.y, r / 2)
 	};
 }
-function S_(e, t, n, r) {
+function C_(e, t, n, r) {
 	return p_([{
 		lat: e.north,
 		lng: e.west
@@ -19478,7 +19480,7 @@ function S_(e, t, n, r) {
 		lng: e.east
 	}], t, n, 0, r).zoom;
 }
-function C_(e, t, n) {
+function w_(e, t, n) {
 	let r = d_(t), i = n / 2, a = r <= n ? r / 2 : Math.max(i, Math.min(r - i, e.y));
 	return {
 		x: (e.x % r + r) % r,
@@ -19487,8 +19489,8 @@ function C_(e, t, n) {
 }
 //#endregion
 //#region frontend/link-preview.ts
-var w_ = 300, T_ = 150, E_ = 400;
-function D_(e, t, n, r = w_, i = T_) {
+var T_ = 300, E_ = 150, D_ = 400;
+function O_(e, t, n, r = T_, i = E_) {
 	if (!/^[1-9][0-9]*$/.test(t)) return;
 	let a = new URL(e || "/", location.href);
 	if (a.origin !== location.origin) return;
@@ -19505,12 +19507,12 @@ function D_(e, t, n, r = w_, i = T_) {
 	for (let [e, t] of Object.entries(o)) a.searchParams.set(e, t);
 	return a.href;
 }
-function O_(e, t, n) {
+function k_(e, t, n) {
 	let r = e.querySelector(".lm-canvas-wrap"), i = e.querySelector(".lm-canvas"), a = document.createElement("div");
 	a.className = "lm-link-preview", a.hidden = !0, a.setAttribute("role", "tooltip"), r.append(a);
 	let o = "", s, c = () => {
 		o = "", clearTimeout(s), a.hidden = !0, a.replaceChildren();
-	}, l = (t) => D_(e.dataset.homeUrl, t, n() ?? 0), u = (e) => {
+	}, l = (t) => O_(e.dataset.homeUrl, t, n() ?? 0), u = (e) => {
 		let t = {
 			x: i.offsetLeft + e.x + 14,
 			y: i.offsetTop + e.y + 14
@@ -19537,7 +19539,7 @@ function O_(e, t, n) {
 			let o = l(e.portId);
 			if (o) {
 				let n = document.createElement("img");
-				n.src = o, n.width = w_, n.height = T_, n.alt = `Traffic graph for ${e.hostname} ${e.port}`, n.decoding = "async", t.append(n);
+				n.src = o, n.width = T_, n.height = E_, n.alt = `Traffic graph for ${e.hostname} ${e.port}`, n.decoding = "async", t.append(n);
 			} else {
 				let e = document.createElement("div");
 				e.className = "lm-link-preview-unavailable", e.textContent = "Traffic graph unavailable", t.append(e);
@@ -19551,36 +19553,36 @@ function O_(e, t, n) {
 		let t = e.target, n = e.renderedPosition ?? t.renderedMidpoint();
 		s = setTimeout(() => {
 			o === t.id() && t.visible() && d(t, n);
-		}, E_);
+		}, D_);
 	}), t.on("mouseout", "edge", (e) => {
 		o === e.target.id() && c();
 	}), t.on("pan zoom", c), i.addEventListener("mouseleave", c), { hide: c };
 }
 //#endregion
 //#region frontend/power.ts
-var k_ = {
+var A_ = {
 	current: "#c2255c",
 	planned: "#7048e8"
-}, A_ = {
+}, j_ = {
 	current: "Current outage",
 	planned: "Planned outage"
-}, j_ = {
+}, M_ = {
 	unknown_kind: "not marked current or planned",
 	no_location: "without a location"
-}, M_ = (e) => !!e && typeof e == "object" && !Array.isArray(e), N_ = (e, t) => typeof e == "string" ? Array.from(e.trim()).slice(0, t).join("") : "", P_ = (e, t) => N_(e, t) || null, F_ = (e) => typeof e == "string" && !Number.isNaN(Date.parse(e)) ? e : null, I_ = (e) => Array.isArray(e) && typeof e[0] == "number" && typeof e[1] == "number" && Math.abs(e[0]) <= 180 && Math.abs(e[1]) <= 90;
-function L_(e) {
-	let t = M_(e) ? e : {};
+}, N_ = (e) => !!e && typeof e == "object" && !Array.isArray(e), P_ = (e, t) => typeof e == "string" ? Array.from(e.trim()).slice(0, t).join("") : "", F_ = (e, t) => P_(e, t) || null, I_ = (e) => typeof e == "string" && !Number.isNaN(Date.parse(e)) ? e : null, L_ = (e) => Array.isArray(e) && typeof e[0] == "number" && typeof e[1] == "number" && Math.abs(e[0]) <= 180 && Math.abs(e[1]) <= 90;
+function R_(e) {
+	let t = N_(e) ? e : {};
 	return {
-		source: N_(t.source, 120) || "DRIFT",
-		observedAt: F_(t.observed_at),
-		limitations: Array.isArray(t.limitations) ? t.limitations.map((e) => N_(e, 300)).filter(Boolean).slice(0, 20) : []
+		source: P_(t.source, 120) || "DRIFT",
+		observedAt: I_(t.observed_at),
+		limitations: Array.isArray(t.limitations) ? t.limitations.map((e) => P_(e, 300)).filter(Boolean).slice(0, 20) : []
 	};
 }
-var R_ = (e) => {
+var z_ = (e) => {
 	let t = e.map((e) => e[0]), n = e.map((e) => e[1]);
 	return (Math.max(...t) - Math.min(...t)) * (Math.max(...n) - Math.min(...n));
 };
-function z_(e) {
+function B_(e) {
 	let t = e[0], n = t.map((e) => e[0]), r = t.map((e) => e[1]), i = Math.min(...r), a = Math.max(...r), o = {
 		lng: (Math.min(...n) + Math.max(...n)) / 2,
 		lat: (i + a) / 2
@@ -19615,46 +19617,46 @@ function z_(e) {
 	}
 	return t[0];
 }
-function B_(e, t, n) {
+function V_(e, t, n) {
 	let r = e ? {
 		lng: e[0],
 		lat: e[1]
 	} : void 0;
-	if (t.length) return e && r && t.some((e) => y_(r, e)) ? e : z_([...t].sort((e, t) => R_(t[0]) - R_(e[0]))[0]);
+	if (t.length) return e && r && t.some((e) => y_(r, e)) ? e : B_([...t].sort((e, t) => z_(t[0]) - z_(e[0]))[0]);
 	if (n.length) {
-		if (e && r && n.some((e) => e.some((t, n) => n > 0 && q_(r, e[n - 1], t) <= .5))) return e;
+		if (e && r && n.some((e) => e.some((t, n) => n > 0 && J_(r, e[n - 1], t) <= .5))) return e;
 		let t = n.reduce((e, t) => t.length > e.length ? t : e);
 		return t[Math.floor(t.length / 2)];
 	}
 	return e;
 }
-function V_(e) {
-	if (!M_(e) || typeof e.id != "string" || !e.id || e.kind !== "current" && e.kind !== "planned") return;
+function H_(e) {
+	if (!N_(e) || typeof e.id != "string" || !e.id || e.kind !== "current" && e.kind !== "planned") return;
 	let t = [];
 	for (let n of Array.isArray(e.polygons) ? e.polygons : []) {
 		if (!Array.isArray(n)) continue;
-		let e = n.filter((e) => Array.isArray(e) && e.length >= 4 && e.every(I_));
+		let e = n.filter((e) => Array.isArray(e) && e.length >= 4 && e.every(L_));
 		e.length && e[0] === n[0] && t.push(e);
 	}
-	let n = (Array.isArray(e.lines) ? e.lines : []).filter((e) => Array.isArray(e) && e.length >= 2 && e.every(I_)), r = I_(e.point) ? e.point : null, i = [...t.flatMap((e) => e[0]), ...n.flat()], a = i.length ? i : r ? [r] : [], o = a.map((e) => e[0]), s = a.map((e) => e[1]);
+	let n = (Array.isArray(e.lines) ? e.lines : []).filter((e) => Array.isArray(e) && e.length >= 2 && e.every(L_)), r = L_(e.point) ? e.point : null, i = [...t.flatMap((e) => e[0]), ...n.flat()], a = i.length ? i : r ? [r] : [], o = a.map((e) => e[0]), s = a.map((e) => e[1]);
 	return {
 		id: e.id,
-		provider: N_(e.provider, 80) || "Grid operator",
+		provider: P_(e.provider, 80) || "Grid operator",
 		kind: e.kind,
-		state: P_(e.state, 80),
-		type: P_(e.type, 80),
-		municipality: P_(e.municipality, 120),
+		state: F_(e.state, 80),
+		type: F_(e.type, 80),
+		municipality: F_(e.municipality, 120),
 		customers: typeof e.customers == "number" && Number.isFinite(e.customers) && e.customers >= 0 ? Math.round(e.customers) : null,
-		text: P_(e.text, 1e3),
-		gridLevel: P_(e.grid_level, 80),
-		reason: P_(e.reason, 300),
-		start: F_(e.start),
-		expectedEnd: F_(e.expected_end),
-		endedAt: F_(e.ended_at),
+		text: F_(e.text, 1e3),
+		gridLevel: F_(e.grid_level, 80),
+		reason: F_(e.reason, 300),
+		start: I_(e.start),
+		expectedEnd: I_(e.expected_end),
+		endedAt: I_(e.ended_at),
 		point: r,
 		polygons: t,
 		lines: n,
-		anchor: B_(r, t, n),
+		anchor: V_(r, t, n),
 		shapeDropped: e.shape_dropped === !0,
 		distanceKm: typeof e.distance_km == "number" && Number.isFinite(e.distance_km) ? e.distance_km : null,
 		bounds: a.length ? {
@@ -19665,103 +19667,103 @@ function V_(e) {
 		} : null
 	};
 }
-function H_(e) {
-	if (!M_(e) || !Array.isArray(e.outages)) throw Error("Unexpected power outage response.");
-	let t = e.outages.map(V_).filter((e) => !!e && !!e.bounds);
+function U_(e) {
+	if (!N_(e) || !Array.isArray(e.outages)) throw Error("Unexpected power outage response.");
+	let t = e.outages.map(H_).filter((e) => !!e && !!e.bounds);
 	return t.sort((e, t) => Number(e.kind === "current") - Number(t.kind === "current")), {
 		outages: t,
-		evidence: L_(e.evidence),
+		evidence: R_(e.evidence),
 		count: typeof e.count == "number" ? e.count : t.length,
 		complete: e.complete === !0,
-		skipped: M_(e.skipped) ? Object.fromEntries(Object.entries(e.skipped).filter((e) => typeof e[1] == "number" && e[1] > 0)) : {}
-	};
-}
-function U_(e) {
-	if (!M_(e) || e.verdict !== "in_outage_area" && e.verdict !== "near_outage" && e.verdict !== "no_known_outage") throw Error("Unexpected power outage response.");
-	return {
-		verdict: e.verdict,
-		why: N_(e.why, 500),
-		outages: (Array.isArray(e.outages) ? e.outages : []).map(V_).filter((e) => !!e),
-		evidence: L_(e.evidence)
+		skipped: N_(e.skipped) ? Object.fromEntries(Object.entries(e.skipped).filter((e) => typeof e[1] == "number" && e[1] > 0)) : {}
 	};
 }
 function W_(e) {
-	if (!M_(e) || e.status !== "ok" && e.status !== "not_read_yet") throw Error("Unexpected power outage status response.");
-	let t = M_(e.providers) ? Object.entries(e.providers) : [];
+	if (!N_(e) || e.verdict !== "in_outage_area" && e.verdict !== "near_outage" && e.verdict !== "no_known_outage") throw Error("Unexpected power outage response.");
+	return {
+		verdict: e.verdict,
+		why: P_(e.why, 500),
+		outages: (Array.isArray(e.outages) ? e.outages : []).map(H_).filter((e) => !!e),
+		evidence: R_(e.evidence)
+	};
+}
+function G_(e) {
+	if (!N_(e) || e.status !== "ok" && e.status !== "not_read_yet") throw Error("Unexpected power outage status response.");
+	let t = N_(e.providers) ? Object.entries(e.providers) : [];
 	return {
 		status: e.status,
-		providers: t.filter(([, e]) => M_(e)).map(([e, t]) => {
+		providers: t.filter(([, e]) => N_(e)).map(([e, t]) => {
 			let n = t;
 			return {
 				key: e,
-				name: N_(n.name, 80) || e,
-				fetchedAt: F_(n.fetched_at),
-				lastError: P_(n.last_error, 300),
-				lastErrorAt: F_(n.last_error_at)
+				name: P_(n.name, 80) || e,
+				fetchedAt: I_(n.fetched_at),
+				lastError: F_(n.last_error, 300),
+				lastErrorAt: I_(n.last_error_at)
 			};
 		})
 	};
 }
-function G_(e, t) {
+function K_(e, t) {
 	return t.filter((t) => t.bounds && e.lat >= t.bounds.minLat && e.lat <= t.bounds.maxLat && e.lng >= t.bounds.minLng && e.lng <= t.bounds.maxLng && t.polygons.some((t) => y_(e, t))).sort((e, t) => Number(t.kind === "current") - Number(e.kind === "current"));
 }
-function K_(e, [t, n]) {
+function q_(e, [t, n]) {
 	return {
 		x: (t - e.lng) * 111.32 * Math.cos(e.lat * Math.PI / 180),
 		y: (n - e.lat) * 110.574
 	};
 }
-function q_(e, t, n) {
-	let r = K_(e, t), i = K_(e, n), a = i.x - r.x, o = i.y - r.y, s = a * a + o * o, c = s ? Math.max(0, Math.min(1, -(r.x * a + r.y * o) / s)) : 0;
+function J_(e, t, n) {
+	let r = q_(e, t), i = q_(e, n), a = i.x - r.x, o = i.y - r.y, s = a * a + o * o, c = s ? Math.max(0, Math.min(1, -(r.x * a + r.y * o) / s)) : 0;
 	return Math.hypot(r.x + c * a, r.y + c * o);
 }
-function J_(e, t) {
+function Y_(e, t) {
 	let n = Infinity, r = (t, r) => {
-		for (let r = 1; r < t.length; r++) n = Math.min(n, q_(e, t[r - 1], t[r]));
-		r && t.length > 1 && (n = Math.min(n, q_(e, t[t.length - 1], t[0])));
+		for (let r = 1; r < t.length; r++) n = Math.min(n, J_(e, t[r - 1], t[r]));
+		r && t.length > 1 && (n = Math.min(n, J_(e, t[t.length - 1], t[0])));
 	};
 	for (let e of t.polygons) for (let t of e) r(t, !0);
 	for (let e of t.lines) r(e, !1);
 	if (t.point && !t.polygons.length && !t.lines.length) {
-		let r = K_(e, t.point);
+		let r = q_(e, t.point);
 		n = Math.min(n, Math.hypot(r.x, r.y));
 	}
 	return n;
 }
-function Y_(e, t, n = 1) {
-	let r = n / 110, i = n / (111 * Math.max(.1, Math.cos(e.lat * Math.PI / 180))), a = new Set(G_(e, t));
+function X_(e, t, n = 1) {
+	let r = n / 110, i = n / (111 * Math.max(.1, Math.cos(e.lat * Math.PI / 180))), a = new Set(K_(e, t));
 	return t.filter((t) => t.bounds && !a.has(t) && e.lat >= t.bounds.minLat - r && e.lat <= t.bounds.maxLat + r && e.lng >= t.bounds.minLng - i && e.lng <= t.bounds.maxLng + i).map((t) => ({
 		outage: t,
-		km: J_(e, t)
+		km: Y_(e, t)
 	})).filter((e) => e.km <= n).sort((e, t) => e.km - t.km);
 }
-function X_(e, t) {
+function Z_(e, t) {
 	return e.polygons.map((e) => e.map((e) => v_(e, t, !0)).join("")).join("") + e.lines.map((e) => v_(e, t, !1)).join("");
 }
-function Z_(e, t) {
+function Q_(e, t) {
 	return e.anchor ? f_({
 		lat: e.anchor[1],
 		lng: e.anchor[0]
 	}, t) : void 0;
 }
-var Q_ = (e) => e.polygons.length ? "area" : e.lines.length ? "lines" : "point", $_ = (e) => e ? new Date(e).toLocaleString(void 0, {
+var $_ = (e) => e.polygons.length ? "area" : e.lines.length ? "lines" : "point", ev = (e) => e ? new Date(e).toLocaleString(void 0, {
 	weekday: "short",
 	day: "numeric",
 	month: "short",
 	hour: "2-digit",
 	minute: "2-digit"
 }) : "";
-function ev(e) {
-	let t = $_(e.start), n = $_(e.endedAt ?? e.expectedEnd), r = e.endedAt ? "fixed" : "expected";
+function tv(e) {
+	let t = ev(e.start), n = ev(e.endedAt ?? e.expectedEnd), r = e.endedAt ? "fixed" : "expected";
 	return t && n ? `${t} – ${r} ${n}` : n ? `${r[0].toUpperCase()}${r.slice(1)} ${n}` : t ? `From ${t}` : "Time not given";
 }
-function tv(e) {
+function nv(e) {
 	return e.observedAt ? `Maps read at ${new Date(e.observedAt).toLocaleTimeString(void 0, {
 		hour: "2-digit",
 		minute: "2-digit"
 	})}` : "Maps not read yet";
 }
-function nv(e) {
+function rv(e) {
 	if (e.verdict === "in_outage_area") return "Inside an outage area on the grid operator's map.";
 	if (e.verdict === "near_outage") {
 		let t = e.outages.map((e) => e.distanceKm).filter((e) => e !== null).sort((e, t) => e - t)[0];
@@ -19771,28 +19773,28 @@ function nv(e) {
 }
 //#endregion
 //#region frontend/weather.ts
-var rv = {
+var iv = {
 	yellow: "#e6b800",
 	orange: "#f08a24",
 	red: "#e03131"
-}, iv = {
+}, av = {
 	yellow: 1,
 	orange: 2,
 	red: 3
-}, av = {
+}, ov = {
 	yellow: "Yellow",
 	orange: "Orange",
 	red: "Red"
-}, ov = (e) => !!e && typeof e == "object" && !Array.isArray(e), sv = (e, t) => typeof e == "string" ? Array.from(e.trim()).slice(0, t).join("") : "", cv = (e) => Array.isArray(e) && typeof e[0] == "number" && typeof e[1] == "number" && Math.abs(e[0]) <= 180 && Math.abs(e[1]) <= 90;
-function lv(e) {
-	if (!ov(e) || !Array.isArray(e.warnings)) throw Error("Unexpected weather warning response.");
+}, sv = (e) => !!e && typeof e == "object" && !Array.isArray(e), cv = (e, t) => typeof e == "string" ? Array.from(e.trim()).slice(0, t).join("") : "", lv = (e) => Array.isArray(e) && typeof e[0] == "number" && typeof e[1] == "number" && Math.abs(e[0]) <= 180 && Math.abs(e[1]) <= 90;
+function uv(e) {
+	if (!sv(e) || !Array.isArray(e.warnings)) throw Error("Unexpected weather warning response.");
 	let t = [];
 	for (let n of e.warnings) {
-		if (!ov(n) || typeof n.id != "string" || n.level !== "yellow" && n.level !== "orange" && n.level !== "red" || !Array.isArray(n.polygons)) continue;
+		if (!sv(n) || typeof n.id != "string" || n.level !== "yellow" && n.level !== "orange" && n.level !== "red" || !Array.isArray(n.polygons)) continue;
 		let e = [];
 		for (let t of n.polygons) {
 			if (!Array.isArray(t)) continue;
-			let n = t.filter((e) => Array.isArray(e) && e.length >= 4 && e.every(cv));
+			let n = t.filter((e) => Array.isArray(e) && e.length >= 4 && e.every(lv));
 			n.length && n[0] === t[0] && e.push(n);
 		}
 		if (!e.length) continue;
@@ -19800,12 +19802,12 @@ function lv(e) {
 		t.push({
 			id: n.id,
 			level: n.level,
-			event: sv(n.event, 40),
-			title: sv(n.title, 120) || "Weather warning",
-			area: sv(n.area, 200),
-			description: sv(n.description, 1e3),
-			instruction: sv(n.instruction, 1e3),
-			consequences: sv(n.consequences, 1e3),
+			event: cv(n.event, 40),
+			title: cv(n.title, 120) || "Weather warning",
+			area: cv(n.area, 200),
+			description: cv(n.description, 1e3),
+			instruction: cv(n.instruction, 1e3),
+			consequences: cv(n.consequences, 1e3),
 			start: s(n.start),
 			end: s(n.end),
 			web: o,
@@ -19819,21 +19821,21 @@ function lv(e) {
 			}
 		});
 	}
-	return t.sort((e, t) => iv[e.level] - iv[t.level]), {
+	return t.sort((e, t) => av[e.level] - av[t.level]), {
 		warnings: t,
-		attribution: sv(e.attribution, 120) || "Weather warnings © MET Norway",
+		attribution: cv(e.attribution, 120) || "Weather warnings © MET Norway",
 		fetchedAt: typeof e.fetchedAt == "number" ? e.fetchedAt : 0,
 		stale: e.stale === !0
 	};
 }
-function uv(e, t) {
-	return t.filter((t) => e.lat >= t.bounds.minLat && e.lat <= t.bounds.maxLat && e.lng >= t.bounds.minLng && e.lng <= t.bounds.maxLng && t.polygons.some((t) => y_(e, t))).sort((e, t) => iv[t.level] - iv[e.level]);
+function dv(e, t) {
+	return t.filter((t) => e.lat >= t.bounds.minLat && e.lat <= t.bounds.maxLat && e.lng >= t.bounds.minLng && e.lng <= t.bounds.maxLng && t.polygons.some((t) => y_(e, t))).sort((e, t) => av[t.level] - av[e.level]);
 }
-var dv = (e) => e.reduce((e, t) => !e || iv[t.level] > iv[e] ? t.level : e, void 0);
-function fv(e, t) {
+var fv = (e) => e.reduce((e, t) => !e || av[t.level] > av[e] ? t.level : e, void 0);
+function pv(e, t) {
 	return e.polygons.map((e) => e.map((e) => v_(e, t, !0)).join("")).join("");
 }
-function pv(e) {
+function mv(e) {
 	let t = (e) => e ? new Date(e).toLocaleString(void 0, {
 		weekday: "short",
 		day: "numeric",
@@ -19845,18 +19847,18 @@ function pv(e) {
 }
 //#endregion
 //#region frontend/world-map.ts
-var mv = "http://www.w3.org/2000/svg", hv = 7, gv = 70, _v = 12, vv = 6, yv = 3e5, bv = 3e5, xv = 6e4, Sv = /* @__PURE__ */ new Set([
+var hv = "http://www.w3.org/2000/svg", gv = 7, _v = 70, vv = 12, yv = 6, bv = 3e5, xv = 3e5, Sv = 6e4, Cv = /* @__PURE__ */ new Set([
 	401,
 	403,
 	404,
 	419
-]), Cv = class extends Error {
+]), wv = class extends Error {
 	status;
 	constructor(e, t) {
 		super(e), this.status = t;
 	}
-}, wv = (e) => !!e && typeof e == "object" && !Array.isArray(e);
-function Tv(e) {
+}, Tv = (e) => !!e && typeof e == "object" && !Array.isArray(e);
+function Ev(e) {
 	e.innerHTML = `
     <div class="lm-shell lm-world-page">
       <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>WORLD MAP</span></div></div><div class="lm-header-right"><nav class="lm-pages" aria-label="LibreMap pages" hidden></nav><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
@@ -19871,7 +19873,7 @@ function Tv(e) {
 		"yellow",
 		"orange",
 		"red"
-	].map((e) => `<span class="lm-world-weather-key" hidden><i class="lm-world-area" style="--area:${rv[e]}"></i>${av[e]} warning</span>`).join("")}${["current", "planned"].map((e) => `<span class="lm-world-power-key" hidden><i class="lm-world-area lm-world-${e}" style="--area:${k_[e]}"></i>${A_[e]}</span>`).join("")}</div>
+	].map((e) => `<span class="lm-world-weather-key" hidden><i class="lm-world-area" style="--area:${iv[e]}"></i>${ov[e]} warning</span>`).join("")}${["current", "planned"].map((e) => `<span class="lm-world-power-key" hidden><i class="lm-world-area lm-world-${e}" style="--area:${A_[e]}"></i>${j_[e]}</span>`).join("")}</div>
         <div class="lm-world-attribution" hidden></div>
       </div><aside class="lm-details" aria-label="Selection details"></aside></main>
       <footer><span class="lm-updated">Waiting for data</span><span>Drag to pan · Scroll or double-click to zoom · Click a location to inspect · Keys: / find · F fit · + − zoom · arrows pan · D next problem · O next location in an outage · Esc clear</span></footer>
@@ -19898,7 +19900,7 @@ function Tv(e) {
 	let L = `libremap:world:${e.dataset.storageKey ?? "local"}`, R = (() => {
 		try {
 			let e = JSON.parse(localStorage.getItem(L) ?? "{}");
-			return wv(e) ? e : {};
+			return Tv(e) ? e : {};
 		} catch {
 			return {};
 		}
@@ -19943,22 +19945,22 @@ function Tv(e) {
 			let e = `LibreNMS returned HTTP ${r.status}`;
 			if (r.status === 422 || r.status === 502 || r.status === 503) {
 				let t = await r.json().catch(() => void 0);
-				wv(t) && typeof t.message == "string" && t.message.length <= 300 && (e = t.message);
+				Tv(t) && typeof t.message == "string" && t.message.length <= 300 && (e = t.message);
 			}
-			throw r.status === 429 && (e = "Too many requests. The map will retry on the next refresh."), new Cv(e, r.status);
+			throw r.status === 429 && (e = "Too many requests. The map will retry on the next refresh."), new wv(e, r.status);
 		}
 		return r.json();
 	}
 	function xe(e) {
-		if (!wv(e) || !Array.isArray(e.locations) || !wv(e.devices)) throw Error("Unexpected locations response.");
-		let t = e.locations.filter((e) => wv(e) && typeof e.id == "string" && typeof e.name == "string" && typeof e.lat == "number" && typeof e.lng == "number" && Math.abs(e.lat) <= 90 && Math.abs(e.lng) <= 180).map((e) => ({
+		if (!Tv(e) || !Array.isArray(e.locations) || !Tv(e.devices)) throw Error("Unexpected locations response.");
+		let t = e.locations.filter((e) => Tv(e) && typeof e.id == "string" && typeof e.name == "string" && typeof e.lat == "number" && typeof e.lng == "number" && Math.abs(e.lat) <= 90 && Math.abs(e.lng) <= 180).map((e) => ({
 			id: e.id,
 			name: g_(e.name),
 			lat: e.lat,
 			lng: e.lng
 		})), n = {};
 		for (let [t, r] of Object.entries(e.devices)) typeof r == "string" && (n[t] = r);
-		let r = wv(e.map) ? e.map : {}, i = wv(r.center) ? r.center : {}, a = (e, t) => typeof e == "number" && Number.isFinite(e) ? e : t;
+		let r = Tv(e.map) ? e.map : {}, i = Tv(r.center) ? r.center : {}, a = (e, t) => typeof e == "number" && Number.isFinite(e) ? e : t;
 		return {
 			locations: t,
 			devices: n,
@@ -19976,7 +19978,7 @@ function Tv(e) {
 		};
 	}
 	function Se(e) {
-		if (!wv(e)) return null;
+		if (!Tv(e)) return null;
 		let [t, n, r, i] = [
 			e.south,
 			e.west,
@@ -20049,18 +20051,18 @@ function Tv(e) {
 	}
 	function we() {
 		if (J.clear(), U) for (let e of v) {
-			let t = uv(e, W);
+			let t = dv(e, W);
 			t.length && J.set(e.id, t);
 		}
 	}
 	function Te() {
 		if (le.clear(), ue.clear(), X) for (let e of v) {
-			let t = G_(e, ee);
+			let t = K_(e, ee);
 			if (t.length) {
 				le.set(e.id, t);
 				continue;
 			}
-			let n = Y_(e, ee);
+			let n = X_(e, ee);
 			n.length && ue.set(e.id, n);
 		}
 	}
@@ -20126,7 +20128,7 @@ function Tv(e) {
 				let a = m_(e, r, n, u);
 				if (!a) continue;
 				i = new Image(256, 256), i.alt = "", i.decoding = "async", i.draggable = !1, i.onerror = () => {
-					i.classList.add("lm-tile-failed"), ++j === vv && P("Map tiles could not be loaded. Device locations are still shown.", !0);
+					i.classList.add("lm-tile-failed"), ++j === yv && P("Map tiles could not be loaded. Device locations are still shown.", !0);
 				}, i.src = a, Fe.set(t, i), s.append(i);
 			}
 			(a || c) && (i.style.transform = `translate(${n * 256 - Me.x}px,${u * 256 - Me.y}px)`);
@@ -20136,23 +20138,23 @@ function Tv(e) {
 	let Re = /* @__PURE__ */ new Map();
 	function ze() {
 		Re.clear(), Pe(), l.replaceChildren(...v.map((e) => {
-			let t = e.nodes.length, n = e.nodes.filter((e) => e.status === "down").length, r = document.createElement("button"), i = dv(J.get(e.id) ?? []), a = le.get(e.id)?.[0]?.kind, o = ue.get(e.id)?.[0];
-			r.type = "button", r.className = `lm-world-marker lm-world-${e.status}`, r.dataset.site = e.id, a ? (r.classList.add("lm-world-in-outage", `lm-world-in-${a}`), r.style.setProperty("--outage", k_[a])) : o && (r.classList.add("lm-world-near-outage"), r.style.setProperty("--outage", k_[o.outage.kind])), r.setAttribute("aria-label", `${_e(e)}: ${t} device${t === 1 ? "" : "s"}${n ? `, ${n} down` : ""}${i ? `, ${i} weather warning` : ""}${a ? `, inside a ${a} power outage area` : o ? `, ${ht(o.km)} from a ${o.outage.kind} power outage` : ""}`), r.style.setProperty("--marker", `${Math.round(Math.min(36, 14 + Math.sqrt(t) * 4))}px`);
+			let t = e.nodes.length, n = e.nodes.filter((e) => e.status === "down").length, r = document.createElement("button"), i = fv(J.get(e.id) ?? []), a = le.get(e.id)?.[0]?.kind, o = ue.get(e.id)?.[0];
+			r.type = "button", r.className = `lm-world-marker lm-world-${e.status}`, r.dataset.site = e.id, a ? (r.classList.add("lm-world-in-outage", `lm-world-in-${a}`), r.style.setProperty("--outage", A_[a])) : o && (r.classList.add("lm-world-near-outage"), r.style.setProperty("--outage", A_[o.outage.kind])), r.setAttribute("aria-label", `${_e(e)}: ${t} device${t === 1 ? "" : "s"}${n ? `, ${n} down` : ""}${i ? `, ${i} weather warning` : ""}${a ? `, inside a ${a} power outage area` : o ? `, ${ht(o.km)} from a ${o.outage.kind} power outage` : ""}`), r.style.setProperty("--marker", `${Math.round(Math.min(36, 14 + Math.sqrt(t) * 4))}px`);
 			let s = document.createElement("span");
 			s.className = "lm-world-dot", s.textContent = t > 1 ? String(t) : "";
 			let c = document.createElement("span");
 			if (c.className = "lm-world-label", c.textContent = ye(e), r.append(s, c), i) {
 				let e = document.createElement("span");
-				e.className = "lm-world-badge", e.textContent = "!", e.style.setProperty("--area", rv[i]), r.dataset.warning = i, r.append(e);
+				e.className = "lm-world-badge", e.textContent = "!", e.style.setProperty("--area", iv[i]), r.dataset.warning = i, r.append(e);
 			}
 			if (a) {
 				let e = document.createElement("span");
-				e.className = "lm-world-badge lm-world-power-badge", e.textContent = "⚡", e.style.setProperty("--area", k_[a]);
+				e.className = "lm-world-badge lm-world-power-badge", e.textContent = "⚡", e.style.setProperty("--area", A_[a]);
 				let t = document.createElement("span");
 				t.className = "lm-world-outage-tag", t.textContent = a === "current" ? "⚡ OUTAGE" : "⚡ PLANNED", r.dataset.outage = a, r.append(e, t);
 			} else if (o) {
 				let e = document.createElement("span");
-				e.className = "lm-world-badge lm-world-power-badge lm-world-near-badge", e.textContent = "⚡", e.style.setProperty("--area", k_[o.outage.kind]), r.dataset.nearOutage = o.outage.kind, r.append(e);
+				e.className = "lm-world-badge lm-world-power-badge lm-world-near-badge", e.textContent = "⚡", e.style.setProperty("--area", A_[o.outage.kind]), r.dataset.nearOutage = o.outage.kind, r.append(e);
 			}
 			return Re.set(e.id, r), r;
 		}));
@@ -20160,13 +20162,13 @@ function Tv(e) {
 	let Be = /* @__PURE__ */ new Map();
 	function Ve() {
 		if (Be.clear(), c.replaceChildren(), Pe(), D) for (let e of y) {
-			let t = document.createElementNS(mv, "g");
+			let t = document.createElementNS(hv, "g");
 			t.classList.add("lm-world-link"), t.dataset.link = e.key, t.setAttribute("tabindex", "0"), t.setAttribute("role", "button"), t.setAttribute("aria-label", `${_e(e.a)} to ${_e(e.b)}: ${e.links.length} link${e.links.length === 1 ? "" : "s"}, ${e.label}`);
-			let n = document.createElementNS(mv, "title");
+			let n = document.createElementNS(hv, "title");
 			n.textContent = `${_e(e.a)} ↔ ${_e(e.b)} · ${e.links.length} link${e.links.length === 1 ? "" : "s"} · ${e.label}`;
-			let r = document.createElementNS(mv, "line");
+			let r = document.createElementNS(hv, "line");
 			r.classList.add("lm-world-hit");
-			let i = document.createElementNS(mv, "line");
+			let i = document.createElementNS(hv, "line");
 			i.classList.add("lm-world-line"), i.setAttribute("stroke", e.color), i.setAttribute("stroke-width", String(Math.min(7, 2 + Math.log2(e.links.length)))), e.state !== "up" && i.setAttribute("stroke-dasharray", "7 5"), t.append(n, r, i), c.append(t), Be.set(e.key, [r, i]);
 		}
 	}
@@ -20175,12 +20177,12 @@ function Tv(e) {
 		u.replaceChildren(), We.clear(), He = void 0, Ue = -1, Pe();
 		for (let t of e.querySelectorAll(".lm-world-weather-key")) t.hidden = !U;
 		if (U) {
-			He = document.createElementNS(mv, "g");
+			He = document.createElementNS(hv, "g");
 			for (let e of W) {
-				let t = document.createElementNS(mv, "path");
-				t.classList.add("lm-world-warning"), t.dataset.warning = e.id, t.setAttribute("fill-rule", "evenodd"), t.style.setProperty("--area", rv[e.level]);
-				let n = document.createElementNS(mv, "title");
-				n.textContent = `${av[e.level]} warning: ${e.title}${e.area ? ` · ${e.area}` : ""}`, t.append(n), He.append(t), We.set(e.id, t);
+				let t = document.createElementNS(hv, "path");
+				t.classList.add("lm-world-warning"), t.dataset.warning = e.id, t.setAttribute("fill-rule", "evenodd"), t.style.setProperty("--area", iv[e.level]);
+				let n = document.createElementNS(hv, "title");
+				n.textContent = `${ov[e.level]} warning: ${e.title}${e.area ? ` · ${e.area}` : ""}`, t.append(n), He.append(t), We.set(e.id, t);
 			}
 			u.append(He);
 		}
@@ -20188,31 +20190,31 @@ function Tv(e) {
 	function Ke() {
 		if (He) {
 			if (Ue !== w.zoom) {
-				for (let e of W) We.get(e.id)?.setAttribute("d", fv(e, w.zoom));
+				for (let e of W) We.get(e.id)?.setAttribute("d", pv(e, w.zoom));
 				Ue = w.zoom;
 			}
 			He.setAttribute("transform", `translate(${-Me.x} ${-Me.y})`);
 		}
 	}
-	let qe, Je = -1, Ye = /* @__PURE__ */ new Map(), Xe = /* @__PURE__ */ new Map(), Ze = (e) => `${A_[e.kind]}: ${e.provider}${e.municipality ? ` · ${e.municipality}` : ""}${e.customers === null ? "" : ` · ${e.customers} customers`}`;
+	let qe, Je = -1, Ye = /* @__PURE__ */ new Map(), Xe = /* @__PURE__ */ new Map(), Ze = (e) => `${j_[e.kind]}: ${e.provider}${e.municipality ? ` · ${e.municipality}` : ""}${e.customers === null ? "" : ` · ${e.customers} customers`}`;
 	function Qe() {
 		d.replaceChildren(), Ye.clear(), Xe.clear(), qe = void 0, Je = -1, Pe();
 		for (let t of e.querySelectorAll(".lm-world-power-key")) t.hidden = !X;
 		if (!X) return;
-		qe = document.createElementNS(mv, "g");
-		let t = document.createElementNS(mv, "g");
+		qe = document.createElementNS(hv, "g");
+		let t = document.createElementNS(hv, "g");
 		for (let e of ee) {
-			let n = document.createElementNS(mv, "path");
-			n.classList.add("lm-world-outage", `lm-world-${e.kind}`, `lm-world-outage-${Q_(e)}`), n.dataset.outage = e.id, n.setAttribute("fill-rule", "evenodd"), n.style.setProperty("--area", k_[e.kind]);
-			let r = document.createElementNS(mv, "title");
+			let n = document.createElementNS(hv, "path");
+			n.classList.add("lm-world-outage", `lm-world-${e.kind}`, `lm-world-outage-${$_(e)}`), n.dataset.outage = e.id, n.setAttribute("fill-rule", "evenodd"), n.style.setProperty("--area", A_[e.kind]);
+			let r = document.createElementNS(hv, "title");
 			if (r.textContent = Ze(e), n.append(r), qe.append(n), Ye.set(e.id, n), !e.anchor) continue;
-			let i = document.createElementNS(mv, "g");
-			i.classList.add("lm-world-outage-pin", `lm-world-${e.kind}`), i.dataset.outage = e.id, i.style.setProperty("--area", k_[e.kind]);
-			let a = document.createElementNS(mv, "circle");
+			let i = document.createElementNS(hv, "g");
+			i.classList.add("lm-world-outage-pin", `lm-world-${e.kind}`), i.dataset.outage = e.id, i.style.setProperty("--area", A_[e.kind]);
+			let a = document.createElementNS(hv, "circle");
 			a.setAttribute("r", "10");
-			let o = document.createElementNS(mv, "text");
+			let o = document.createElementNS(hv, "text");
 			o.textContent = "⚡", o.setAttribute("text-anchor", "middle"), o.setAttribute("dy", "4.5");
-			let s = document.createElementNS(mv, "title");
+			let s = document.createElementNS(hv, "title");
 			s.textContent = Ze(e), i.append(s, a, o), t.append(i), Xe.set(e.id, i);
 		}
 		qe.append(t), d.append(qe);
@@ -20221,8 +20223,8 @@ function Tv(e) {
 		if (qe) {
 			if (Je !== w.zoom) {
 				for (let e of ee) {
-					Ye.get(e.id)?.setAttribute("d", X_(e, w.zoom));
-					let t = Z_(e, w.zoom);
+					Ye.get(e.id)?.setAttribute("d", Z_(e, w.zoom));
+					let t = Q_(e, w.zoom);
 					t && Xe.get(e.id)?.setAttribute("transform", `translate(${t.x.toFixed(1)} ${t.y.toFixed(1)})`);
 				}
 				Je = w.zoom;
@@ -20260,7 +20262,7 @@ function Tv(e) {
 			let a = et(f_(r, n)), o = a.x < -e - 60 || a.y < -t - 60 || a.x > 2 * e + 60 || a.y > 2 * t + 60;
 			i.style.display = o ? "none" : "", o || (i.style.transform = `translate(${a.x}px,${a.y}px) translate(-50%,-50%)`);
 		}
-		l.classList.toggle("lm-world-named", n >= hv || V), l.classList.toggle("lm-world-device-names", V);
+		l.classList.toggle("lm-world-named", n >= gv || V), l.classList.toggle("lm-world-device-names", V);
 		let r = d_(n);
 		for (let e of y) {
 			let t = Be.get(e.key);
@@ -20290,11 +20292,11 @@ function Tv(e) {
 	};
 	function ot() {
 		let e = _?.map.bounds, { w: t, h: n } = Ae();
-		return e && t && n ? Math.max(1, S_(e, t, n, _?.map.maxZoom ?? 18)) : 1;
+		return e && t && n ? Math.max(1, C_(e, t, n, _?.map.maxZoom ?? 18)) : 1;
 	}
 	function st(e, t) {
-		let { w: n, h: r } = Ae(), i = _?.map.bounds, a = C_(e, t, r);
-		return i ? x_(a, t, n, r, i) : a;
+		let { w: n, h: r } = Ae(), i = _?.map.bounds, a = w_(e, t, r);
+		return i ? S_(a, t, n, r, i, x_(n, r)) : a;
 	}
 	function ct(e, t) {
 		let n = _?.map.maxZoom ?? 18;
@@ -20340,7 +20342,7 @@ function Tv(e) {
 			ct(r.zoom, f_(r, r.zoom));
 			return;
 		}
-		let r = p_(v, e, t, gv, _?.map.maxZoom ?? 18, _v);
+		let r = p_(v, e, t, _v, _?.map.maxZoom ?? 18, vv);
 		ct(r.zoom, r.center);
 	}
 	function dt(e) {
@@ -20403,12 +20405,12 @@ function Tv(e) {
 		let t = le.get(e.id) ?? [], n = ue.get(e.id) ?? [];
 		if (!X || !t.length && !n.length) return;
 		let r = t[0] ?? n[0].outage, i = Q("div", void 0, `lm-world-outage-banner${t.length ? "" : " lm-world-outage-banner-near"}`);
-		i.style.setProperty("--outage", k_[r.kind]), i.append(Q("strong", t.length ? `⚡ ${r.kind === "current" ? "INSIDE A POWER OUTAGE AREA" : "INSIDE A PLANNED OUTAGE AREA"}` : `⚡ ${ht(n[0].km)} FROM A ${r.kind === "current" ? "POWER OUTAGE" : "PLANNED OUTAGE"}`));
+		i.style.setProperty("--outage", A_[r.kind]), i.append(Q("strong", t.length ? `⚡ ${r.kind === "current" ? "INSIDE A POWER OUTAGE AREA" : "INSIDE A PLANNED OUTAGE AREA"}` : `⚡ ${ht(n[0].km)} FROM A ${r.kind === "current" ? "POWER OUTAGE" : "PLANNED OUTAGE"}`));
 		let a = [
 			r.provider,
 			r.municipality,
 			r.customers === null ? "" : `${r.customers} customers`,
-			ev(r)
+			tv(r)
 		].filter(Boolean).join(" · ");
 		i.append(Q("span", a)), t.length > 1 && i.append(Q("span", `and ${t.length - 1} more outage${t.length === 2 ? "" : "s"} here`));
 		let o = Q("button", "Show the outage");
@@ -20511,9 +20513,9 @@ function Tv(e) {
 	}
 	function Ct(e) {
 		let t = Q("div", void 0, "lm-device-list lm-world-warnings");
-		for (let n of [...e].sort((e, t) => iv[t.level] - iv[e.level])) {
+		for (let n of [...e].sort((e, t) => av[t.level] - av[e.level])) {
 			let e = Q("button", void 0, "lm-world-device"), r = Q("i");
-			r.style.background = rv[n.level], e.append(r, Q("span", `${n.title}${n.area ? ` · ${n.area}` : ""}`)), e.title = `${av[n.level]} warning`, e.onclick = () => vt({
+			r.style.background = iv[n.level], e.append(r, Q("span", `${n.title}${n.area ? ` · ${n.area}` : ""}`)), e.title = `${ov[n.level]} warning`, e.onclick = () => vt({
 				type: "warning",
 				id: n.id
 			}), t.append(e);
@@ -20522,9 +20524,9 @@ function Tv(e) {
 	}
 	function wt(e) {
 		let t = v.filter((t) => J.get(t.id)?.includes(e));
-		r.append(yt(), Q("div", `${av[e.level].toUpperCase()} WARNING · MET NORWAY`, "lm-eyebrow"), Q("h2", e.title), pt([
+		r.append(yt(), Q("div", `${ov[e.level].toUpperCase()} WARNING · MET NORWAY`, "lm-eyebrow"), Q("h2", e.title), pt([
 			...e.area ? [["Area", e.area]] : [],
-			["When", pv(e)],
+			["When", mv(e)],
 			["Locations affected", String(t.length)]
 		]));
 		for (let [t, n] of [
@@ -20577,7 +20579,7 @@ function Tv(e) {
 		let t = Q("div", void 0, "lm-device-list lm-world-outages");
 		for (let n of [...e].sort((e, t) => Number(t.kind === "current") - Number(e.kind === "current") || (t.customers ?? 0) - (e.customers ?? 0))) {
 			let e = Q("button", void 0, "lm-world-device"), r = Q("i");
-			r.style.background = k_[n.kind], e.append(r, Q("span", `${n.provider}${n.municipality ? ` · ${n.municipality}` : ""}${n.customers === null ? "" : ` · ${n.customers} customers`}`)), e.title = A_[n.kind], ee.some((e) => e.id === n.id) ? e.onclick = () => vt({
+			r.style.background = A_[n.kind], e.append(r, Q("span", `${n.provider}${n.municipality ? ` · ${n.municipality}` : ""}${n.customers === null ? "" : ` · ${n.customers} customers`}`)), e.title = j_[n.kind], ee.some((e) => e.id === n.id) ? e.onclick = () => vt({
 				type: "outage",
 				id: n.id
 			}) : e.disabled = !0, t.append(e);
@@ -20587,18 +20589,18 @@ function Tv(e) {
 	function Dt() {
 		let e = Q("div", void 0, "lm-hint lm-world-power-status");
 		if (!te) return e.textContent = "Grid operator maps: waiting for DRIFT.", e;
-		e.append(Q("p", `${tv(te)} · ${te.source}`)), ne || e.append(Q("p", "The list may be incomplete: it was cut off, or a map has not been read yet."));
-		for (let [t, n] of Object.entries(ae)) t === "shape_too_large" ? e.append(Q("p", `⚠ ${n} outage area${n === 1 ? " was" : "s were"} too detailed to draw and ${n === 1 ? "is" : "are"} shown as a pin.`)) : e.append(Q("p", `⚠ ${n} outage${n === 1 ? "" : "s"} from DRIFT ${n === 1 ? "is" : "are"} not on the map: ${j_[t] ?? t}.`));
+		e.append(Q("p", `${nv(te)} · ${te.source}`)), ne || e.append(Q("p", "The list may be incomplete: it was cut off, or a map has not been read yet."));
+		for (let [t, n] of Object.entries(ae)) t === "shape_too_large" ? e.append(Q("p", `⚠ ${n} outage area${n === 1 ? " was" : "s were"} too detailed to draw and ${n === 1 ? "is" : "are"} shown as a pin.`)) : e.append(Q("p", `⚠ ${n} outage${n === 1 ? "" : "s"} from DRIFT ${n === 1 ? "is" : "are"} not on the map: ${M_[t] ?? t}.`));
 		for (let t of te.limitations) e.append(Q("p", `⚠ ${t}`));
 		for (let t of re?.providers ?? []) t.lastError ? e.append(Q("p", `⚠ ${t.name}: ${t.lastError}${t.lastErrorAt ? ` (${new Date(t.lastErrorAt).toLocaleTimeString()})` : ""}`)) : t.fetchedAt || e.append(Q("p", `${t.name}: map not read yet`));
 		return e;
 	}
 	function Ot(e) {
 		let t = Q("div", void 0, "lm-world-power-here"), n = de.get(e.id);
-		if ((!n || Date.now() - n.at > xv) && kt(e), !n || !n.check && !n.error) return t.append(Q("p", "Checking the grid operators' maps…")), t;
+		if ((!n || Date.now() - n.at > Sv) && kt(e), !n || !n.check && !n.error) return t.append(Q("p", "Checking the grid operators' maps…")), t;
 		if (n.error) return t.append(Q("p", n.error, "lm-hint")), t;
-		let r = n.check, i = Q("p", nv(r), `lm-world-verdict lm-world-${r.verdict}`);
-		t.append(i), r.why && t.append(Q("p", r.why, "lm-hint")), r.outages.length && t.append(Et(r.outages.map((e) => ee.find((t) => t.id === e.id) ?? e))), t.append(Q("p", tv(r.evidence), "lm-hint"));
+		let r = n.check, i = Q("p", rv(r), `lm-world-verdict lm-world-${r.verdict}`);
+		t.append(i), r.why && t.append(Q("p", r.why, "lm-hint")), r.outages.length && t.append(Et(r.outages.map((e) => ee.find((t) => t.id === e.id) ?? e))), t.append(Q("p", nv(r.evidence), "lm-hint"));
 		for (let e of r.evidence.limitations) t.append(Q("p", `⚠ ${e}`, "lm-hint"));
 		return t;
 	}
@@ -20614,7 +20616,7 @@ function Tv(e) {
 			let e = new URL(n, location.href);
 			e.searchParams.set("lat", String(t.lat)), e.searchParams.set("lon", String(t.lng)), de.set(t.id, {
 				at: Date.now(),
-				check: U_(await be(e.href, "power outage check"))
+				check: W_(await be(e.href, "power outage check"))
 			});
 		} catch (e) {
 			de.set(t.id, {
@@ -20637,7 +20639,7 @@ function Tv(e) {
 		}] : [];
 		if (!n.length) return;
 		ke();
-		let { w: r, h: i } = Ae(), a = p_(n, r, i, gv, Math.min(_?.map.maxZoom ?? 18, 15), 14);
+		let { w: r, h: i } = Ae(), a = p_(n, r, i, _v, Math.min(_?.map.maxZoom ?? 18, 15), 14);
 		ct(a.zoom, a.center);
 	}
 	function jt(e) {
@@ -20645,16 +20647,16 @@ function Tv(e) {
 			site: t,
 			near: ue.get(t.id)?.find((t) => t.outage === e)
 		})).filter((e) => !!e.near);
-		r.append(yt(), Q("div", `${A_[e.kind].toUpperCase()} · ${e.provider.toUpperCase()}`, "lm-eyebrow"), Q("h2", e.municipality ?? e.provider), pt([
+		r.append(yt(), Q("div", `${j_[e.kind].toUpperCase()} · ${e.provider.toUpperCase()}`, "lm-eyebrow"), Q("h2", e.municipality ?? e.provider), pt([
 			...e.state ? [["State", e.state]] : [],
 			...e.type ? [["Type", e.type]] : [],
 			...e.customers === null ? [] : [["Customers affected", String(e.customers)]],
-			["When", ev(e)],
+			["When", tv(e)],
 			...e.gridLevel ? [["Grid level", e.gridLevel]] : [],
 			...e.reason ? [["Reason", e.reason]] : [],
 			["Locations in area", String(t.length)],
 			["Devices in area", String(t.reduce((e, t) => e + t.nodes.length, 0))]
-		])), e.text && r.append(Q("p", e.text)), Q_(e) === "point" && r.append(Q("p", "The grid operator gives this outage as a point, without an area, so the map cannot tell which locations it covers. Locations within 1 km are listed as near it.", "lm-hint")), e.shapeDropped && r.append(Q("p", "This outage's area was too detailed to draw alongside the others, so it is shown as a pin.", "lm-hint"));
+		])), e.text && r.append(Q("p", e.text)), $_(e) === "point" && r.append(Q("p", "The grid operator gives this outage as a point, without an area, so the map cannot tell which locations it covers. Locations within 1 km are listed as near it.", "lm-hint")), e.shapeDropped && r.append(Q("p", "This outage's area was too detailed to draw alongside the others, so it is shown as a pin.", "lm-hint"));
 		let i = Q("button", "Show on the map", "lm-world-back");
 		if (i.onclick = () => At(e), r.append(i), t.length) {
 			let e = Q("div", void 0, "lm-device-list lm-world-in-outage-list");
@@ -20725,7 +20727,7 @@ function Tv(e) {
 				let e = t.label === "DOWN" ? "The link is down." : t.label === "DISABLED" ? "The interface is administratively disabled." : t.label === "STALE" ? "No recent traffic sample from LibreNMS." : "LibreNMS has no speed or traffic counters for this interface.";
 				u.append(Q("span", e, "lm-world-load-note"));
 			}
-			let p = D_(e.dataset.homeUrl, s.sourcePortId, h?.generatedAt ?? 0);
+			let p = O_(e.dataset.homeUrl, s.sourcePortId, h?.generatedAt ?? 0);
 			if (p) {
 				let e = Q("details", "", "lm-world-load-graph");
 				e.append(Q("summary", "Traffic, last 24 hours")), e.addEventListener("toggle", () => {
@@ -20768,13 +20770,13 @@ function Tv(e) {
 			O = !0, m("refresh").disabled = !0;
 			try {
 				let [n, r] = await Promise.all([be(e.dataset.endpoint, "topology"), be(e.dataset.locationsEndpoint, "locations")]);
-				if (!wv(n) || !Array.isArray(n.devices) || !Array.isArray(n.links) || !wv(n.config)) throw Error("Unexpected topology response.");
+				if (!Tv(n) || !Array.isArray(n.devices) || !Array.isArray(n.links) || !Tv(n.config)) throw Error("Unexpected topology response.");
 				h = n, _ = xe(r), g = mg(h), ge = new Map([..._.locations].sort((e, t) => Number(e.id) - Number(t.id) || e.id.localeCompare(t.id)).map((e, t) => [e.id, t + 1])), M = Number.isFinite(h.generatedAt) ? h.generatedAt - Date.now() / 1e3 : 0;
 				let i = p.value;
 				p.replaceChildren(new Option("All device groups", ""), ...g.deviceGroups.map((e) => new Option(e.name, e.id))), p.value = g.deviceGroups.some((e) => e.id === i) ? i : "", Lt(), Ce(), ft(), k ||= (ut(), !0), t(".lm-updated").textContent = `Snapshot fetched · ${(/* @__PURE__ */ new Date(h.generatedAt * 1e3)).toLocaleTimeString()}`, P(_.locations.length ? `${v.reduce((e, t) => e + t.nodes.length, 0)} devices at ${v.length} locations` : "No devices have map coordinates yet.");
 			} catch (e) {
 				let t = e instanceof Error ? e.message : "Unable to load device locations";
-				if (h && !(e instanceof Cv && Sv.has(e.status))) {
+				if (h && !(e instanceof wv && Cv.has(e.status))) {
 					P(`${t} · Showing the data from ${(/* @__PURE__ */ new Date(h.generatedAt * 1e3)).toLocaleTimeString()}.`, !0);
 					return;
 				}
@@ -20800,7 +20802,7 @@ function Tv(e) {
 		if (U && !q && H) {
 			q = !0, ft();
 			try {
-				let e = lv(await be(H, "weather warning"));
+				let e = uv(await be(H, "weather warning"));
 				if (!U) return;
 				W = e.warnings, G = e.attribution, K = e.fetchedAt || Date.now() / 1e3, Ge(), Ce(), Lt();
 				let t = (/* @__PURE__ */ new Date(K * 1e3)).toLocaleTimeString();
@@ -20819,7 +20821,7 @@ function Tv(e) {
 		if (X && !ie && Y) {
 			ie = !0, ft();
 			try {
-				let [t, n] = await Promise.all([be(Y, "power outage").then(H_), be(e.dataset.powerHealthEndpoint, "power outage status").then(W_).catch(() => void 0)]);
+				let [t, n] = await Promise.all([be(Y, "power outage").then(U_), be(e.dataset.powerHealthEndpoint, "power outage status").then(G_).catch(() => void 0)]);
 				if (!X) return;
 				ee = t.outages, te = t.evidence, ne = t.complete, re = n, ae = t.skipped, Qe(), Ce(), Lt();
 				let r = ee.filter((e) => e.kind === "current").length, i = Object.entries(t.skipped).filter(([e]) => e !== "shape_too_large").reduce((e, [, t]) => e + t, 0), a = [
@@ -20827,7 +20829,7 @@ function Tv(e) {
 					...t.complete ? [] : ["the list may be incomplete"],
 					...i ? [`${i} outage${i === 1 ? "" : "s"} could not be placed`] : []
 				];
-				P(`${r} current and ${ee.length - r} planned power outage${ee.length === 1 ? "" : "s"} · ${le.size} location${le.size === 1 ? "" : "s"} inside an outage area${ue.size ? `, ${ue.size} within 1 km` : ""} · ${tv(t.evidence)}${a.length ? ` · ⚠ ${a.join("; ")}` : ""}`, a.length > 0);
+				P(`${r} current and ${ee.length - r} planned power outage${ee.length === 1 ? "" : "s"} · ${le.size} location${le.size === 1 ? "" : "s"} inside an outage area${ue.size ? `, ${ue.size} within 1 km` : ""} · ${nv(t.evidence)}${a.length ? ` · ⚠ ${a.join("; ")}` : ""}`, a.length > 0);
 			} catch (e) {
 				P(`${e instanceof Error ? e.message : "Power outages are unavailable."}${ee.length ? " · Showing the last outages received." : ""}`, !0);
 			} finally {
@@ -20984,9 +20986,9 @@ function Tv(e) {
 		document.hidden || It();
 	}, 6e4), setInterval(() => {
 		U && !document.hidden && Rt();
-	}, yv), setInterval(() => {
+	}, bv), setInterval(() => {
 		X && !document.hidden && Bt();
-	}, bv), e.dataset.debug === "true" && Object.defineProperty(window, "libremapWorldDebug", {
+	}, xv), e.dataset.debug === "true" && Object.defineProperty(window, "libremapWorldDebug", {
 		value: () => ({
 			zoom: w.zoom,
 			center: { ...w.center },
@@ -20997,7 +20999,7 @@ function Tv(e) {
 				text: Re.get(e.id)?.querySelector(".lm-world-label")?.textContent ?? "",
 				count: e.nodes.length,
 				status: e.status,
-				warning: dv(J.get(e.id) ?? []) ?? null,
+				warning: fv(J.get(e.id) ?? []) ?? null,
 				outage: le.get(e.id)?.[0]?.kind ?? null,
 				nearOutage: ue.get(e.id)?.[0]?.outage.kind ?? null,
 				position: je(f_(e, w.zoom))
@@ -21023,7 +21025,7 @@ function Tv(e) {
 			outages: X ? ee.map((e) => ({
 				id: e.id,
 				kind: e.kind,
-				shape: Q_(e),
+				shape: $_(e),
 				drawn: !!Ye.get(e.id)?.getAttribute("d") || !!Xe.get(e.id)?.getAttribute("transform"),
 				pinned: !!Xe.get(e.id)?.getAttribute("transform")
 			})) : [],
@@ -21034,7 +21036,7 @@ function Tv(e) {
 }
 //#endregion
 //#region node_modules/elkjs/lib/elk-worker.min.js?worker
-var Ev = /* @__PURE__ */ c((/* @__PURE__ */ o(((e, t) => {
+var Dv = /* @__PURE__ */ c((/* @__PURE__ */ o(((e, t) => {
 	(function(n) {
 		if (typeof e == "object" && t !== void 0) t.exports = n();
 		else if (typeof define == "function" && define.amd) define([], n);
@@ -21228,7 +21230,7 @@ var Ev = /* @__PURE__ */ c((/* @__PURE__ */ o(((e, t) => {
 		}, {}, [2])(2);
 	});
 })))(), 1);
-function Dv(e) {
+function Ov(e) {
 	return new Worker("" + new URL("assets/elk-worker.min-ChMHynyl.js", import.meta.url).href, {
 		type: "module",
 		name: e?.name
@@ -21236,20 +21238,20 @@ function Dv(e) {
 }
 //#endregion
 //#region frontend/layout-positions.ts
-var Ov = 256, kv = 180, Av = 246, jv = 155, Mv = 8, Nv = 4, Pv = 4, Fv = [{
+var kv = 256, Av = 180, jv = 246, Mv = 155, Nv = 8, Pv = 4, Fv = 4, Iv = [{
 	column: 260,
 	row: 210
 }, {
 	column: 238,
 	row: 135
-}], Iv = 2;
-function Lv(e, t) {
+}], Lv = 2;
+function Rv(e, t) {
 	if (e <= 0) return !1;
 	let n = Math.max(1, Math.round(e / t));
-	return Math.abs(e - n * t) <= Iv;
+	return Math.abs(e - n * t) <= Lv;
 }
-function Rv(e, t) {
-	if (e.length <= Mv) return !1;
+function zv(e, t) {
+	if (e.length <= Nv) return !1;
 	let n = /* @__PURE__ */ new Map();
 	for (let [, t] of e) {
 		let e = Math.round(t.y);
@@ -21260,19 +21262,19 @@ function Rv(e, t) {
 		return t.slice(1).map((e, n) => e - t[n]).filter((e) => e > 0);
 	});
 	if (i.length === 0 || a.length < 2) return !1;
-	let o = i.filter((e) => Lv(e, t.row)).length, s = a.filter((e) => Lv(e, t.column)).length;
+	let o = i.filter((e) => Rv(e, t.row)).length, s = a.filter((e) => Rv(e, t.column)).length;
 	return o / i.length >= .75 && s / a.length >= .75;
 }
-function zv(e, t) {
+function Bv(e, t) {
 	let n = Object.entries(e);
-	if (n.length <= Mv) return e;
+	if (n.length <= Nv) return e;
 	let r = n.map(([, e]) => e.x), i = n.map(([, e]) => e.y), a = Math.max(...r) - Math.min(...r) + 210, o = Math.max(...i) - Math.min(...i) + 76, s = n.filter(([e]) => !t.has(e));
-	return a / o <= Pv && !Fv.some((e) => Rv(s, e)) ? e : Object.fromEntries(n.filter(([e]) => t.has(e)));
+	return a / o <= Fv && !Iv.some((e) => zv(s, e)) ? e : Object.fromEntries(n.filter(([e]) => t.has(e)));
 }
-function Bv(e, t, n = !1) {
+function Vv(e, t, n = !1) {
 	let r = /* @__PURE__ */ new Map();
 	for (let t of e.nodes) r.set(t.tier, [...r.get(t.tier) ?? [], t]);
-	let i = n ? Av : Ov, a = n ? jv : kv, o = n ? 1.2 : 1.4, s = Math.max(n ? Nv : Mv, Math.ceil(Math.sqrt(e.nodes.length * o * a / i))), c = {}, l = 0;
+	let i = n ? jv : kv, a = n ? Mv : Av, o = n ? 1.2 : 1.4, s = Math.max(n ? Pv : Nv, Math.ceil(Math.sqrt(e.nodes.length * o * a / i))), c = {}, l = 0;
 	for (let e of [...r.keys()].sort((e, t) => e - t)) {
 		let n = r.get(e);
 		n.sort((e, n) => e.site.localeCompare(n.site) || (t.get(e.id) ?? 0) - (t.get(n.id) ?? 0) || e.id.localeCompare(n.id));
@@ -21290,11 +21292,11 @@ function Bv(e, t, n = !1) {
 }
 //#endregion
 //#region frontend/layout.ts
-var Vv = () => new Ev.default({ workerFactory: () => new Dv() }), Hv = Vv();
-function Uv() {
-	Hv.terminateWorker(), Hv = Vv();
+var Hv = () => new Dv.default({ workerFactory: () => new Ov() }), Uv = Hv();
+function Wv() {
+	Uv.terminateWorker(), Uv = Hv();
 }
-async function Wv(e) {
+async function Gv(e) {
 	let t = new Map(e.nodes.map((e) => [e.id, e])), n = e.links.filter((e) => t.get(e.source).tier !== t.get(e.target).tier).map((e, n) => {
 		let r = t.get(e.source).tier < t.get(e.target).tier;
 		return {
@@ -21302,7 +21304,7 @@ async function Wv(e) {
 			sources: [r ? e.source : e.target],
 			targets: [r ? e.target : e.source]
 		};
-	}), r = await Hv.layout({
+	}), r = await Uv.layout({
 		id: "root",
 		layoutOptions: {
 			"elk.algorithm": "layered",
@@ -21318,11 +21320,11 @@ async function Wv(e) {
 		})),
 		edges: n
 	});
-	return Bv(e, new Map(r.children.map((e) => [e.id, e.x ?? 0])));
+	return Vv(e, new Map(r.children.map((e) => [e.id, e.x ?? 0])));
 }
 //#endregion
 //#region frontend/demo.ts
-function Gv() {
+function Kv() {
 	let e = Math.floor(Date.now() / 1e3);
 	return {
 		generatedAt: e,
@@ -21487,7 +21489,7 @@ function Gv() {
 		}))
 	};
 }
-var Kv = () => ({
+var qv = () => ({
 	rootId: null,
 	deviceGroupId: null,
 	site: "",
@@ -21502,26 +21504,26 @@ var Kv = () => ({
 		x: 0,
 		y: 0
 	}
-}), qv = (e) => !!e && typeof e == "object" && !Array.isArray(e), Jv = (e) => typeof e == "number" && Number.isFinite(e) && Math.abs(e) <= 1e6, Yv = (e) => qv(e) && Jv(e.x) && Jv(e.y);
-function Xv(e, t) {
-	let n = Kv();
-	if (!qv(e)) return n;
+}), Jv = (e) => !!e && typeof e == "object" && !Array.isArray(e), Yv = (e) => typeof e == "number" && Number.isFinite(e) && Math.abs(e) <= 1e6, Xv = (e) => Jv(e) && Yv(e.x) && Yv(e.y);
+function Zv(e, t) {
+	let n = qv();
+	if (!Jv(e)) return n;
 	let r = t ? new Set(t.nodes.map((e) => e.id)) : void 0, i = (e) => /^\d+$/.test(e) && (!r || r.has(e));
 	typeof e.rootId == "string" && i(e.rootId) && (!t || t.nodes.some((t) => t.id === e.rootId && t.role === "AGG")) && (n.rootId = e.rootId), typeof e.deviceGroupId == "string" && /^[1-9]\d{0,9}$/.test(e.deviceGroupId) && (!t || t.deviceGroups.some((t) => t.id === e.deviceGroupId)) && (n.deviceGroupId = e.deviceGroupId), typeof e.site == "string" && i_(e.site) <= 200 && (!t || t.nodes.some((t) => t.site === e.site)) && (n.site = e.site), typeof e.search == "string" && (n.search = a_(e.search)), n.backbone = e.backbone === !0, n.showOther = e.showOther === !0, typeof e.hops == "number" && Number.isInteger(e.hops) && e.hops >= 1 && e.hops <= 5 && (n.hops = e.hops);
 	let a = t ? t.nodes.length : r_, o = 0;
-	if (qv(e.positions)) for (let [t, r] of Object.entries(e.positions)) {
+	if (Jv(e.positions)) for (let [t, r] of Object.entries(e.positions)) {
 		if (o >= a) break;
-		i(t) && Yv(r) && (n.positions[t] = {
+		i(t) && Xv(r) && (n.positions[t] = {
 			x: r.x,
 			y: r.y
 		}, o++);
 	}
-	return Array.isArray(e.pinned) && (n.pinned = [...new Set(e.pinned.filter((e) => typeof e == "string" && i(e) && Object.hasOwn(n.positions, e)))].slice(0, a)), typeof e.zoom == "number" && Number.isFinite(e.zoom) && (n.zoom = Math.min(2.5, Math.max(.15, e.zoom))), Yv(e.pan) && (n.pan = {
+	return Array.isArray(e.pinned) && (n.pinned = [...new Set(e.pinned.filter((e) => typeof e == "string" && i(e) && Object.hasOwn(n.positions, e)))].slice(0, a)), typeof e.zoom == "number" && Number.isFinite(e.zoom) && (n.zoom = Math.min(2.5, Math.max(.15, e.zoom))), Xv(e.pan) && (n.pan = {
 		x: e.pan.x,
 		y: e.pan.y
 	}), n;
 }
-function Zv(e, t) {
+function Qv(e, t) {
 	let n = e.nodes.find((e) => e.id === t && e.role === "AGG");
 	if (!n) return new Set(e.nodes.map((e) => e.id));
 	let r = new Map(e.nodes.map((e) => [e.id, e])), i = new Map(e.nodes.map((e) => [e.id, []]));
@@ -21541,7 +21543,7 @@ function Zv(e, t) {
 	}
 	return o;
 }
-function Qv(e, t, n, r) {
+function $v(e, t, n, r) {
 	let i = /* @__PURE__ */ new Map();
 	for (let t of e.links) if (r.has(t.source) && r.has(t.target)) for (let e of [t.source, t.target]) {
 		let n = i.get(e);
@@ -21562,8 +21564,8 @@ function Qv(e, t, n, r) {
 		links: o
 	};
 }
-function $v(e, t) {
-	let n = Zv(e, t.rootId), r = t.deviceGroupId ? e.deviceGroups.find((e) => e.id === t.deviceGroupId) : void 0;
+function ey(e, t) {
+	let n = Qv(e, t.rootId), r = t.deviceGroupId ? e.deviceGroups.find((e) => e.id === t.deviceGroupId) : void 0;
 	if (t.deviceGroupId && !r) return /* @__PURE__ */ new Set();
 	let i = r ? new Set(r.deviceIds) : void 0, a = new Set(e.nodes.filter((e) => {
 		let r = t.backbone ? e.role === "AGG" : t.showOther || e.role === "AGG" || e.role === "ER";
@@ -21576,40 +21578,40 @@ function $v(e, t) {
 	if (t.search) for (let t of e.links) s.has(t.source) && a.has(t.target) && c.add(t.target), s.has(t.target) && a.has(t.source) && c.add(t.source);
 	return c;
 }
-var ey = 228, ty = 94;
-function ny(e, t, n, r) {
+var ty = 228, ny = 94;
+function ry(e, t, n, r) {
 	let i = {}, a = /* @__PURE__ */ new Map(), o = (e, t) => `${e}:${t}`, s = (e) => {
-		let t = o(Math.floor(e.x / ey), Math.floor(e.y / ty)), n = a.get(t);
+		let t = o(Math.floor(e.x / ty), Math.floor(e.y / ny)), n = a.get(t);
 		n ? n.push(e) : a.set(t, [e]);
 	}, c = (e) => {
-		let t = Math.floor(e.x / ey), n = Math.floor(e.y / ty);
-		for (let r = -1; r <= 1; r++) for (let i = -1; i <= 1; i++) for (let s of a.get(o(t + r, n + i)) ?? []) if (Math.abs(s.x - e.x) < ey && Math.abs(s.y - e.y) < ty) return !0;
+		let t = Math.floor(e.x / ty), n = Math.floor(e.y / ny);
+		for (let r = -1; r <= 1; r++) for (let i = -1; i <= 1; i++) for (let s of a.get(o(t + r, n + i)) ?? []) if (Math.abs(s.x - e.x) < ty && Math.abs(s.y - e.y) < ny) return !0;
 		return !1;
 	};
-	for (let t of e.nodes) Yv(n[t.id]) && (i[t.id] = { ...n[t.id] }, s(i[t.id]));
+	for (let t of e.nodes) Xv(n[t.id]) && (i[t.id] = { ...n[t.id] }, s(i[t.id]));
 	for (let n of e.nodes) if (!i[n.id]) {
 		let r = { ...t[n.id] ?? {
 			x: 0,
 			y: n.tier * 180
 		} }, a = r.x;
-		for (let t = 1; c(r) && t <= e.nodes.length * 2 + 1; t++) r.x = a + Math.ceil(t / 2) * ey * (t % 2 ? 1 : -1);
+		for (let t = 1; c(r) && t <= e.nodes.length * 2 + 1; t++) r.x = a + Math.ceil(t / 2) * ty * (t % 2 ? 1 : -1);
 		i[n.id] = r, s(r);
 	}
-	for (let e of r) i[e] && Yv(n[e]) && (i[e] = { ...n[e] });
+	for (let e of r) i[e] && Xv(n[e]) && (i[e] = { ...n[e] });
 	return i;
 }
 //#endregion
 //#region frontend/view-store.ts
-var ry = class extends Error {
+var iy = class extends Error {
 	status;
 	constructor(e, t = 0) {
 		super(e), this.status = t;
 	}
-}, iy = {
+}, ay = {
 	PUT: "This view changed in another tab. Reload views before saving again.",
 	DELETE: "This view changed in another tab. Reload views before deleting it."
 };
-function ay(e, t) {
+function oy(e, t) {
 	let n = new URL(e, location.href);
 	if (n.origin !== location.origin) throw Error("Saved views must use the same origin.");
 	async function r(e, r, i, a = {}) {
@@ -21627,7 +21629,7 @@ function ay(e, t) {
 			body: i === void 0 ? void 0 : JSON.stringify(i),
 			signal: AbortSignal.timeout(2e4)
 		});
-		if (!c.ok) throw new ry(await oy(c, e), c.status);
+		if (!c.ok) throw new iy(await sy(c, e), c.status);
 		return c.status === 204 ? void 0 : c.json();
 	}
 	return {
@@ -21646,7 +21648,7 @@ function ay(e, t) {
 		}
 	};
 }
-async function oy(e, t) {
+async function sy(e, t) {
 	if (e.status === 422) {
 		let t = await e.json().catch(() => void 0), n = t && typeof t == "object" && "message" in t && typeof t.message == "string" ? t.message.trim() : "";
 		if (n && n.length <= 300) return n;
@@ -21655,21 +21657,21 @@ async function oy(e, t) {
 		401: "Your session has expired. Sign in and reload.",
 		403: "You no longer have access to saved views.",
 		404: "This view is no longer available. Reload views.",
-		409: iy[t] ?? iy.PUT,
+		409: ay[t] ?? ay.PUT,
 		419: "Your session has expired. Reload the page before saving.",
 		422: "The view could not be saved. Check its name, device access and size.",
 		429: "Too many requests. Wait a moment before saving again.",
 		503: "Saved views are unavailable. The plugin database migration may be pending."
 	}[e.status] ?? `Saved views request failed (HTTP ${e.status}).`;
 }
-function sy() {
+function cy() {
 	if (typeof crypto.randomUUID == "function") return crypto.randomUUID();
 	let e = crypto.getRandomValues(/* @__PURE__ */ new Uint8Array(16));
 	e[6] = e[6] & 15 | 64, e[8] = e[8] & 63 | 128;
 	let t = [...e].map((e) => e.toString(16).padStart(2, "0")).join("");
 	return `${t.slice(0, 8)}-${t.slice(8, 12)}-${t.slice(12, 16)}-${t.slice(16, 20)}-${t.slice(20)}`;
 }
-function cy(e) {
+function ly(e) {
 	function t() {
 		let t;
 		try {
@@ -21688,7 +21690,7 @@ function cy(e) {
 		}
 		return Array.isArray(n) ? n.filter((e) => e && typeof e.id == "string" && typeof e.name == "string" && Number.isInteger(e.revision)).slice(0, 50).map((e) => ({
 			...e,
-			state: Xv(e.state)
+			state: Zv(e.state)
 		})) : [];
 	}
 	function n(t) {
@@ -21698,12 +21700,12 @@ function cy(e) {
 		list: async () => t(),
 		save: async (e, r, i) => {
 			let a = t(), o = a.findIndex((e) => e.id === i?.id);
-			if (i && (o < 0 || a[o].revision !== i.revision)) throw new ry(iy.PUT, 409);
-			if (!i && a.length >= 50) throw new ry("You can save up to 50 views. Delete a view before creating another.", 422);
+			if (i && (o < 0 || a[o].revision !== i.revision)) throw new iy(ay.PUT, 409);
+			if (!i && a.length >= 50) throw new iy("You can save up to 50 views. Delete a view before creating another.", 422);
 			let s = {
-				id: i?.id ?? sy(),
+				id: i?.id ?? cy(),
 				name: e,
-				state: Xv(r),
+				state: Zv(r),
 				revision: (i?.revision ?? 0) + 1,
 				updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 			};
@@ -21711,14 +21713,14 @@ function cy(e) {
 		},
 		remove: async (e) => {
 			let r = t(), i = r.find((t) => t.id === e.id);
-			if (!i || i.revision !== e.revision) throw new ry(iy.DELETE, 409);
+			if (!i || i.revision !== e.revision) throw new iy(ay.DELETE, 409);
 			n(r.filter((t) => t.id !== e.id));
 		}
 	};
 }
 //#endregion
 //#region frontend/views-panel.ts
-function ly(e, t) {
+function uy(e, t) {
 	e.innerHTML = "<label class=\"lm-select\">Saved view <select aria-label=\"Saved view\"><option value=\"\">Current workspace</option></select></label><button data-view-action=\"save\" disabled>Save view</button><button data-view-action=\"delete\" disabled>Delete view</button><button data-view-action=\"reload\">Reload views</button><span class=\"lm-view-status\" aria-live=\"polite\"></span><dialog class=\"lm-view-dialog\" aria-labelledby=\"lm-view-title\"><form><h2 id=\"lm-view-title\">Save current view</h2><p>Remember filters, positions, pins and zoom.</p><label>View name<input name=\"name\" aria-label=\"View name\" required autocomplete=\"off\"></label><div class=\"lm-dialog-actions\"><button type=\"button\" data-view-action=\"cancel\">Cancel</button><button type=\"submit\" value=\"new\">Save as new</button><button type=\"submit\" value=\"update\">Save changes</button></div></form></dialog><dialog class=\"lm-delete-dialog\" aria-labelledby=\"lm-delete-title\"><h2 id=\"lm-delete-title\">Delete saved view?</h2><p></p><div class=\"lm-dialog-actions\"><button data-view-action=\"cancel-delete\">Cancel</button><button data-view-action=\"confirm-delete\">Delete saved view</button></div></dialog>";
 	let n = e.querySelector("select"), r = e.querySelector(".lm-view-status"), i = e.querySelector(".lm-view-dialog"), a = e.querySelector(".lm-delete-dialog"), o = e.querySelector("input"), s = [], c, l = !1, u = !1, d = !1, f = 0;
 	function p(e, t = !1) {
@@ -21735,7 +21737,7 @@ function ly(e, t) {
 		n.replaceChildren(new Option("Current workspace", ""), ...s.map((e) => new Option(e.name, e.id))), n.value = c?.id ?? "", m();
 	}
 	function g(e) {
-		e instanceof ry && [
+		e instanceof iy && [
 			401,
 			403,
 			404,
@@ -21807,19 +21809,19 @@ function ly(e, t) {
 }
 //#endregion
 //#region frontend/main.ts
-var uy = class extends Error {
+var dy = class extends Error {
 	status;
 	constructor(e, t) {
 		super(e), this.status = t;
 	}
-}, dy = /* @__PURE__ */ new Set([
+}, fy = /* @__PURE__ */ new Set([
 	401,
 	403,
 	404,
 	419
-]), fy = document.querySelector("#libremap");
-fy && (fy.dataset.mode === "custom" ? l_(fy) : fy.dataset.mode === "world" ? Tv(fy) : py(fy));
-function py(e) {
+]), py = document.querySelector("#libremap");
+py && (py.dataset.mode === "custom" ? l_(py) : py.dataset.mode === "world" ? Ev(py) : my(py));
+function my(e) {
 	let t = e.dataset.demo === "true";
 	e.innerHTML = `
     <div class="lm-shell">
@@ -21839,7 +21841,7 @@ function py(e) {
 		maxZoom: 2.5,
 		selectionType: "single",
 		style: Cg(e)
-	}), d = Tg(e, () => u.style(Cg(e))), f, p = t ? void 0 : O_(e, u, () => f?.generatedAt), m = {
+	}), d = Tg(e, () => u.style(Cg(e))), f, p = t ? void 0 : k_(e, u, () => f?.generatedAt), m = {
 		nodes: [],
 		links: [],
 		deviceGroups: []
@@ -21847,9 +21849,9 @@ function py(e) {
 	function A() {
 		try {
 			let e = localStorage.getItem(k);
-			return Xv(e ? JSON.parse(e) : { positions: JSON.parse(localStorage.getItem(O) ?? "{}") });
+			return Zv(e ? JSON.parse(e) : { positions: JSON.parse(localStorage.getItem(O) ?? "{}") });
 		} catch {
-			return Kv();
+			return qv();
 		}
 	}
 	let j = A(), M = j.positions, N = new Set(j.pinned), P = !1, F = {}, I = !1, L = () => Object.fromEntries(u.nodes().map((e) => [e.id(), e.position()])), R = () => {
@@ -21860,7 +21862,7 @@ function py(e) {
 		return t;
 	};
 	function z() {
-		return Xv({
+		return Zv({
 			rootId: c.value || null,
 			deviceGroupId: s.value || null,
 			site: o.value,
@@ -21887,9 +21889,9 @@ function py(e) {
 		i.textContent = e, i.classList.toggle("lm-error", t);
 	}, H;
 	try {
-		H = t ? cy(`${k}:views`) : e.dataset.viewsEndpoint ? ay(e.dataset.viewsEndpoint, e.dataset.csrf ?? "") : void 0;
+		H = t ? ly(`${k}:views`) : e.dataset.viewsEndpoint ? oy(e.dataset.viewsEndpoint, e.dataset.csrf ?? "") : void 0;
 	} catch {}
-	let U = ly(r(".lm-views"), {
+	let U = uy(r(".lm-views"), {
 		store: H,
 		demo: t,
 		capture: z,
@@ -21925,7 +21927,7 @@ function py(e) {
 	}
 	function q(e) {
 		if (!f) return;
-		let t = Xv(e, m);
+		let t = Zv(e, m);
 		c.value = t.rootId ?? "", s.value = t.deviceGroupId ?? "", o.value = t.site, a.value = t.search, h = t.backbone, g = t.showOther, l.value = String(t.hops), N = new Set(t.pinned), v = void 0, u.elements().unselect().removeClass("lm-dim"), K(), ee(), J(), Y(), re(t.positions, t);
 	}
 	function J() {
@@ -22020,11 +22022,11 @@ function py(e) {
 			type: "node",
 			id: e
 		}, u.elements().unselect(), t.select();
-		let n = Qv(m, e, Number(l.value), new Set(u.nodes(":visible").map((e) => e.id())));
+		let n = $v(m, e, Number(l.value), new Set(u.nodes(":visible").map((e) => e.id())));
 		u.elements().addClass("lm-dim"), u.elements().filter((e) => e.isNode() ? n.nodes.has(e.id()) : n.links.has(e.data("linkId"))).removeClass("lm-dim"), ee();
 	}
 	function ne(e = !0) {
-		let t = $v(m, {
+		let t = ey(m, {
 			rootId: c.value || null,
 			deviceGroupId: s.value || null,
 			site: o.value,
@@ -22042,7 +22044,7 @@ function py(e) {
 					nodes: m.nodes.filter((e) => t.has(e.id)),
 					links: m.links.filter((e) => t.has(e.source) && t.has(e.target)),
 					deviceGroups: []
-				}, n = Bv(e, new Map(e.nodes.map((e) => [e.id, F[e.id]?.x ?? 0])), !0), r = new Set([...N].filter((e) => t.has(e))), i = ny(e, n, Object.fromEntries([...r].filter((e) => F[e]).map((e) => [e, F[e]])), r);
+				}, n = Vv(e, new Map(e.nodes.map((e) => [e.id, F[e.id]?.x ?? 0])), !0), r = new Set([...N].filter((e) => t.has(e))), i = ry(e, n, Object.fromEntries([...r].filter((e) => F[e]).map((e) => [e, F[e]])), r);
 				u.nodes().filter((e) => t.has(e.id()) && !N.has(e.id())).forEach((e) => {
 					e.position(i[e.id()]);
 				}), I = !0;
@@ -22052,19 +22054,19 @@ function py(e) {
 		}), r(".lm-empty").hidden = t.size > 0, r(".lm-empty").textContent = m.nodes.length ? "No devices match these filters." : "No authorized devices are available.", e && t.size && u.fit(u.elements(":visible"), 70);
 	}
 	function re(e = {}, t) {
-		let n = zv(e, N);
+		let n = Bv(e, N);
 		x = n, S = n === e ? t : void 0, y++, G(!0), clearTimeout(b), b = setTimeout(() => {
-			y++, Uv(), G(!1), V("Layout timed out. Existing positions are retained; retry Re-layout.", !0);
+			y++, Wv(), G(!1), V("Layout timed out. Existing positions are retained; retry Re-layout.", !0);
 		}, 2e4);
 		let r = y;
-		Wv(m).then((e) => ie(r, e)).catch(() => {
+		Gv(m).then((e) => ie(r, e)).catch(() => {
 			r === y && (clearTimeout(b), G(!1), V("Automatic layout failed. Check the published worker asset and retry Re-layout.", !0));
 		});
 	}
 	function ie(e, n) {
 		if (e !== y) return;
 		clearTimeout(b);
-		let r = ny(m, n, x, N);
+		let r = ry(m, n, x, N);
 		F = r, I = !1, u.batch(() => u.nodes().forEach((e) => {
 			e.unlock(), e.position(r[e.id()]);
 		})), K(), ne(!S), S && u.viewport(S), S = void 0, G(!1), B(), V(t ? "Demo topology · illustrative devices and traffic" : "Topology loaded · positions saved in this browser");
@@ -22089,7 +22091,7 @@ function py(e) {
 		c.replaceChildren(new Option("All AGG groups", ""), ...m.nodes.filter((e) => e.role === "AGG").map((e) => new Option(ug(e), e.id))), [...c.options].some((e) => e.value === b) && (c.value = b);
 		let w = s.value;
 		if (s.replaceChildren(new Option("All device groups", ""), ...m.deviceGroups.map((e) => new Option(e.name, e.id))), [...s.options].some((e) => e.value === w) && (s.value = w), N = new Set([...N].filter((e) => m.nodes.some((t) => t.id === e))), !P) {
-			let e = Xv(j, m);
+			let e = Zv(j, m);
 			c.value = e.rootId ?? "", s.value = e.deviceGroupId ?? "", o.value = e.site, a.value = e.search, h = e.backbone, g = e.showOther, l.value = String(e.hops), N = new Set(e.pinned), J(), Y();
 		}
 		u.batch(() => {
@@ -22146,7 +22148,7 @@ function py(e) {
 		if (!_) {
 			_ = !0;
 			try {
-				if (t) ae(Gv());
+				if (t) ae(Kv());
 				else {
 					if (!e.dataset.endpoint) throw Error("Missing topology endpoint");
 					let t = new URL(e.dataset.endpoint, location.href);
@@ -22156,15 +22158,15 @@ function py(e) {
 						headers: { Accept: "application/json" },
 						signal: AbortSignal.timeout(2e4)
 					});
-					if (n.status === 429) throw new uy("Too many topology requests. The map will retry on the next refresh.", 429);
-					if (!n.ok) throw new uy(await my(n), n.status);
+					if (n.status === 429) throw new dy("Too many topology requests. The map will retry on the next refresh.", 429);
+					if (!n.ok) throw new dy(await hy(n), n.status);
 					let r = await n.json();
 					if (!Array.isArray(r.devices) || !Array.isArray(r.links) || !r.config) throw Error("Unexpected topology response");
 					ae(r);
 				}
 			} catch (e) {
 				let t = e instanceof Error ? e.message : "Unable to load topology";
-				if (f && !(e instanceof uy && dy.has(e.status))) {
+				if (f && !(e instanceof dy && fy.has(e.status))) {
 					V(`${t} · Showing the snapshot from ${(/* @__PURE__ */ new Date(f.generatedAt * 1e3)).toLocaleTimeString()}.`, !0);
 					return;
 				}
@@ -22333,7 +22335,7 @@ function py(e) {
 		configurable: !0
 	});
 }
-async function my(e) {
+async function hy(e) {
 	if (e.status === 422) {
 		let t = await e.json().catch(() => void 0), n = t && typeof t == "object" && "message" in t && typeof t.message == "string" ? t.message.trim() : "";
 		if (n && n.length <= 300) return n;
