@@ -879,9 +879,7 @@ export function mountWorldMap(root:HTMLElement) {
   };
   svg.addEventListener('click',pickLink);
   svg.addEventListener('keydown',event=>{if(event.key==='Enter' || event.key===' '){event.preventDefault();pickLink(event);}});
-  // Rebuilding replaces every marker; wait for a pause in typing.
-  let searchTimer=0;
-  search.addEventListener('input',()=>{search.value=limitFilter(search.value);clearTimeout(searchTimer);searchTimer=window.setTimeout(rebuild,120);});
+  search.addEventListener('input',()=>{search.value=limitFilter(search.value);rebuild();});
   groupSelect.addEventListener('change',()=>{rebuild();fit();});
   root.addEventListener('click',event=>{
     const action=(event.target as Element).closest<HTMLElement>('[data-world]')?.dataset.world;
