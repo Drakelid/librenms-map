@@ -72,7 +72,7 @@ export function mountWorldMap(root:HTMLElement) {
   let view={zoom:2,center:{x:worldSize(2)/2,y:worldSize(2)/2}};
   // Core Network: only AGG and ER devices, as classified from their names (rossa1agg1, rossa1er1) or set in libremap.overrides.
   const isCore=(n:MapNode)=>n.role==='AGG' || n.role==='ER';
-$1 showLinks=true, busy=false, fitted=false, downCursor=-1, tileFailures=0;
+  let selected:Selection|undefined, problemsOnly=false, showLinks=true, busy=false, fitted=false, downCursor=-1, tileFailures=0;
   let clockOffset=0;
   const serverNow=()=>Date.now()/1000+clockOffset;
   const message=(text:string,error=false)=>{notice.textContent=text;notice.classList.toggle('lm-error',error);};
