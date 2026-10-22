@@ -4,6 +4,21 @@ import type { Core, EdgeSingular } from 'cytoscape';
 // mouse sweeping across a dense map from starting a render per link crossed.
 const GRAPH_WIDTH=300, GRAPH_HEIGHT=150, HOVER_DELAY=400;
 
+/**
+ * LibreNMS's authenticated one-day traffic graph for a port, on this page's
+ * own origin only; undefined for a port ID that is not a plain number.
+ */
+export function portGraphUrl(homeUrl:string|undefined,portId:string,refresh:number,width=GRAPH_WIDTH,height=GRAPH_HEIGHT):string|undefined {
+  if(!/^[1-9][0-9]*$/.test(portId))return undefined;
+  const home=new URL(homeUrl || '/',location.href);
+  if(home.origin!==location.origin)return undefined;
+  home.pathname=`${home.pathname.replace(/\/+$/,'')}/graph`.replace(/\/{2,}/g,'/');
+  home.search='';home.hash='';
+  const params={type:'port_bits',id:portId,from:'-1d',legend:'no',width:String(width),height:String(height),refreshnum:String(refresh)};
+  for(const [key,value] of Object.entries(params))home.searchParams.set(key,value);
+  return home.href;
+}
+
 export function mountLinkPreview(root:HTMLElement,cy:Core,refreshKey:()=>number|undefined):{hide:()=>void} {
   const wrap=root.querySelector<HTMLElement>('.lm-canvas-wrap')!;
   const canvas=root.querySelector<HTMLElement>('.lm-canvas')!;
@@ -15,16 +30,7 @@ export function mountLinkPreview(root:HTMLElement,cy:Core,refreshKey:()=>number|
   const hide=()=>{
     hovered='';clearTimeout(timer);preview.hidden=true;preview.replaceChildren();
   };
-  const graphUrl=(portId:string):string|undefined=>{
-    if(!/^[1-9][0-9]*$/.test(portId))return undefined;
-    const home=new URL(root.dataset.homeUrl || '/',location.href);
-    if(home.origin!==location.origin)return undefined;
-    home.pathname=`${home.pathname.replace(/\/+$/,'')}/graph`.replace(/\/{2,}/g,'/');
-    home.search='';home.hash='';
-    const params={type:'port_bits',id:portId,from:'-1d',legend:'no',width:String(GRAPH_WIDTH),height:String(GRAPH_HEIGHT),refreshnum:String(refreshKey() ?? 0)};
-    for(const [key,value] of Object.entries(params))home.searchParams.set(key,value);
-    return home.href;
-  };
+  const graphUrl=(portId:string)=>portGraphUrl(root.dataset.homeUrl,portId,refreshKey() ?? 0);
   const place=(position:{x:number;y:number})=>{
     const desired={x:canvas.offsetLeft+position.x+14,y:canvas.offsetTop+position.y+14};
     const maxLeft=Math.max(8,wrap.clientWidth-preview.offsetWidth-8);

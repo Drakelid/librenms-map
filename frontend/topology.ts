@@ -132,6 +132,29 @@ export function lateralOffsets(graph: Topology): Map<string, number> {
 /** Link load bands: below 50%, 50–70%, and above 70%. */
 export const LOAD_COLORS = { normal: '#6485b6', warning: '#cb9a28', high: '#e03131' } as const;
 
+/** "950 kb/s", "12.3 Mb/s", "1.2 Gb/s" (SI units, as LibreNMS shows interface rates). */
+export function formatBps(bps: number): string {
+  const units = ['b/s', 'kb/s', 'Mb/s', 'Gb/s', 'Tb/s'];
+  let value = Math.max(0, bps), unit = 0;
+  while (value >= 1000 && unit < units.length - 1) { value /= 1000; unit++; }
+  return `${value >= 100 || unit === 0 ? Math.round(value) : value.toFixed(1)} ${units[unit]}`;
+}
+
+/**
+ * Load in each direction of a link, measured at its source port: out is
+ * source → target, in is target → source. Null when `metric` has no load to
+ * show (down, disabled, stale or unknown); the label then says why.
+ */
+export function directions(link: Link, now: number, staleAfter: number) {
+  const m = metric(link, now, staleAfter);
+  if (m.state !== 'up') return null;
+  const one = (bps: number) => {
+    const percent = Math.round(bps / link.speedBps! * 100);
+    return { bps, percent, color: percent > 70 ? LOAD_COLORS.high : percent >= 50 ? LOAD_COLORS.warning : LOAD_COLORS.normal };
+  };
+  return { out: one(link.outBps!), in: one(link.inBps!), speedBps: link.speedBps! };
+}
+
 export function metric(link: Link, now: number, staleAfter: number) {
   if (link.status === 'down') return { label: 'DOWN', color: '#e05b65', state: 'down', utilization: null };
   if (link.status === 'disabled') return { label: 'DISABLED', color: '#8a96a9', state: 'unknown', utilization: null };

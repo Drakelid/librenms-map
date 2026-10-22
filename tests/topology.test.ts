@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classify, deviceName, lateralOffsets, LOAD_COLORS, metric, normalizeLinks, topology } from '../frontend/topology';
+import { classify, deviceName, directions, formatBps, lateralOffsets, LOAD_COLORS, metric, normalizeLinks, topology } from '../frontend/topology';
 import type { Config, Link, Snapshot } from '../frontend/types';
 const config: Config = { prefixes: ['hk-'], staleAfter: 900, overrides: {} };
 const link = (source: string, target: string, sourcePortId = '1', targetPortId = '2'): Link => ({ id: `${source}-${target}-${sourcePortId}`, source, target, sourcePortId, targetPortId, sourcePort: 'eth1', targetPort: 'eth2', speedBps: 1e9, inBps: 2e8, outBps: 5e8, sampledAt: 1000, status: 'up' });
@@ -81,4 +81,23 @@ test('labels prefer the server display name, fall back to the hostname and order
     { id:'1', hostname:'10.0.0.1', displayName:'rossa1agg2', status:'up' }, { id:'2', hostname:'10.0.0.2', displayName:'rossa1agg1', status:'up' },
   ] });
   assert.deepEqual(graph.nodes.map(n => n.id), ['2','1']);
+});
+
+test('each direction of a link has its own load, rate and colour',()=>{
+  // Measured at the source port: out is source → target (500 Mb/s), in is target → source (200 Mb/s).
+  const d=directions(link('a','b'),1100,900)!;
+  assert.deepEqual([d.out.percent,d.out.bps,d.out.color],[50,5e8,LOAD_COLORS.warning]);
+  assert.deepEqual([d.in.percent,d.in.bps,d.in.color],[20,2e8,LOAD_COLORS.normal]);
+  assert.equal(d.speedBps,1e9);
+  assert.equal(directions({ ...link('a','b'), outBps:7.2e8 },1100,900)!.out.color,LOAD_COLORS.high);
+  // Nothing to show for a down, stale or unmeasured link.
+  assert.equal(directions({ ...link('a','b'), status:'down' },1100,900),null);
+  assert.equal(directions(link('a','b'),5000,900),null);
+  assert.equal(directions({ ...link('a','b'), speedBps:null },1100,900),null);
+
+  assert.equal(formatBps(0),'0 b/s');
+  assert.equal(formatBps(950),'950 b/s');
+  assert.equal(formatBps(12_345_678),'12.3 Mb/s');
+  assert.equal(formatBps(1e9),'1.0 Gb/s');
+  assert.equal(formatBps(250e6),'250 Mb/s');
 });

@@ -363,3 +363,33 @@ test('hundreds of outages scroll inside the sidebar instead of lengthening the p
   expect((await placement(pin)).onScreen).toBe(true);
   expect(await pageHeight()).toBe(before);
 });
+
+test('every link line can be clicked, and shows the load in each direction',async({page})=>{
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+  const graphs:string[]=[];
+  await page.route('**/graph?**',route=>{graphs.push(route.request().url());return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150"/>'});});
+  await open(page);
+  // The middle of the Rossa–Heiane line, away from every marker: the markers layer above the
+  // lines used to take this click, so only lines outside that layer could be selected.
+  await page.locator('.lm-world-link[data-link="1|2"] .lm-world-hit').click();
+  const details=page.locator('.lm-details');
+  await expect(details.locator('.lm-eyebrow').first()).toHaveText('CONNECTIONS');
+  // Each measured link shows both directions with a percentage and a rate, busiest link first.
+  const loads=details.locator('.lm-world-load');
+  expect(await loads.count()).toBeGreaterThanOrEqual(2);
+  await expect(loads.first()).toContainText('→');
+  await expect(loads.first()).toContainText(/\d+%/);
+  await expect(loads.first()).toContainText(/[kMGT]?b\/s/);
+  await expect(details.locator('.lm-world-load-note').first()).toContainText(/link · measured at /);
+  // The one-day traffic graph is requested only when opened.
+  expect(graphs).toEqual([]);
+  await details.getByText('Traffic, last 24 hours').first().click();
+  await expect(details.locator('.lm-world-load-graph img').first()).toBeVisible();
+  expect(graphs.length).toBe(1);
+  expect(new URL(graphs[0]).searchParams.get('type')).toBe('port_bits');
+
+  // A down link says why it has no load.
+  await page.locator('.lm-world-link[data-link="2|3"] .lm-world-hit').click();
+  await expect(details.locator('.lm-world-links-list')).toContainText('The link is down.');
+  expect(errors).toEqual([]);
+});

@@ -29,6 +29,9 @@
 /* While dragging, nothing under the pointer needs hit-testing or hover repaints. */
 #libremap .lm-world.lm-dragging .lm-world-pane * { pointer-events: none; }
 #libremap .lm-world-tiles, #libremap .lm-world-markers { position: absolute; inset: 0; }
+/* The markers layer covers the map; only the markers themselves take clicks, so links beneath stay clickable. */
+#libremap .lm-world-markers { pointer-events: none; }
+#libremap .lm-world-marker { pointer-events: auto; }
 #libremap .lm-world-tiles img { position: absolute; left: 0; top: 0; width: 256px; height: 256px; max-width: none; pointer-events: none; }
 #libremap .lm-world-tiles img.lm-tile-failed { visibility: hidden; }
 /* Light map tiles read as a dark map without a second tile source. */
@@ -83,7 +86,7 @@
 #libremap .lm-world-warnings { margin-top: 10px; }
 #libremap .lm-world-links { position: absolute; left: 0; top: 0; overflow: hidden; pointer-events: none; }
 #libremap .lm-world-link { cursor: pointer; outline: none; }
-#libremap .lm-world-hit { stroke: transparent; stroke-width: 14; pointer-events: stroke; }
+#libremap .lm-world-hit { stroke: transparent; stroke-width: 16; pointer-events: stroke; }
 #libremap .lm-world-line { stroke-linecap: round; opacity: .85; pointer-events: none; }
 #libremap .lm-world-link:hover .lm-world-line, #libremap .lm-world-link:focus-visible .lm-world-line, #libremap .lm-world-line.lm-selected { opacity: 1; filter: drop-shadow(0 0 3px #fff); }
 #libremap.lm-dark .lm-world-line.lm-selected { filter: drop-shadow(0 0 3px #000); }
@@ -119,5 +122,15 @@
 #libremap .lm-world-unlocated summary { cursor: pointer; color: var(--ink); }
 #libremap .lm-world-unlocated ul { max-height: 240px; overflow: auto; padding-left: 18px; }
 #libremap .lm-world-links-list { list-style: none; padding: 0; margin: 16px 0; font-size: 12px; }
-#libremap .lm-world-links-list li { display: grid; gap: 2px; padding: 8px 0; border-top: 1px solid var(--line); }
+#libremap .lm-world-links-list li { display: grid; gap: 4px; padding: 10px 0; border-top: 1px solid var(--line); }
+/* Load per direction: a bar, the percentage and the rate. */
+#libremap .lm-world-load { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "label label label" "bar value rate"; gap: 2px 6px; align-items: center; }
+#libremap .lm-world-load-label { grid-area: label; color: var(--muted); font-size: 11px; }
+#libremap .lm-world-load-bar { grid-area: bar; display: block; height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+#libremap .lm-world-load-bar i { display: block; height: 100%; border-radius: 4px; }
+#libremap .lm-world-load b { grid-area: value; font-variant-numeric: tabular-nums; min-width: 3.2em; text-align: right; }
+#libremap .lm-world-load-rate { grid-area: rate; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; min-width: 5.5em; text-align: right; }
+#libremap .lm-world-load-note { color: var(--muted); font-size: 11px; }
+#libremap .lm-world-load-graph summary { cursor: pointer; color: var(--accent); font-size: 11px; }
+#libremap .lm-world-load-graph img { display: block; max-width: 100%; height: auto; margin-top: 6px; border-radius: 4px; }
 @media (max-width: 720px) { #libremap .lm-world-wrap .lm-legend { display: none; } }

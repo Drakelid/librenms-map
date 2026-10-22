@@ -1,8 +1,9 @@
 import { statusColor, themeController } from './canvas-style';
 import { shortcutAllowed } from './canvas-tools';
 import { clampCenter, fitView, project, TILE, tileUrl, withoutCoordinates, worldSize, type Point } from './geo';
+import { portGraphUrl } from './link-preview';
 import { mountPageNav } from './page-nav';
-import { deviceName, LOAD_COLORS, metric, topology } from './topology';
+import { deviceName, directions, formatBps, LOAD_COLORS, metric, topology } from './topology';
 import { KIND_NAMES, mapsReadAt, NEAR_KM, OUTAGE_COLORS, outageAnchorAt, outagePath, outagePeriod, outagesAt, outagesNear, outageShape, parseCheck, parseHealth, parseOutages, SKIPPED_REASONS, verdictText, type Evidence, type NearOutage, type Outage, type OutageCheck, type PowerHealth } from './power';
 import { limitFilter } from './view-limits';
 import type { Link, MapNode, Snapshot, Topology } from './types';
@@ -857,16 +858,51 @@ export function mountWorldMap(root:HTMLElement) {
     const banner=powerBanner(site);if(banner)panel.append(banner);
     if(n.url){const url=new URL(n.url,location.href);if(url.origin===location.origin){const a=el('a','Open in LibreNMS ↗','lm-device-link');a.href=url.href;panel.append(a);}}
   }
-  /** Each link's load and both interfaces; a far port LibreNMS did not match is marked. */
+  /**
+   * Each link's load in both directions, with its rate and speed, its two
+   * interfaces, and a folded one-day traffic graph of the measuring port. A
+   * far port LibreNMS did not match is marked. Busiest links first.
+   */
   function linkRows(links:Link[]){
     const names=new Map(graph.nodes.map(n=>[n.id,nameOf(n)]));
     const rows=el('ul',undefined,'lm-world-links-list');
     const now=serverNow(), staleAfter=snapshot?.config.staleAfter ?? 900;
-    for(const link of links){
-      const m=metric(link,now,staleAfter);
+    const load=(link:Link)=>metric(link,now,staleAfter).utilization ?? -1;
+    for(const link of [...links].sort((a,b)=>load(b)-load(a))){
+      const m=metric(link,now,staleAfter), d=directions(link,now,staleAfter);
+      const source=names.get(link.source) ?? link.source, target=names.get(link.target) ?? link.target;
       const item=el('li');const state=el('strong',m.label);state.style.color=m.color;
       const far=link.targetPortId ? link.targetPort : `${link.targetPort} (reported by neighbor)`;
-      item.append(state,el('span',`${names.get(link.source) ?? link.source} ${link.sourcePort} ↔ ${names.get(link.target) ?? link.target} ${far}`));
+      item.append(state,el('span',`${source} ${link.sourcePort} ↔ ${target} ${far}`));
+      if(d){
+        const bar=(label:string,dir:{bps:number;percent:number;color:string})=>{
+          const row=el('div',undefined,'lm-world-load');
+          const track=el('span',undefined,'lm-world-load-bar'), fill=el('i');
+          fill.style.width=`${Math.min(100,Math.max(dir.percent,dir.bps>0 ? 1 : 0))}%`;fill.style.background=dir.color;track.append(fill);
+          const value=el('b',`${dir.percent}%`);value.style.color=dir.color;
+          row.append(el('span',label,'lm-world-load-label'),track,value,el('span',formatBps(dir.bps),'lm-world-load-rate'));
+          row.setAttribute('aria-label',`${label}: ${dir.percent}% (${formatBps(dir.bps)} of ${formatBps(d.speedBps)})`);
+          return row;
+        };
+        item.append(bar(`${source} → ${target}`,d.out),bar(`${target} → ${source}`,d.in));
+        const age=link.sampledAt!==null ? Math.max(0,Math.round((now-link.sampledAt)/60)) : null;
+        item.append(el('span',`${formatBps(d.speedBps)} link · measured at ${source} ${link.sourcePort}${age!==null ? `, ${age ? `${age} min` : 'under a minute'} ago` : ''}`,'lm-world-load-note'));
+      }else{
+        const why=m.label==='DOWN' ? 'The link is down.' : m.label==='DISABLED' ? 'The interface is administratively disabled.' : m.label==='STALE' ? 'No recent traffic sample from LibreNMS.' : 'LibreNMS has no speed or traffic counters for this interface.';
+        item.append(el('span',why,'lm-world-load-note'));
+      }
+      // The graph is rendered by LibreNMS on request, so it loads only when opened.
+      const src=portGraphUrl(root.dataset.homeUrl,link.sourcePortId,snapshot?.generatedAt ?? 0);
+      if(src){
+        const more=el('details','','lm-world-load-graph');more.append(el('summary','Traffic, last 24 hours'));
+        more.addEventListener('toggle',()=>{
+          if(!more.open || more.querySelector('img')) return;
+          const image=new Image(300,150);image.src=src;image.alt=`Traffic graph for ${source} ${link.sourcePort}`;image.decoding='async';
+          image.onerror=()=>image.replaceWith(el('span','The traffic graph could not be loaded.','lm-world-load-note'));
+          more.append(image);
+        });
+        item.append(more);
+      }
       rows.append(item);
     }
     return rows;
