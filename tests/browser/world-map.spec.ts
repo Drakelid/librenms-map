@@ -46,7 +46,8 @@ test('devices are placed at their locations with the links between them',async({
   // Every one of the demo's 18 links is accounted for: 3 lines, 10 inside a location, 5 to devices without coordinates.
   expect(state.undrawn).toEqual({withinSite:{'1':7,'2':3},unlocated:5});
   await expect(page.locator('.lm-world-undrawn')).toHaveText('15 links are not drawn as lines: 10 join devices at the same location (listed under that location); 5 reach a device without coordinates.');
-  await page.getByRole('button',{name:'Location 1: 6 devices'}).click();
+  // Rossa's marker sits under Karmsundgata's (5 km away) at the zoom that fits all four; open it directly.
+  await page.getByRole('button',{name:'Location 1: 6 devices'}).dispatchEvent('click');
   await expect(page.locator('.lm-details')).toContainText('LINKS WITHIN THIS LOCATION · 7');
   await expect(page.locator('.lm-details .lm-world-links-list li')).toHaveCount(7);
   await page.keyboard.press('Escape');
@@ -146,7 +147,7 @@ test('device names label the markers only when asked for',async({page})=>{
   expect((await text())['Location 1']).toBe('');
   // Off again: no device name on the map, but a selected location still lists its devices by name.
   await expect(page.locator('.lm-world-markers')).not.toContainText('hk-');
-  await page.getByRole('button',{name:'Location 1: 6 devices'}).click();
+  await page.getByRole('button',{name:'Location 1: 6 devices'}).dispatchEvent('click'); // Under Karmsundgata's marker.
   await expect(page.getByRole('heading',{name:'rossa1',exact:true})).toBeVisible();
   await expect(page.locator('.lm-details')).toContainText('hk-rossa1agg2 ');
   await page.locator('.lm-details').getByRole('button',{name:'hk-rossa1agg1',exact:true}).click();

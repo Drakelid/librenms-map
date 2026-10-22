@@ -2,8 +2,8 @@
 /* The workspace keeps its height and the sidebar scrolls within it, so long lists never lengthen the page. */
 /* `flex: none`: as a flex item of the page column, whose height is not fixed, `flex: 1` sizes it from
    its content (the sidebar included) and ignores `height`. */
-#libremap .lm-world-page .lm-workspace { flex: none; height: 520px; }
-@media (min-height: 950px) { #libremap .lm-world-page .lm-workspace { height: 640px; } }
+/* The map fills the window below the page header and toolbar, and is never shorter than 520 px. */
+#libremap .lm-world-page .lm-workspace { flex: none; height: max(520px, calc(100vh - 340px)); }
 #libremap .lm-world-page .lm-details { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 @media (max-width: 720px) {
   #libremap .lm-world-page .lm-workspace { height: auto; }
