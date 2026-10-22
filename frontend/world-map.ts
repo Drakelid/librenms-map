@@ -42,7 +42,7 @@ export function mountWorldMap(root:HTMLElement) {
     <div class="lm-shell lm-world-page">
       <header class="lm-header"><div class="lm-brand"><span class="lm-logo">◈</span><div><strong>LibreMap</strong><span>WORLD MAP</span></div></div><div class="lm-header-right"><nav class="lm-pages" aria-label="LibreMap pages" hidden></nav><a class="lm-back" href="/">LibreNMS ↗</a></div></header>
       <section class="lm-heading"><div><div class="lm-eyebrow">INFRASTRUCTURE / GEOGRAPHY</div></div><div class="lm-summary" aria-label="Location summary"></div></section>
-      <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device or location…"></label><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><button data-world="problems" aria-pressed="false">Only problems</button><button data-world="links" aria-pressed="true" class="lm-active">Links</button><button data-world="weather" aria-pressed="false" hidden title="Show MET Norway weather warnings">⚠ Weather warnings</button><button data-world="power" aria-pressed="false" hidden title="Show power outages on the grid operators' maps">⚡ Power outages</button><button data-world="names" aria-pressed="false" title="Label locations with the names of their devices">Device names</button><button data-world="addresses" aria-pressed="false" title="Show the LibreNMS location text and coordinates">Addresses</button><span class="lm-spacer"></span><button data-world="refresh">↻ Refresh</button><button data-world="fullscreen" title="Fullscreen">⛶</button></div>
+      <div class="lm-toolbar"><label class="lm-search"><span>⌕</span><input type="search" aria-label="Find device" placeholder="Find a device or location…"></label><label class="lm-select">Device group <select aria-label="Device group"><option value="">All device groups</option></select></label><button data-world="problems" aria-pressed="false">Only problems</button><button data-world="core" aria-pressed="false" title="Show only the core network: AGG and ER devices, named like rossa1agg1 and rossa1er1">Core Network</button><button data-world="links" aria-pressed="true" class="lm-active">Links</button><button data-world="weather" aria-pressed="false" hidden title="Show MET Norway weather warnings">⚠ Weather warnings</button><button data-world="power" aria-pressed="false" hidden title="Show power outages on the grid operators' maps">⚡ Power outages</button><button data-world="names" aria-pressed="false" title="Label locations with the names of their devices">Device names</button><button data-world="addresses" aria-pressed="false" title="Show the LibreNMS location text and coordinates">Addresses</button><span class="lm-spacer"></span><button data-world="refresh">↻ Refresh</button><button data-world="fullscreen" title="Fullscreen">⛶</button></div>
       <div class="lm-notice" role="status" aria-live="polite">Loading device locations…</div>
       <main class="lm-workspace"><div class="lm-canvas-wrap lm-world-wrap">
         <div class="lm-world" tabindex="0" aria-label="World map of device locations. Drag to pan, scroll to zoom."><div class="lm-world-pane"><div class="lm-world-tiles"></div><svg class="lm-world-weather"></svg><svg class="lm-world-power"></svg><svg class="lm-world-links"></svg><div class="lm-world-markers"></div></div></div>
@@ -70,7 +70,9 @@ export function mountWorldMap(root:HTMLElement) {
   // Visible links that are not lines: both ends at one location, or an end without coordinates.
   let withinSite=new Map<string,Link[]>(), undrawnUnlocated=0;
   let view={zoom:2,center:{x:worldSize(2)/2,y:worldSize(2)/2}};
-  let selected:Selection|undefined, problemsOnly=false, showLinks=true, busy=false, fitted=false, downCursor=-1, tileFailures=0;
+  // Core Network: only AGG and ER devices, as classified from their names (rossa1agg1, rossa1er1) or set in libremap.overrides.
+  const isCore=(n:MapNode)=>n.role==='AGG' || n.role==='ER';
+$1 showLinks=true, busy=false, fitted=false, downCursor=-1, tileFailures=0;
   let clockOffset=0;
   const serverNow=()=>Date.now()/1000+clockOffset;
   const message=(text:string,error=false)=>{notice.textContent=text;notice.classList.toggle('lm-error',error);};
@@ -85,11 +87,13 @@ export function mountWorldMap(root:HTMLElement) {
   // Per-viewer display preferences; storage is optional.
   const prefsKey=`libremap:world:${root.dataset.storageKey ?? 'local'}`;
   const prefs:Record<string,unknown>=(()=>{try{const value=JSON.parse(localStorage.getItem(prefsKey) ?? '{}');return object(value) ? value : {};}catch{return {};}})();
-  const savePrefs=()=>{try{localStorage.setItem(prefsKey,JSON.stringify({addresses:showAddresses,deviceNames:showDeviceNames,weather:weatherOn,power:powerOn}));}catch{/* Storage is optional. */}};
+  const savePrefs=()=>{try{localStorage.setItem(prefsKey,JSON.stringify({addresses:showAddresses,deviceNames:showDeviceNames,weather:weatherOn,power:powerOn,core:coreOnly}));}catch{/* Storage is optional. */}};
   // LibreNMS location text is often a street address: hidden unless asked for.
   let showAddresses=prefs.addresses===true;
   // Device names stay off the map itself unless asked for; the details panel still lists them.
   let showDeviceNames=prefs.deviceNames===true;
+  // Core Network is remembered in the browser, like the other display choices.
+  let coreOnly=prefs.core===true;
   const weatherEndpoint=root.dataset.weatherEndpoint;
   let weatherOn=!!weatherEndpoint && prefs.weather===true;
   let warnings:Warning[]=[], weatherAttribution='', weatherFetchedAt=0, weatherBusy=false;
@@ -196,6 +200,7 @@ export function mountWorldMap(root:HTMLElement) {
     const visible=graph.nodes.filter(n=>{
       if(members && !members.has(n.id)) return false;
       if(problemsOnly && n.status!=='down') return false;
+      if(coreOnly && !isCore(n)) return false;
       // Hidden addresses are not searchable either, so results never hint at them.
       return !query || [nameOf(n),n.hostname,n.sysName ?? '',n.site,showAddresses ? locationOf(n.id)?.name ?? '' : ''].some(text=>text.toLowerCase().includes(query));
     });
@@ -570,11 +575,11 @@ export function mountWorldMap(root:HTMLElement) {
   function syncControls(){
     const max=places?.map.maxZoom ?? 18, off=!snapshot;
     button('zoom-in').disabled=view.zoom>=max;button('zoom-out').disabled=view.zoom<=minZoom();button('fit').disabled=off;
-    search.disabled=off;groupSelect.disabled=off;button('problems').disabled=off;button('links').disabled=off;
+    search.disabled=off;groupSelect.disabled=off;button('problems').disabled=off;button('core').disabled=off;button('links').disabled=off;
     button('addresses').disabled=off;button('names').disabled=off;
     button('weather').hidden=!weatherEndpoint;button('weather').disabled=weatherBusy;
     button('power').hidden=!powerEndpoint;button('power').disabled=powerBusy;
-    for(const [action,on] of [['problems',problemsOnly],['links',showLinks],['addresses',showAddresses],['names',showDeviceNames],['weather',weatherOn],['power',powerOn]] as const){button(action).classList.toggle('lm-active',on);button(action).setAttribute('aria-pressed',String(on));}
+    for(const [action,on] of [['problems',problemsOnly],['core',coreOnly],['links',showLinks],['addresses',showAddresses],['names',showDeviceNames],['weather',weatherOn],['power',powerOn]] as const){button(action).classList.toggle('lm-active',on);button(action).setAttribute('aria-pressed',String(on));}
   }
 
   // ---- Summary and details -----------------------------------------------
@@ -660,6 +665,7 @@ export function mountWorldMap(root:HTMLElement) {
       ].filter(Boolean);
       panel.append(el('p',`${internal+undrawnUnlocated} link${internal+undrawnUnlocated===1 ? ' is' : 's are'} not drawn as lines: ${parts.join('; ')}.`,'lm-hint lm-world-undrawn'));
     }
+    if(coreOnly) panel.append(el('p','Core Network is on: only AGG and ER devices are shown, those named like rossa1agg1 or rossa1er1 (or set as AGG or ER in libremap.overrides). Links to other devices are hidden with them.','lm-hint'));
     if(!showAddresses && !showDeviceNames) panel.append(el('p','Markers are shown without names. Select Addresses for the LibreNMS location text, or Device names to label them with their devices. Select a location to see its devices.','lm-hint'));
     else if(!showAddresses) panel.append(el('p','Select Addresses to show the LibreNMS location text and coordinates.','lm-hint'));
     if(weatherOn){
@@ -955,6 +961,12 @@ export function mountWorldMap(root:HTMLElement) {
     panel.append(closeButton(),el('div','CONNECTIONS','lm-eyebrow'),el('h2',`${siteName(pair.a)} ↔ ${siteName(pair.b)}`),list([['Links',String(pair.links.length)],['Status',pair.label]]),linkRows(pair.links));
     for(const site of [pair.a,pair.b]){const b=el('button',`Show ${siteName(site)}`,'lm-world-back');b.onclick=()=>{select({type:'site',id:site.id});centreOn(site);};panel.append(b);}
   }
+  function setCore(on:boolean){
+    coreOnly=on;savePrefs();syncControls();rebuild();
+    const shown=sites.reduce((total,site)=>total+site.nodes.length,0), hidden=graph.nodes.filter(n=>!isCore(n)).length;
+    message(on ? `Core Network: ${shown} AGG and ER device${shown===1 ? '' : 's'} at ${sites.length} location${sites.length===1 ? '' : 's'}${hidden ? ` · ${hidden} other device${hidden===1 ? '' : 's'} hidden` : ''}`
+      : `${shown} devices at ${sites.length} locations`);
+  }
   function nextDown(){
     const down=sites.filter(s=>s.status==='down');
     if(!down.length){message(snapshot && graph.nodes.some(n=>n.status==='down') ? 'Down devices have no coordinates or are hidden by the current filters.' : 'No located devices are down.');return;}
@@ -1101,6 +1113,7 @@ export function mountWorldMap(root:HTMLElement) {
     const action=(event.target as Element).closest<HTMLElement>('[data-world]')?.dataset.world;
     switch(action){
       case 'problems':problemsOnly=!problemsOnly;syncControls();rebuild();if(problemsOnly && sites.length)fit();break;
+      case 'core':setCore(!coreOnly);break;
       case 'links':showLinks=!showLinks;syncControls();buildLinks();render();break;
       case 'weather':setWeather(!weatherOn);break;
       case 'power':setPower(!powerOn);break;
@@ -1140,7 +1153,7 @@ export function mountWorldMap(root:HTMLElement) {
   // Read-only diagnostic hook for browser checks with fixtures that opt in.
   if(root.dataset.debug==='true') Object.defineProperty(window,'libremapWorldDebug',{value:()=>({
     zoom:view.zoom,center:{...view.center},
-    markers:sites.map(site=>({id:site.id,name:site.name,label:mapName(site),text:markers.get(site.id)?.querySelector('.lm-world-label')?.textContent ?? '',count:site.nodes.length,status:site.status,warning:worstLevel(siteWarnings.get(site.id) ?? []) ?? null,outage:siteOutages.get(site.id)?.[0]?.kind ?? null,nearOutage:siteNear.get(site.id)?.[0]?.outage.kind ?? null,position:screen(project(site,view.zoom))})),
+    markers:sites.map(site=>({id:site.id,name:site.name,roles:site.nodes.map(n=>n.role),label:mapName(site),text:markers.get(site.id)?.querySelector('.lm-world-label')?.textContent ?? '',count:site.nodes.length,status:site.status,warning:worstLevel(siteWarnings.get(site.id) ?? []) ?? null,outage:siteOutages.get(site.id)?.[0]?.kind ?? null,nearOutage:siteNear.get(site.id)?.[0]?.outage.kind ?? null,position:screen(project(site,view.zoom))})),
     links:siteLinks.map(pair=>({key:pair.key,count:pair.links.length,state:pair.state,label:pair.label,color:pair.color})),
     outside:outside.map(n=>n.id),bounds:places?.map.bounds ?? null,undrawn:{withinSite:Object.fromEntries([...withinSite].map(([id,list])=>[id,list.length])),unlocated:undrawnUnlocated},
     warnings:weatherOn ? warnings.map(w=>({id:w.id,level:w.level,drawn:!!weatherPaths.get(w.id)?.getAttribute('d')})) : [],

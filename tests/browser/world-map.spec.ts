@@ -446,3 +446,35 @@ test('the map stays on Norway, and a location outside it is listed instead of pl
   expect(await insideNorway()).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test('Core Network shows only AGG and ER devices, and is remembered',async({page})=>{
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+  // The demo's unclassified switch placed at Rossa, beside its AGG and ER devices.
+  const located={...locations,devices:{...locations.devices,'15':'1'},map:{...locations.map,tiles:null}};
+  await page.route('**/world-page',route=>route.fulfill({contentType:'text/html',body:'<div id="libremap" data-mode="world" data-debug="true" data-storage-key="world-core" data-endpoint="/world-topology" data-locations-endpoint="/world-locations" data-topology-url="/topology" data-custom-url="/custom"></div><script type="module" src="/frontend/main.ts"></script>'}));
+  await page.route('**/world-topology',route=>route.fulfill({json:demoSnapshot()}));
+  await page.route('**/world-locations',route=>route.fulfill({json:located}));
+  await page.goto('/world-page');
+  await expect(page.getByRole('status')).toContainText('13 devices at 4 locations');
+  type CoreDebug={markers:{name:string;count:number;roles:string[]}[]};
+  const state=()=>page.evaluate(()=>(window as unknown as {libremapWorldDebug:()=>CoreDebug}).libremapWorldDebug());
+  const roles=async()=>[...new Set((await state()).markers.flatMap(m=>m.roles))].sort();
+  expect(await roles()).toEqual(['AGG','ER','OTHER']);
+
+  const toggle=page.getByRole('button',{name:'Core Network',exact:true});
+  await expect(toggle).toHaveAttribute('aria-pressed','false');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed','true');
+  await expect(page.getByRole('status')).toContainText('Core Network: 12 AGG and ER devices at 4 locations · 1 other device hidden');
+  expect(await roles()).toEqual(['AGG','ER']);
+  expect((await state()).markers.find(m=>m.name==='Rossa')!.count).toBe(6);
+  await expect(page.locator('.lm-details')).toContainText('Core Network is on');
+
+  // Remembered across a reload; turning it off brings the other device back.
+  await page.reload();
+  await expect(page.getByRole('button',{name:'Core Network',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect.poll(roles).toEqual(['AGG','ER']);
+  await page.getByRole('button',{name:'Core Network',exact:true}).click();
+  expect(await roles()).toEqual(['AGG','ER','OTHER']);
+  expect(errors).toEqual([]);
+});
