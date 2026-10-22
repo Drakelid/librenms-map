@@ -20098,10 +20098,15 @@ function hv(e) {
 	}
 	function $e() {
 		let { w: e, h: t } = Oe(), n = C.zoom;
-		Ae = {
+		if (Ae = {
 			x: Math.round(C.center.x - e / 2),
 			y: Math.round(C.center.y - t / 2)
-		}, je = {
+		}, je.w !== e || je.h !== t) for (let n of [
+			u,
+			d,
+			c
+		]) n.style.left = `${-e}px`, n.style.top = `${-t}px`, n.style.width = `${3 * e}px`, n.style.height = `${3 * t}px`, n.setAttribute("viewBox", `${-e} ${-t} ${3 * e} ${3 * t}`), n.setAttribute("preserveAspectRatio", "none");
+		je = {
 			zoom: n,
 			x: C.center.x,
 			y: C.center.y,
