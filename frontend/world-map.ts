@@ -3,7 +3,7 @@ import { shortcutAllowed } from './canvas-tools';
 import { clampCenter, fitView, project, TILE, tileUrl, withoutCoordinates, worldSize, type Point } from './geo';
 import { mountPageNav } from './page-nav';
 import { deviceName, LOAD_COLORS, metric, topology } from './topology';
-import { KIND_NAMES, mapsReadAt, OUTAGE_COLORS, outagePath, outagePeriod, outagesAt, outageShape, parseCheck, parseHealth, parseOutages, verdictText, type Evidence, type Outage, type OutageCheck, type PowerHealth } from './power';
+import { KIND_NAMES, mapsReadAt, NEAR_KM, OUTAGE_COLORS, outageAnchorAt, outagePath, outagePeriod, outagesAt, outagesNear, outageShape, parseCheck, parseHealth, parseOutages, SKIPPED_REASONS, verdictText, type Evidence, type NearOutage, type Outage, type OutageCheck, type PowerHealth } from './power';
 import { limitFilter } from './view-limits';
 import type { Link, MapNode, Snapshot, Topology } from './types';
 import { LEVEL_NAMES, LEVEL_RANK, parseWarnings, WARNING_COLORS, warningPath, warningPeriod, warningsAt, worstLevel, type Warning } from './weather';
@@ -50,7 +50,7 @@ export function mountWorldMap(root:HTMLElement) {
         <div class="lm-legend"><span><i class="lm-world-key" style="background:${statusColor('up')}"></i>Up</span><span><i class="lm-world-key" style="background:${statusColor('down')}"></i>Down</span><span><i class="lm-world-key" style="background:${statusColor('unknown')}"></i>Unknown</span><span><i style="color:${LOAD_COLORS.normal}"></i>&lt;50%</span><span><i style="color:${LOAD_COLORS.warning}"></i>50–70%</span><span><i style="color:${LOAD_COLORS.high}"></i>&gt;70%</span><span><i class="lm-dashed" style="color:#e05b65"></i>Link down</span>${(['yellow','orange','red'] as const).map(level=>`<span class="lm-world-weather-key" hidden><i class="lm-world-area" style="--area:${WARNING_COLORS[level]}"></i>${LEVEL_NAMES[level]} warning</span>`).join('')}${(['current','planned'] as const).map(kind=>`<span class="lm-world-power-key" hidden><i class="lm-world-area lm-world-${kind}" style="--area:${OUTAGE_COLORS[kind]}"></i>${KIND_NAMES[kind]}</span>`).join('')}</div>
         <div class="lm-world-attribution" hidden></div>
       </div><aside class="lm-details" aria-label="Selection details"></aside></main>
-      <footer><span class="lm-updated">Waiting for data</span><span>Drag to pan · Scroll or double-click to zoom · Click a location to inspect · Keys: / find · F fit · + − zoom · arrows pan · D next problem · Esc clear</span></footer>
+      <footer><span class="lm-updated">Waiting for data</span><span>Drag to pan · Scroll or double-click to zoom · Click a location to inspect · Keys: / find · F fit · + − zoom · arrows pan · D next problem · O next location in an outage · Esc clear</span></footer>
     </div>`;
   const $=<T extends Element>(selector:string)=>root.querySelector<T>(selector)!;
   const notice=$<HTMLElement>('.lm-notice'), panel=$<HTMLElement>('.lm-details'), empty=$<HTMLElement>('.lm-empty');
@@ -95,6 +95,9 @@ export function mountWorldMap(root:HTMLElement) {
   const powerEndpoint=root.dataset.powerEndpoint;
   let powerOn=!!powerEndpoint && prefs.power===true;
   let outages:Outage[]=[], powerEvidence:Evidence|undefined, powerComplete=true, powerHealth:PowerHealth|undefined, powerBusy=false;
+  let powerSkipped:Record<string,number>={}, outageCursor=-1;
+  // Locations inside an outage area, and those within NEAR_KM of one.
+  const siteOutages=new Map<string,Outage[]>(), siteNear=new Map<string,NearOutage[]>(), siteChecks=new Map<string,SiteCheck>();|undefined, powerComplete=true, powerHealth:PowerHealth|undefined, powerBusy=false;
   const siteOutages=new Map<string,Outage[]>(), siteChecks=new Map<string,SiteCheck>();
 
   // Naming has two audiences. The map itself (marker labels, their screen
@@ -236,9 +239,14 @@ export function mountWorldMap(root:HTMLElement) {
   }
   /** Which outage areas contain each visible location. */
   function matchOutages(){
-    siteOutages.clear();
+    siteOutages.clear();siteNear.clear();
     if(!powerOn) return;
-    for(const site of sites){const covering=outagesAt(site,outages);if(covering.length)siteOutages.set(site.id,covering);}
+    for(const site of sites){
+      const covering=outagesAt(site,outages);
+      if(covering.length){siteOutages.set(site.id,covering);continue;}
+      const near=outagesNear(site,outages);
+      if(near.length)siteNear.set(site.id,near);
+    }
   }
 
   /** A connection between locations takes the colour of its worst state, else its busiest link. */
@@ -322,9 +330,12 @@ export function mountWorldMap(root:HTMLElement) {
       const count=site.nodes.length, down=site.nodes.filter(n=>n.status==='down').length;
       const marker=document.createElement('button');
       const level=worstLevel(siteWarnings.get(site.id) ?? []);
-      const outage=siteOutages.get(site.id)?.[0]?.kind;
+      const outage=siteOutages.get(site.id)?.[0]?.kind, near=siteNear.get(site.id)?.[0];
       marker.type='button';marker.className=`lm-world-marker lm-world-${site.status}`;marker.dataset.site=site.id;
-      marker.setAttribute('aria-label',`${mapName(site)}: ${count} device${count===1 ? '' : 's'}${down ? `, ${down} down` : ''}${level ? `, ${level} weather warning` : ''}${outage ? `, in a ${outage} power outage area` : ''}`);
+      // Inside an outage area: a heavy ring and an "OUTAGE" tag; near one: a dashed ring.
+      if(outage){marker.classList.add('lm-world-in-outage',`lm-world-in-${outage}`);marker.style.setProperty('--outage',OUTAGE_COLORS[outage]);}
+      else if(near){marker.classList.add('lm-world-near-outage');marker.style.setProperty('--outage',OUTAGE_COLORS[near.outage.kind]);}
+      marker.setAttribute('aria-label',`${mapName(site)}: ${count} device${count===1 ? '' : 's'}${down ? `, ${down} down` : ''}${level ? `, ${level} weather warning` : ''}${outage ? `, inside a ${outage} power outage area` : near ? `, ${kmText(near.km)} from a ${near.outage.kind} power outage` : ''}`);
       marker.style.setProperty('--marker',`${Math.round(Math.min(36,14+Math.sqrt(count)*4))}px`);
       const dot=document.createElement('span');dot.className='lm-world-dot';dot.textContent=count>1 ? String(count) : '';
       const label=document.createElement('span');label.className='lm-world-label';label.textContent=markerLabel(site);
@@ -335,7 +346,11 @@ export function mountWorldMap(root:HTMLElement) {
       }
       if(outage){
         const badge=document.createElement('span');badge.className='lm-world-badge lm-world-power-badge';badge.textContent='⚡';badge.style.setProperty('--area',OUTAGE_COLORS[outage]);
-        marker.dataset.outage=outage;marker.append(badge);
+        const tag=document.createElement('span');tag.className='lm-world-outage-tag';tag.textContent=outage==='current' ? '⚡ OUTAGE' : '⚡ PLANNED';
+        marker.dataset.outage=outage;marker.append(badge,tag);
+      }else if(near){
+        const badge=document.createElement('span');badge.className='lm-world-badge lm-world-power-badge lm-world-near-badge';badge.textContent='⚡';badge.style.setProperty('--area',OUTAGE_COLORS[near.outage.kind]);
+        marker.dataset.nearOutage=near.outage.kind;marker.append(badge);
       }
       markers.set(site.id,marker);
       return marker;
@@ -384,26 +399,42 @@ export function mountWorldMap(root:HTMLElement) {
     weatherLayer.setAttribute('transform',`translate(${-origin.x} ${-origin.y})`);
   }
   // Outage areas, lines and points: drawn like the warning areas, above them.
+  // Every outage also gets a fixed-size ⚡ pin, so an area too small to see at this zoom is still marked.
   let powerLayer:SVGGElement|undefined, powerZoom=-1;
-  const powerPaths=new Map<string,SVGPathElement>();
+  const powerPaths=new Map<string,SVGPathElement>(), powerPins=new Map<string,SVGGElement>();
+  const outageTitle=(outage:Outage)=>`${KIND_NAMES[outage.kind]}: ${outage.provider}${outage.municipality ? ` · ${outage.municipality}` : ''}${outage.customers!==null ? ` · ${outage.customers} customers` : ''}`;
   function buildPower(){
-    powerSvg.replaceChildren();powerPaths.clear();powerLayer=undefined;powerZoom=-1;invalidate();
+    powerSvg.replaceChildren();powerPaths.clear();powerPins.clear();powerLayer=undefined;powerZoom=-1;invalidate();
     for(const key of root.querySelectorAll<HTMLElement>('.lm-world-power-key'))key.hidden=!powerOn;
     if(!powerOn) return;
     powerLayer=document.createElementNS(SVG,'g');
+    const pins=document.createElementNS(SVG,'g');
     for(const outage of outages){
       const path=document.createElementNS(SVG,'path');
       path.classList.add('lm-world-outage',`lm-world-${outage.kind}`,`lm-world-outage-${outageShape(outage)}`);path.dataset.outage=outage.id;
       path.setAttribute('fill-rule','evenodd');path.style.setProperty('--area',OUTAGE_COLORS[outage.kind]);
-      const title=document.createElementNS(SVG,'title');title.textContent=`${KIND_NAMES[outage.kind]}: ${outage.provider}${outage.municipality ? ` · ${outage.municipality}` : ''}${outage.customers!==null ? ` · ${outage.customers} customers` : ''}`;
+      const title=document.createElementNS(SVG,'title');title.textContent=outageTitle(outage);
       path.append(title);powerLayer.append(path);powerPaths.set(outage.id,path);
+      if(!outage.anchor) continue;
+      const pin=document.createElementNS(SVG,'g');
+      pin.classList.add('lm-world-outage-pin',`lm-world-${outage.kind}`);pin.dataset.outage=outage.id;pin.style.setProperty('--area',OUTAGE_COLORS[outage.kind]);
+      const circle=document.createElementNS(SVG,'circle');circle.setAttribute('r','10');
+      const bolt=document.createElementNS(SVG,'text');bolt.textContent='⚡';bolt.setAttribute('text-anchor','middle');bolt.setAttribute('dy','4.5');
+      const pinTitle=document.createElementNS(SVG,'title');pinTitle.textContent=outageTitle(outage);
+      pin.append(pinTitle,circle,bolt);pins.append(pin);powerPins.set(outage.id,pin);
     }
+    // Pins above every area, current outages above planned ones (the list's order).
+    powerLayer.append(pins);
     powerSvg.append(powerLayer);
   }
   function renderPower(){
     if(!powerLayer) return;
     if(powerZoom!==view.zoom){
-      for(const outage of outages)powerPaths.get(outage.id)?.setAttribute('d',outagePath(outage,view.zoom));
+      for(const outage of outages){
+        powerPaths.get(outage.id)?.setAttribute('d',outagePath(outage,view.zoom));
+        const at=outageAnchorAt(outage,view.zoom);
+        if(at) powerPins.get(outage.id)?.setAttribute('transform',`translate(${at.x.toFixed(1)} ${at.y.toFixed(1)})`);
+      }
       powerZoom=view.zoom;
     }
     powerLayer.setAttribute('transform',`translate(${-origin.x} ${-origin.y})`);
@@ -453,6 +484,7 @@ export function mountWorldMap(root:HTMLElement) {
     for(const [key,pairLines] of lines)pairLines[1].classList.toggle('lm-selected',selected?.type==='link' && selected.id===key);
     for(const [id,path] of weatherPaths)path.classList.toggle('lm-selected',selected?.type==='warning' && selected.id===id);
     for(const [id,path] of powerPaths)path.classList.toggle('lm-selected',selected?.type==='outage' && selected.id===id);
+    for(const [id,pin] of powerPins)pin.classList.toggle('lm-selected',selected?.type==='outage' && selected.id===id);
   }
 
   let frame=0;
@@ -523,9 +555,42 @@ export function mountWorldMap(root:HTMLElement) {
       summary.append(item);
     }
     if(powerOn){
-      const item=el('div',undefined,'lm-summary-power');item.append(el('strong',String(siteOutages.size)),el('span','In outage area'));
+      // Clickable when any location is affected: steps through them, like the problem count.
+      const inside=siteOutages.size;
+      const item=el(inside ? 'button' : 'div',undefined,`lm-summary-power${inside ? ' lm-summary-power-hit' : ''}`);
+      item.append(el('strong',String(inside)),el('span','In outage area'));
+      if(inside){item.dataset.world='next-outage';item.title='Show the next location inside an outage area (O)';item.setAttribute('aria-label',`${inside} location${inside===1 ? '' : 's'} inside an outage area. Show the next one`);}
       summary.append(item);
+      if(siteNear.size){const near=el('div',undefined,'lm-summary-power');near.append(el('strong',String(siteNear.size)),el('span',`Within ${NEAR_KM} km`));summary.append(near);}
     }
+  }
+  /** "350 m" or "1.2 km". */
+  const kmText=(km:number)=>km<1 ? `${Math.max(10,Math.round(km*100)*10)} m` : `${km.toFixed(1)} km`;
+  /** A coloured banner saying plainly that a location is inside, or near, a power outage. */
+  function powerBanner(site:Site){
+    const inside=siteOutages.get(site.id) ?? [], near=siteNear.get(site.id) ?? [];
+    if(!powerOn || (!inside.length && !near.length)) return undefined;
+    const top=inside[0] ?? near[0].outage;
+    const banner=el('div',undefined,`lm-world-outage-banner${inside.length ? '' : ' lm-world-outage-banner-near'}`);
+    banner.style.setProperty('--outage',OUTAGE_COLORS[top.kind]);
+    banner.append(el('strong',inside.length
+      ? `⚡ ${top.kind==='current' ? 'INSIDE A POWER OUTAGE AREA' : 'INSIDE A PLANNED OUTAGE AREA'}`
+      : `⚡ ${kmText(near[0].km)} FROM A ${top.kind==='current' ? 'POWER OUTAGE' : 'PLANNED OUTAGE'}`));
+    const detail=[top.provider,top.municipality,top.customers!==null ? `${top.customers} customers` : '',outagePeriod(top)].filter(Boolean).join(' · ');
+    banner.append(el('span',detail));
+    if(inside.length>1) banner.append(el('span',`and ${inside.length-1} more outage${inside.length===2 ? '' : 's'} here`));
+    const open=el('button','Show the outage');open.onclick=()=>select({type:'outage',id:top.id});banner.append(open);
+    return banner;
+  }
+  function nextOutage(){
+    // Current outages first, then planned.
+    const affected=sites.filter(s=>siteOutages.has(s.id)).sort((a,b)=>Number(siteOutages.get(b.id)![0].kind==='current')-Number(siteOutages.get(a.id)![0].kind==='current'));
+    if(!powerOn){message('Turn on ⚡ Power outages to step through affected locations.');return;}
+    if(!affected.length){message(siteNear.size ? `No location is inside an outage area; ${siteNear.size} ${siteNear.size===1 ? 'is' : 'are'} within ${NEAR_KM} km of one.` : 'No location is inside or near an outage on the grid operators\' maps.');return;}
+    outageCursor=(outageCursor+1)%affected.length;
+    const site=affected[outageCursor];
+    select({type:'site',id:site.id});centreOn(site);
+    message(`Location in an outage area ${outageCursor+1} of ${affected.length}: ${siteName(site)}`);
   }
   function select(next:Selection|undefined){selected=next;renderDetails();renderSelection();}
   function closeButton(){const b=el('button','×','lm-close');b.setAttribute('aria-label','Close details');b.onclick=()=>select(undefined);return b;}
@@ -586,6 +651,8 @@ export function mountWorldMap(root:HTMLElement) {
       ['Devices',String(site.nodes.length)],['Down',String(down)],
       ...(showAddresses ? [['Coordinates',`${site.lat.toFixed(5)}, ${site.lng.toFixed(5)}`] as [string,string]] : []),
     ]));
+    // First thing under the heading, so it cannot be missed.
+    const banner=powerBanner(site);if(banner)panel.append(banner);
     const covering=siteWarnings.get(site.id) ?? [];
     if(covering.length) panel.append(el('div','WEATHER WARNINGS HERE','lm-eyebrow lm-world-section'),warningList(covering));
     if(powerOn) panel.append(el('div','POWER HERE','lm-eyebrow lm-world-section'),powerHere(site));
@@ -656,6 +723,10 @@ export function mountWorldMap(root:HTMLElement) {
     if(!powerEvidence){box.textContent='Grid operator maps: waiting for DRIFT.';return box;}
     box.append(el('p',`${mapsReadAt(powerEvidence)} · ${powerEvidence.source}`));
     if(!powerComplete) box.append(el('p','The list may be incomplete: it was cut off, or a map has not been read yet.'));
+    for(const [reason,count] of Object.entries(powerSkipped)){
+      if(reason==='shape_too_large') box.append(el('p',`⚠ ${count} outage area${count===1 ? ' was' : 's were'} too detailed to draw and ${count===1 ? 'is' : 'are'} shown as a pin.`));
+      else box.append(el('p',`⚠ ${count} outage${count===1 ? '' : 's'} from DRIFT ${count===1 ? 'is' : 'are'} not on the map: ${SKIPPED_REASONS[reason] ?? reason}.`));
+    }
     for(const limitation of powerEvidence.limitations) box.append(el('p',`⚠ ${limitation}`));
     for(const provider of powerHealth?.providers ?? []){
       if(provider.lastError) box.append(el('p',`⚠ ${provider.name}: ${provider.lastError}${provider.lastErrorAt ? ` (${new Date(provider.lastErrorAt).toLocaleTimeString()})` : ''}`));
@@ -694,6 +765,7 @@ export function mountWorldMap(root:HTMLElement) {
   }
   function outageDetails(outage:Outage){
     const affected=sites.filter(site=>siteOutages.get(site.id)?.includes(outage));
+    const nearby=sites.map(site=>({site,near:siteNear.get(site.id)?.find(n=>n.outage===outage)})).filter((s):s is {site:Site;near:NearOutage}=>!!s.near);
     panel.append(closeButton(),el('div',`${KIND_NAMES[outage.kind].toUpperCase()} · ${outage.provider.toUpperCase()}`,'lm-eyebrow'),el('h2',outage.municipality ?? outage.provider),list([
       ...(outage.state ? [['State',outage.state] as [string,string]] : []),
       ...(outage.type ? [['Type',outage.type] as [string,string]] : []),
@@ -702,12 +774,23 @@ export function mountWorldMap(root:HTMLElement) {
       ...(outage.gridLevel ? [['Grid level',outage.gridLevel] as [string,string]] : []),
       ...(outage.reason ? [['Reason',outage.reason] as [string,string]] : []),
       ['Locations in area',String(affected.length)],
+      ['Devices in area',String(affected.reduce((total,site)=>total+site.nodes.length,0))],
     ]));
     if(outage.text) panel.append(el('p',outage.text));
+    if(outageShape(outage)==='point') panel.append(el('p','The grid operator gives this outage as a point, without an area, so the map cannot tell which locations it covers. Locations within 1 km are listed as near it.','lm-hint'));
+    if(outage.shapeDropped) panel.append(el('p','This outage\'s area was too detailed to draw alongside the others, so it is shown as a pin.','lm-hint'));
+    const show=el('button','Show on the map','lm-world-back');
+    show.onclick=()=>{const at=outageAnchorAt(outage,0);if(at){const zoom=Math.max(view.zoom,Math.min(places?.map.maxZoom ?? 18,LABEL_ZOOM+3));setView(zoom,{x:at.x*2**zoom,y:at.y*2**zoom});}};
+    panel.append(show);
     if(affected.length){
+      const locations=el('div',undefined,'lm-device-list lm-world-in-outage-list');
+      for(const site of affected){const b=el('button',`⚡ ${siteName(site)} · ${site.nodes.length} device${site.nodes.length===1 ? '' : 's'}`);b.onclick=()=>{select({type:'site',id:site.id});centreOn(site);};locations.append(b);}
+      panel.append(el('div','LOCATIONS INSIDE THIS AREA','lm-eyebrow lm-world-section'),locations);
+    }
+    if(nearby.length){
       const locations=el('div',undefined,'lm-device-list');
-      for(const site of affected){const b=el('button',siteName(site));b.onclick=()=>{select({type:'site',id:site.id});centreOn(site);};locations.append(b);}
-      panel.append(el('div','LOCATIONS IN THIS AREA','lm-eyebrow lm-world-section'),locations);
+      for(const {site,near} of nearby.sort((a,b)=>a.near.km-b.near.km)){const b=el('button',`${siteName(site)} · ${kmText(near.km)} away`);b.onclick=()=>{select({type:'site',id:site.id});centreOn(site);};locations.append(b);}
+      panel.append(el('div',`LOCATIONS WITHIN ${NEAR_KM} KM`,'lm-eyebrow lm-world-section'),locations);
     }
     panel.append(powerStatus());
   }
@@ -720,6 +803,7 @@ export function mountWorldMap(root:HTMLElement) {
       ...(n.hostname.trim() && n.hostname.trim()!==nameOf(n) ? [[isAddress(n.hostname.trim()) ? 'IP address' : 'Hostname',n.hostname.trim()] as [string,string]] : []),
       ...(n.sysName?.trim() && n.sysName.trim()!==nameOf(n) ? [['sysName',n.sysName.trim()] as [string,string]] : []),['Location',siteName(site)],...(siteOfDevice(n) ? [['Site',siteOfDevice(n)] as [string,string]] : []),
     ]));
+    const banner=powerBanner(site);if(banner)panel.append(banner);
     if(n.url){const url=new URL(n.url,location.href);if(url.origin===location.origin){const a=el('a','Open in LibreNMS ↗','lm-device-link');a.href=url.href;panel.append(a);}}
   }
   /** Each link's load and both interfaces; a far port LibreNMS did not match is marked. */
@@ -811,18 +895,19 @@ export function mountWorldMap(root:HTMLElement) {
         getJson(root.dataset.powerHealthEndpoint,'power outage status').then(parseHealth).catch(()=>undefined),
       ]);
       if(!powerOn) return;
-      outages=feed.outages;powerEvidence=feed.evidence;powerComplete=feed.complete;powerHealth=health;
+      outages=feed.outages;powerEvidence=feed.evidence;powerComplete=feed.complete;powerHealth=health;powerSkipped=feed.skipped;
       buildPower();rebuild();updateAttribution();
       const current=outages.filter(o=>o.kind==='current').length;
-      const caveats=[...feed.evidence.limitations,...(feed.complete ? [] : ['the list may be incomplete'])];
-      message(`${current} current and ${outages.length-current} planned power outage${outages.length===1 ? '' : 's'} · ${siteOutages.size} location${siteOutages.size===1 ? '' : 's'} in an outage area · ${mapsReadAt(feed.evidence)}${caveats.length ? ` · ⚠ ${caveats.join('; ')}` : ''}`,caveats.length>0);
+      const missing=Object.entries(feed.skipped).filter(([reason])=>reason!=='shape_too_large').reduce((total,[,count])=>total+count,0);
+      const caveats=[...feed.evidence.limitations,...(feed.complete ? [] : ['the list may be incomplete']),...(missing ? [`${missing} outage${missing===1 ? '' : 's'} could not be placed`] : [])];
+      message(`${current} current and ${outages.length-current} planned power outage${outages.length===1 ? '' : 's'} · ${siteOutages.size} location${siteOutages.size===1 ? '' : 's'} inside an outage area${siteNear.size ? `, ${siteNear.size} within ${NEAR_KM} km` : ''} · ${mapsReadAt(feed.evidence)}${caveats.length ? ` · ⚠ ${caveats.join('; ')}` : ''}`,caveats.length>0);
     }catch(error){
       message(`${error instanceof Error ? error.message : 'Power outages are unavailable.'}${outages.length ? ' · Showing the last outages received.' : ''}`,true);
     }finally{powerBusy=false;syncControls();}
   }
   function setPower(on:boolean){
     powerOn=on && !!powerEndpoint;savePrefs();
-    if(!powerOn){outages=[];powerEvidence=undefined;powerHealth=undefined;powerComplete=true;siteChecks.clear();if(selected?.type==='outage')selected=undefined;}
+    if(!powerOn){outages=[];powerEvidence=undefined;powerHealth=undefined;powerComplete=true;powerSkipped={};outageCursor=-1;siteChecks.clear();if(selected?.type==='outage')selected=undefined;}
     buildPower();rebuild();updateAttribution();syncControls();
     if(powerOn)void refreshPower();
   }
@@ -833,7 +918,7 @@ export function mountWorldMap(root:HTMLElement) {
     if(event.button!==0 || (event.target as Element).closest('.lm-world-marker, .lm-world-link')) return;
     // Warning and outage areas cover the map; pressing one still pans, and only a click selects it.
     const warning=(event.target as Element).closest<SVGPathElement>('.lm-world-warning')?.dataset.warning;
-    const outage=(event.target as Element).closest<SVGPathElement>('.lm-world-outage')?.dataset.outage;
+    const outage=(event.target as Element).closest<SVGElement>('.lm-world-outage, .lm-world-outage-pin')?.dataset.outage;
     drag={id:event.pointerId,start:{x:event.clientX,y:event.clientY},center:{...view.center},moved:false,warning,outage};
     viewport.setPointerCapture(event.pointerId);viewport.classList.add('lm-dragging');
   });
@@ -895,6 +980,7 @@ export function mountWorldMap(root:HTMLElement) {
       case 'zoom-in':zoomBy(1);break;
       case 'zoom-out':zoomBy(-1);break;
       case 'next-down':nextDown();break;
+      case 'next-outage':nextOutage();break;
       case 'fullscreen':void (document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen()).catch(()=>message('Fullscreen is unavailable in this browser.'));break;
     }
   });
@@ -903,7 +989,7 @@ export function mountWorldMap(root:HTMLElement) {
     const pan=(dx:number,dy:number)=>setView(view.zoom,{x:view.center.x+dx,y:view.center.y+dy});
     const actions:Record<string,()=>void>={
       '/':()=>{if(!search.disabled)search.focus();},
-      f:fit,'+':()=>zoomBy(1),'=':()=>zoomBy(1),'-':()=>zoomBy(-1),d:nextDown,
+      f:fit,'+':()=>zoomBy(1),'=':()=>zoomBy(1),'-':()=>zoomBy(-1),d:nextDown,o:nextOutage,
       ArrowLeft:()=>pan(-120,0),ArrowRight:()=>pan(120,0),ArrowUp:()=>pan(0,-120),ArrowDown:()=>pan(0,120),
       Escape:()=>{if(selected)select(undefined);},
     };
@@ -920,11 +1006,11 @@ export function mountWorldMap(root:HTMLElement) {
   // Read-only diagnostic hook for browser checks with fixtures that opt in.
   if(root.dataset.debug==='true') Object.defineProperty(window,'libremapWorldDebug',{value:()=>({
     zoom:view.zoom,center:{...view.center},
-    markers:sites.map(site=>({id:site.id,name:site.name,label:mapName(site),text:markers.get(site.id)?.querySelector('.lm-world-label')?.textContent ?? '',count:site.nodes.length,status:site.status,warning:worstLevel(siteWarnings.get(site.id) ?? []) ?? null,outage:siteOutages.get(site.id)?.[0]?.kind ?? null,position:screen(project(site,view.zoom))})),
+    markers:sites.map(site=>({id:site.id,name:site.name,label:mapName(site),text:markers.get(site.id)?.querySelector('.lm-world-label')?.textContent ?? '',count:site.nodes.length,status:site.status,warning:worstLevel(siteWarnings.get(site.id) ?? []) ?? null,outage:siteOutages.get(site.id)?.[0]?.kind ?? null,nearOutage:siteNear.get(site.id)?.[0]?.outage.kind ?? null,position:screen(project(site,view.zoom))})),
     links:siteLinks.map(pair=>({key:pair.key,count:pair.links.length,state:pair.state,label:pair.label,color:pair.color})),
     undrawn:{withinSite:Object.fromEntries([...withinSite].map(([id,list])=>[id,list.length])),unlocated:undrawnUnlocated},
     warnings:weatherOn ? warnings.map(w=>({id:w.id,level:w.level,drawn:!!weatherPaths.get(w.id)?.getAttribute('d')})) : [],
-    outages:powerOn ? outages.map(o=>({id:o.id,kind:o.kind,shape:outageShape(o),drawn:!!powerPaths.get(o.id)?.getAttribute('d')})) : [],
+    outages:powerOn ? outages.map(o=>({id:o.id,kind:o.kind,shape:outageShape(o),drawn:!!powerPaths.get(o.id)?.getAttribute('d') || !!powerPins.get(o.id)?.getAttribute('transform'),pinned:!!powerPins.get(o.id)?.getAttribute('transform')})) : [],
     tiles:[...tiles.values()].map(image=>image.src),
   }),configurable:true});
 

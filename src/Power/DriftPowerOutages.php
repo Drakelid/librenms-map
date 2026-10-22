@@ -53,7 +53,11 @@ class DriftPowerOutages
      * Outages with their affected areas, lines or point, as plain shapes of
      * [lon, lat] points rather than raw GeoJSON.
      *
-     * @return array{outages: list<array>, evidence: array}
+     * An outage whose shape cannot be drawn is still placed at a point when
+     * one is known; any outage left out is counted in `skipped`, by reason,
+     * so the map can say so rather than silently show less.
+     *
+     * @return array{outages: list<array>, evidence: array, skipped: array<string, int>}
      */
     public function outagesGeoJson(?string $kind = null, ?string $municipality = null, ?string $provider = null): array
     {
@@ -63,24 +67,57 @@ class DriftPowerOutages
         }
         $outages = [];
         $points = 0;
+        $skipped = ['unknown_kind' => 0, 'no_location' => 0, 'shape_too_large' => 0];
         foreach ($data['features'] as $feature) {
             $properties = is_array($feature) && is_array($feature['properties'] ?? null) ? $feature['properties'] : null;
             $outage = $properties === null ? null : $this->outage($properties);
             if ($outage === null) {
+                $skipped['unknown_kind']++;
                 continue;
             }
-            $shape = $this->shape(is_array($feature['geometry'] ?? null) ? $feature['geometry'] : [], $points);
+            $geometry = is_array($feature['geometry'] ?? null) ? $feature['geometry'] : [];
+            $before = $points;
+            $shape = $this->shape($geometry, $points);
             // A Point geometry places the outage when its properties give no point.
             $outage['point'] ??= $shape['point'];
             $outage['polygons'] = $shape['polygons'];
             $outage['lines'] = $shape['lines'];
+            // Past the drawing budget the shape is dropped, but the outage is still placed.
+            $outage['shape_dropped'] = $points > self::MAX_POINTS && $points > $before && $shape['polygons'] === [] && $shape['lines'] === [];
+            if ($outage['shape_dropped']) {
+                $skipped['shape_too_large']++;
+                $outage['point'] ??= $this->firstPoint($geometry['coordinates'] ?? null);
+            }
             if ($outage['polygons'] === [] && $outage['lines'] === [] && $outage['point'] === null) {
+                $skipped['no_location']++;
                 continue;
             }
             $outages[] = $outage;
         }
 
-        return ['outages' => $this->uniqueIds($outages), 'evidence' => $this->evidence($data['evidence'] ?? null)];
+        return [
+            'outages' => $this->uniqueIds($outages),
+            'evidence' => $this->evidence($data['evidence'] ?? null),
+            'skipped' => $skipped,
+        ];
+    }
+
+    /** The first valid [lon, lat] in nested GeoJSON coordinates. */
+    private function firstPoint(mixed $coordinates, int $depth = 0): ?array
+    {
+        if (! is_array($coordinates) || $depth > 4) {
+            return null;
+        }
+        if (($point = $this->point($coordinates)) !== null) {
+            return $point;
+        }
+        foreach ($coordinates as $child) {
+            if (($point = $this->firstPoint($child, $depth + 1)) !== null) {
+                return $point;
+            }
+        }
+
+        return null;
     }
 
     /** @return array{verdict: string, why: string, at: ?string, coordinates: ?array, outages: list<array>, evidence: array} */

@@ -20,16 +20,38 @@
 #libremap .lm-world-weather-key[hidden] { display: none; }
 /* Power outage areas, lines and points, above the warnings. Planned ones are dashed and lighter. */
 #libremap .lm-world-power { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-#libremap .lm-world-outage { fill: var(--area); fill-opacity: .28; stroke: var(--area); stroke-width: 1.5; stroke-opacity: .9; pointer-events: visiblePainted; cursor: pointer; }
-#libremap .lm-world-outage.lm-world-planned { fill-opacity: .14; stroke-dasharray: 6 4; }
+#libremap .lm-world-outage { fill: var(--area); fill-opacity: .34; stroke: var(--area); stroke-width: 2.5; stroke-opacity: 1; stroke-linejoin: round; pointer-events: visiblePainted; cursor: pointer; }
+#libremap .lm-world-outage.lm-world-planned { fill-opacity: .2; stroke-dasharray: 7 4; }
 #libremap .lm-world-outage-lines { fill: none; stroke-width: 4; stroke-linecap: round; pointer-events: visibleStroke; }
 #libremap .lm-world-outage-point { fill-opacity: .7; stroke: #fff; }
-#libremap .lm-world-outage:hover { fill-opacity: .4; }
-#libremap .lm-world-outage.lm-selected { fill-opacity: .45; stroke-width: 3; }
+#libremap .lm-world-outage:hover { fill-opacity: .45; }
+#libremap .lm-world-outage.lm-selected { fill-opacity: .5; stroke-width: 4; }
 #libremap .lm-world-outage-lines.lm-selected { stroke-width: 6; }
 #libremap .lm-legend i.lm-world-area.lm-world-planned { border-style: dashed; }
 #libremap .lm-world-power-key[hidden] { display: none; }
-#libremap .lm-world-power-badge { right: auto; left: -7px; color: #fff; font-size: 9px; }
+#libremap .lm-world-badge.lm-world-power-badge { right: auto; left: -9px; top: -9px; width: 19px; height: 19px; color: #fff; font-size: 11px; }
+#libremap .lm-world-badge.lm-world-near-badge { width: 15px; height: 15px; left: -7px; top: -7px; font-size: 9px; opacity: .9; }
+/* Each outage's pin: fixed size at every zoom, so small areas and point-only outages stay visible. */
+#libremap .lm-world-outage-pin { cursor: pointer; pointer-events: visiblePainted; }
+#libremap .lm-world-outage-pin circle { fill: var(--area); stroke: #fff; stroke-width: 2; }
+#libremap .lm-world-outage-pin.lm-world-planned circle { stroke-dasharray: 3 2; }
+#libremap .lm-world-outage-pin text { font-size: 12px; fill: #fff; pointer-events: none; }
+#libremap .lm-world-outage-pin:hover circle, #libremap .lm-world-outage-pin.lm-selected circle { stroke-width: 3.5; }
+/* A location inside an outage area: a heavy ring in the outage colour, a pulse and an always-visible tag. Near one: a dashed ring. */
+#libremap .lm-world-in-outage { z-index: 1; }
+#libremap .lm-world-in-outage .lm-world-dot { box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--outage), 0 1px 6px #0008; }
+#libremap .lm-world-in-outage::before { content: ''; position: absolute; inset: -9px; border-radius: 50%; border: 3px solid var(--outage); animation: lm-world-outage-pulse 1.8s ease-out infinite; pointer-events: none; }
+#libremap .lm-world-in-planned::before { animation: none; border-style: dashed; }
+#libremap .lm-world-near-outage::before { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 2px dashed var(--outage); pointer-events: none; }
+#libremap .lm-world-outage-tag { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); padding: 1px 6px; border-radius: 3px; background: var(--outage); color: #fff; font-size: 10px; font-weight: 800; letter-spacing: .04em; line-height: 1.5; white-space: nowrap; box-shadow: 0 1px 3px #0006; pointer-events: none; }
+@keyframes lm-world-outage-pulse { 0% { transform: scale(.9); opacity: .9; } 80%, 100% { transform: scale(1.7); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { #libremap .lm-world-in-outage::before { animation: none; } }
+/* The details panel says it in words, first thing under the heading. */
+#libremap .lm-world-outage-banner { display: grid; gap: 4px; margin: 12px 0; padding: 10px 12px; border-radius: 6px; border-left: 5px solid var(--outage); background: color-mix(in srgb, var(--outage) 16%, var(--panel)); color: var(--ink); font-size: 12px; }
+#libremap .lm-world-outage-banner strong { font-size: 13px; letter-spacing: .02em; }
+#libremap .lm-world-outage-banner-near { border-left-style: dashed; background: color-mix(in srgb, var(--outage) 7%, var(--panel)); }
+#libremap .lm-world-outage-banner button { justify-self: start; margin-top: 4px; padding: 4px 9px; font-size: 11px; }
+#libremap .lm-summary-power-hit strong { color: #c2255c; }
 #libremap .lm-world-power-status p, #libremap .lm-world-power-here p { margin: 4px 0; }
 #libremap .lm-world-verdict { font-weight: 600; }
 #libremap .lm-world-in_outage_area { color: #c2255c; }

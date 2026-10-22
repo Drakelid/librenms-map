@@ -242,3 +242,51 @@ test('without coordinates the map explains how to add them',async({page})=>{
   await expect(page.locator('.lm-world-unlocated summary')).toHaveText('16 devices have no coordinates');
   await expect(page.locator('.lm-world-tiles img')).toHaveCount(0);
 });
+
+test('power outages mark their areas with pins and flag the locations inside or near them',async({page})=>{
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+  type PowerDebug={outages:{id:string;kind:string;shape:string;drawn:boolean;pinned:boolean}[];markers:{name:string;outage:string|null;nearOutage:string|null}[]};
+  const evidence={source:'DRIFT',observed_at:new Date().toISOString(),limitations:[]};
+  // A small current area around Rossa, a point outage about 500 m from Heiane, and a far planned area.
+  const ring=(lng:number,lat:number,d:number)=>[[[lng-d,lat-d],[lng+d,lat-d],[lng+d,lat+d],[lng-d,lat+d],[lng-d,lat-d]]];
+  const feed={count:4,complete:true,evidence,skipped:{unknown_kind:1},outages:[
+    {id:'Fagne:1',kind:'current',provider:'Fagne',municipality:'Haugesund',customers:42,polygons:[ring(5.268,59.4138,.002)],lines:[],point:null},
+    {id:'Lyse:2',kind:'current',provider:'Lyse Elnett',municipality:'Stavanger',polygons:[],lines:[],point:[5.733,58.9745]},
+    {id:'BKK:3',kind:'planned',provider:'BKK',municipality:'Voss',polygons:[ring(6.4,60.6,.001)],lines:[],point:null},
+  ]};
+  await page.route('**/world-page',route=>route.fulfill({contentType:'text/html',body:'<div id="libremap" data-mode="world" data-debug="true" data-storage-key="world-power" data-endpoint="/world-topology" data-locations-endpoint="/world-locations" data-power-endpoint="/world-power" data-power-at-endpoint="/world-power-at" data-power-health-endpoint="/world-power-health" data-topology-url="/topology" data-custom-url="/custom"></div><script type="module" src="/frontend/main.ts"></script>'}));
+  await page.route('**/world-topology',route=>route.fulfill({json:demoSnapshot()}));
+  await page.route('**/world-locations',route=>route.fulfill({json:{...locations,map:{...locations.map,tiles:null}}}));
+  await page.route('**/world-power',route=>route.fulfill({json:feed}));
+  await page.route('**/world-power-health',route=>route.fulfill({json:{status:'ok',poll_seconds:300,providers:{}}}));
+  await page.route('**/world-power-at**',route=>route.fulfill({json:{verdict:'in_outage_area',why:'Inside the Fagne outage area.',outages:[],evidence}}));
+  await page.goto('/world-page');
+  await expect(page.getByRole('status')).toContainText('12 devices at 4 locations');
+
+  await page.getByRole('button',{name:'⚡ Power outages',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('1 location inside an outage area, 1 within 1 km');
+  await expect(page.getByRole('status')).toContainText('1 outage could not be placed');
+  const state=await page.evaluate(()=>(window as unknown as {libremapWorldDebug:()=>PowerDebug}).libremapWorldDebug());
+  // Every outage has a pin, including the point-only one, whose area is too small to see when zoomed out.
+  expect(state.outages.map(o=>[o.id,o.shape,o.drawn,o.pinned])).toEqual([['BKK:3','area',true,true],['Fagne:1','area',true,true],['Lyse:2','point',true,true]]);
+  await expect(page.locator('.lm-world-outage-pin')).toHaveCount(3);
+  expect(state.markers.filter(m=>m.outage || m.nearOutage).map(m=>[m.name,m.outage,m.nearOutage])).toEqual([['Rossa','current',null],['Heiane',null,'current']]);
+  await expect(page.locator('.lm-world-outage-tag')).toHaveText(['⚡ OUTAGE']);
+  await expect(page.locator('.lm-summary')).toContainText('1In outage area');
+  await expect(page.locator('.lm-details')).toContainText('1 outage from DRIFT is not on the map: not marked current or planned.');
+
+  // The summary steps to the affected location, whose details open with a banner.
+  await page.locator('.lm-summary').getByRole('button',{name:/inside an outage area/}).click();
+  const banner=page.locator('.lm-world-outage-banner');
+  await expect(banner).toContainText('INSIDE A POWER OUTAGE AREA');
+  await expect(banner).toContainText('Fagne · Haugesund · 42 customers');
+  await banner.getByRole('button',{name:'Show the outage'}).click();
+  await expect(page.getByRole('heading',{name:'Haugesund'})).toBeVisible();
+  await expect(page.locator('.lm-details')).toContainText('LOCATIONS INSIDE THIS AREA');
+  await expect(page.locator('.lm-details dl')).toContainText('Devices in area6');
+
+  // A location near an outage says how near.
+  await page.getByRole('button',{name:/from a current power outage/}).click();
+  await expect(page.locator('.lm-world-outage-banner')).toContainText(/FROM A POWER OUTAGE/);
+  expect(errors).toEqual([]);
+});

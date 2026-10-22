@@ -4,7 +4,12 @@ export type OutageKind='current'|'planned';
 export type Verdict='in_outage_area'|'near_outage'|'no_known_outage';
 export interface Outage {
   id:string; provider:string; kind:OutageKind;
-  state:string|null; type:string|null; municipality:string|null; customers:number|null;
+  state:string|  point:[number,number]|null; polygons:Ring[][]; lines:Ring[];
+  // Where the outage's pin goes, so even an area too small to see at this zoom is marked.
+  anchor:[number,number]|null;
+  // The server could not draw this outage's shape (too detailed) and placed it at a point instead.
+  shapeDropped:boolean;
+  distanceKm:number|null; type:string|null; municipality:string|null; customers:number|null;
   text:string|null; gridLevel:string|null; reason:string|null;
   start:string|null; expectedEnd:string|null; endedAt:string|null;
   point:[number,number]|null; polygons:Ring[][]; lines:Ring[];
@@ -12,7 +17,9 @@ export interface Outage {
   bounds:{minLat:number;maxLat:number;minLng:number;maxLng:number}|null;
 }
 export interface Evidence { source:string; observedAt:string|null; limitations:string[] }
-export interface OutageFeed { outages:Outage[]; evidence:Evidence; count:number; complete:boolean }
+export interface OutageFeed { outages:Outage[]; evidence:Evidence; count:number; complete:boolean; skipped:Record<string,number> }
+/** An outage close to, but not containing, a place. */
+export interface NearOutage { outage:Outage; km:number }
 export interface OutageCheck { verdict:Verdict; why:string; outages:Outage[]; evidence:Evidence }
 export interface ProviderHealth { key:string; name:string; fetchedAt:string|null; lastError:string|null; lastErrorAt:string|null }
 export interface PowerHealth { status:'ok'|'not_read_yet'; providers:ProviderHealth[] }
@@ -20,8 +27,10 @@ export interface PowerHealth { status:'ok'|'not_read_yet'; providers:ProviderHea
 // Distinct from the weather warnings' yellow, orange and red.
 export const OUTAGE_COLORS:Record<OutageKind,string>={current:'#c2255c',planned:'#7048e8'};
 export const KIND_NAMES:Record<OutageKind,string>={current:'Current outage',planned:'Planned outage'};
-// A point-only outage is drawn as a circle of this many screen pixels.
-const POINT_RADIUS=7;
+// A place this close to an outage area, line or point counts as near it.
+export const NEAR_KM=1;
+// Why the server left outages off the map.
+export const SKIPPED_REASONS:Record<string,string>={unknown_kind:'not marked current or planned',no_location:'without a location'};
 
 const object=(value:unknown):value is Record<string,unknown> => !!value && typeof value==='object' && !Array.isArray(value);
 const text=(value:unknown,max:number)=>typeof value==='string' ? Array.from(value.trim()).slice(0,max).join('') : '';
@@ -36,6 +45,19 @@ function parseEvidence(value:unknown):Evidence {
     observedAt:time(e.observed_at),
     limitations:Array.isArray(e.limitations) ? e.limitations.map(l=>text(l,300)).filter(Boolean).slice(0,20) : [],
   };
+}
+
+/** The outage's reported point, else the middle of its largest area, else the middle point of its first line. */
+function anchorOf(point:[number,number]|null, polygons:Ring[][], lines:Ring[]):[number,number]|null {
+  if(point) return point;
+  const box=(ring:Ring)=>{
+    const lngs=ring.map(p=>p[0]), lats=ring.map(p=>p[1]);
+    return {lng:(Math.min(...lngs)+Math.max(...lngs))/2,lat:(Math.min(...lats)+Math.max(...lats))/2,size:(Math.max(...lngs)-Math.min(...lngs))*(Math.max(...lats)-Math.min(...lats))};
+  };
+  const largest=polygons.map(p=>box(p[0])).sort((a,b)=>b.size-a.size)[0];
+  if(largest) return [largest.lng,largest.lat];
+  const line=lines[0];
+  return line ? line[Math.floor(line.length/2)] : null;
 }
 
 /** One outage; the server already simplifies DRIFT's answer, but it is still treated as untrusted. */
@@ -57,7 +79,7 @@ function parseOutage(o:unknown):Outage|undefined {
     customers:typeof o.customers==='number' && Number.isFinite(o.customers) && o.customers>=0 ? Math.round(o.customers) : null,
     text:optional(o.text,1000),gridLevel:optional(o.grid_level,80),reason:optional(o.reason,300),
     start:time(o.start),expectedEnd:time(o.expected_end),endedAt:time(o.ended_at),
-    point,polygons,lines,
+    point,polygons,lines,anchor:anchorOf(point,polygons,lines),shapeDropped:o.shape_dropped===true,
     distanceKm:typeof o.distance_km==='number' && Number.isFinite(o.distance_km) ? o.distance_km : null,
     bounds:points.length ? {minLat:Math.min(...lats),maxLat:Math.max(...lats),minLng:Math.min(...lngs),maxLng:Math.max(...lngs)} : null,
   };
@@ -72,6 +94,7 @@ export function parseOutages(value:unknown):OutageFeed {
     outages,evidence:parseEvidence(value.evidence),
     count:typeof value.count==='number' ? value.count : outages.length,
     complete:value.complete===true,
+    skipped:object(value.skipped) ? Object.fromEntries(Object.entries(value.skipped).filter((e):e is [string,number]=>typeof e[1]==='number' && e[1]>0)) : {},
   };
 }
 
@@ -100,14 +123,45 @@ export function outagesAt(point:LatLng, outages:Outage[]):Outage[] {
     .sort((a,b)=>Number(b.kind==='current')-Number(a.kind==='current'));
 }
 
-/** An SVG path in world pixels at `zoom`: areas (holes cut by even-odd), open lines, or a circle at the point. */
+/** Kilometres from a place to a point, on a local flat approximation; ample for distances of a few kilometres. */
+function km(from:LatLng,[lng,lat]:[number,number]):{x:number;y:number} {
+  return {x:(lng-from.lng)*111.32*Math.cos(from.lat*Math.PI/180),y:(lat-from.lat)*110.574};
+}
+function segmentKm(from:LatLng,a:[number,number],b:[number,number]):number {
+  const p=km(from,a), q=km(from,b), dx=q.x-p.x, dy=q.y-p.y, length=dx*dx+dy*dy;
+  const t=length ? Math.max(0,Math.min(1,-(p.x*dx+p.y*dy)/length)) : 0;
+  return Math.hypot(p.x+t*dx,p.y+t*dy);
+}
+/** How far a place is from an outage's area edge, lines or point, in kilometres. */
+export function distanceToOutage(place:LatLng, outage:Outage):number {
+  let best=Infinity;
+  const edges=(ring:Ring,closed:boolean)=>{for(let i=1;i<ring.length;i++)best=Math.min(best,segmentKm(place,ring[i-1],ring[i]));if(closed && ring.length>1)best=Math.min(best,segmentKm(place,ring[ring.length-1],ring[0]));};
+  for(const polygon of outage.polygons)for(const ring of polygon)edges(ring,true);
+  for(const line of outage.lines)edges(line,false);
+  if(outage.point){const p=km(place,outage.point);best=Math.min(best,Math.hypot(p.x,p.y));}
+  return best;
+}
+/** Outages within `limit` km of a place that do not contain it, nearest first. */
+export function outagesNear(place:LatLng, outages:Outage[], limit=NEAR_KM):NearOutage[] {
+  // About `limit` km in degrees, with room to spare, to skip far outages cheaply.
+  const dLat=limit/110, dLng=limit/(111*Math.max(.1,Math.cos(place.lat*Math.PI/180)));
+  const inside=new Set(outagesAt(place,outages));
+  return outages.filter(o=>o.bounds && !inside.has(o) && place.lat>=o.bounds.minLat-dLat && place.lat<=o.bounds.maxLat+dLat && place.lng>=o.bounds.minLng-dLng && place.lng<=o.bounds.maxLng+dLng)
+    .map(outage=>({outage,km:distanceToOutage(place,outage)}))
+    .filter(n=>n.km<=limit)
+    .sort((a,b)=>a.km-b.km);
+}
+
+/** An SVG path in world pixels at `zoom`: areas (holes cut by even-odd) or open lines. A point-only outage has only its pin. */
 export function outagePath(outage:Outage, zoom:number):string {
   const areas=outage.polygons.map(polygon=>polygon.map(ring=>pathData(ring,zoom,true)).join('')).join('');
   const lines=outage.lines.map(line=>pathData(line,zoom,false)).join('');
-  if(areas || lines) return areas+lines;
-  if(!outage.point) return '';
-  const p=project({lat:outage.point[1],lng:outage.point[0]},zoom), r=POINT_RADIUS;
-  return `M${(p.x-r).toFixed(1)} ${p.y.toFixed(1)}a${r} ${r} 0 1 0 ${2*r} 0a${r} ${r} 0 1 0 ${-2*r} 0Z`;
+  return areas+lines;
+}
+
+/** World pixels of an outage's pin at `zoom`. */
+export function outageAnchorAt(outage:Outage, zoom:number) {
+  return outage.anchor ? project({lat:outage.anchor[1],lng:outage.anchor[0]},zoom) : undefined;
 }
 
 /** How an outage is drawn: an area to fill, lines to stroke, or a point marker. */

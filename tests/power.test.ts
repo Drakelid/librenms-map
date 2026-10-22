@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mapsReadAt, outagePath, outagePeriod, outagesAt, outageShape, parseCheck, parseHealth, parseOutages, verdictText } from '../frontend/power';
+import { distanceToOutage, mapsReadAt, outageAnchorAt, outagePath, outagePeriod, outagesAt, outagesNear, outageShape, parseCheck, parseHealth, parseOutages, verdictText } from '../frontend/power';
 
 const square=(lng:number,lat:number,size=1)=>[[lng,lat],[lng+size,lat],[lng+size,lat+size],[lng,lat+size],[lng,lat]];
 const outage=(id:string,kind:string,shape:Record<string,unknown>)=>({id,kind,provider:'BKK',polygons:[],lines:[],point:null,...shape});
@@ -32,7 +32,7 @@ test('outage feeds are validated before they are drawn',()=>{
 
   assert.match(outagePath(feed.outages[1],0),/^M[\d. L]+Z$/);
   assert.match(outagePath(feed.outages[2],0),/^M[\d. ]+L[\d. ]+$/); // An open line.
-  assert.match(outagePath(feed.outages[3],5),/^M[\d. ]+a7 7 /); // A circle at the point.
+  assert.equal(outagePath(feed.outages[3],5),''); // A point-only outage is drawn by its pin alone.
   assert.match(outagePeriod(feed.outages[0]),/ – expected /);
   assert.equal(outagePeriod(feed.outages[2]),'Time not given');
 });
@@ -58,4 +58,36 @@ test('the status names each operator map and its errors',()=>{
   }});
   assert.deepEqual(health.providers.map(p=>[p.key,p.name,p.lastError]),[['fagne','Fagne',null],['lyse','Lyse Elnett','timeout']]);
   assert.throws(()=>parseHealth({status:'broken'}));
+});
+
+test('every outage has a pin, and places near one are found',()=>{
+  const feed=parseOutages({evidence,skipped:{unknown_kind:2,no_location:0,shape_too_large:1},outages:[
+    outage('area','current',{polygons:[[square(5,60),square(5.4,60.4,.2)],[square(7,62,.1)]]}),
+    outage('reported','current',{polygons:[[square(5,60)]],point:[5.3,60.2]}),
+    outage('line','planned',{lines:[[[6,61],[6.2,61],[6.4,61]]]}),
+    outage('point','current',{point:[8,63],shape_dropped:true}),
+  ]});
+  // Only reasons with a count are kept.
+  assert.deepEqual(feed.skipped,{unknown_kind:2,shape_too_large:1});
+  const byId=(id:string)=>feed.outages.find(o=>o.id===id)!;
+  // The largest area's middle, unless the operator gave a point; a line's middle point.
+  assert.deepEqual(byId('area').anchor,[5.5,60.5]);
+  assert.deepEqual(byId('reported').anchor,[5.3,60.2]);
+  assert.deepEqual(byId('line').anchor,[6.2,61]);
+  assert.equal(byId('point').shapeDropped,true);
+  assert.ok(outageAnchorAt(byId('point'),5));
+
+  // About 550 m north of the area's top edge (lat 61): near it, not inside.
+  const north={lat:61.005,lng:5.5};
+  assert.deepEqual(outagesAt(north,feed.outages),[]);
+  const near=outagesNear(north,feed.outages);
+  assert.deepEqual(near.map(n=>n.outage.id),['area','reported']);
+  assert.ok(near[0].km>0.5 && near[0].km<0.6,`${near[0].km}`);
+  // Inside an area is not "near" it.
+  assert.deepEqual(outagesNear({lat:60.2,lng:5.2},feed.outages).map(n=>n.outage.id),[]);
+  // Near a line and a point, within 1 km but not 3 km away.
+  assert.deepEqual(outagesNear({lat:61.005,lng:6.3},feed.outages).map(n=>n.outage.id),['line']);
+  assert.deepEqual(outagesNear({lat:63,lng:8.01},feed.outages).map(n=>n.outage.id),['point']);
+  assert.deepEqual(outagesNear({lat:63.03,lng:8},feed.outages),[]);
+  assert.ok(Math.abs(distanceToOutage({lat:63,lng:8},byId('point')))<1e-9);
 });

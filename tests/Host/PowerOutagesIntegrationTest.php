@@ -94,8 +94,10 @@ class PowerOutagesIntegrationTest extends TestCase
             ->assertJsonPath('evidence.limitations.0', 'L-nett map is stale');
         $outages = $response->json('outages');
 
-        // An unknown kind is dropped; IDs are made unique across operators.
+        // An unknown kind is left out, and counted; IDs are made unique across operators.
         $this->assertSame(['BKK:1001', 'Fagne:77', 'outage-2'], array_column($outages, 'id'));
+        $response->assertJsonPath('skipped', ['unknown_kind' => 1, 'no_location' => 0, 'shape_too_large' => 0]);
+        $this->assertFalse($outages[0]['shape_dropped']);
         $this->assertEquals([[[[5.0, 60.0], [6.0, 60.0], [6.0, 61.0], [5.0, 61.0], [5.0, 60.0]]]], $outages[0]['polygons']);
         $this->assertEquals([[[5.1, 59.4], [5.3, 59.5]]], $outages[1]['lines']);
         $this->assertSame('planned', $outages[1]['kind']);
@@ -122,6 +124,36 @@ class PowerOutagesIntegrationTest extends TestCase
         $this->getJson('/libremap/power/outages?kind=yesterday')->assertStatus(422);
         $this->getJson('/libremap/power/outages?provider=elvia')->assertStatus(422);
         Http::assertSentCount(4);
+    }
+
+    public function testOutagesBeyondTheDrawingBudgetAreStillPlaced(): void
+    {
+        // One area of 200,001 points uses up the budget; the next area is over it too.
+        $huge = [];
+        for ($i = 0; $i < 200000; $i++) {
+            $huge[] = [5 + $i / 200000, 60 + ($i % 2) / 1000];
+        }
+        $huge[] = $huge[0];
+        $small = [[[6.0, 61.0], [6.1, 61.0], [6.1, 61.1], [6.0, 61.1], [6.0, 61.0]]];
+        Http::fake([
+            'drift.test/api/power-outages/outages.geojson*' => Http::response(['type' => 'FeatureCollection', 'evidence' => $this->evidence(), 'features' => [
+                ['type' => 'Feature', 'geometry' => ['type' => 'Polygon', 'coordinates' => [$huge]], 'properties' => $this->outage(['id' => 'huge', 'point' => null])],
+                ['type' => 'Feature', 'geometry' => ['type' => 'MultiPolygon', 'coordinates' => [$small]], 'properties' => $this->outage(['id' => 'small', 'point' => null])],
+                ['type' => 'Feature', 'geometry' => null, 'properties' => $this->outage(['id' => 'nowhere', 'point' => null])],
+            ]]),
+            'drift.test/api/power-outages/outages?*' => Http::response(['outages' => [], 'count' => 3, 'kind' => 'all', 'complete' => true, 'evidence' => $this->evidence()]),
+        ]);
+
+        $response = $this->getJson('/libremap/power/outages')->assertOk()
+            ->assertJsonPath('skipped', ['unknown_kind' => 0, 'no_location' => 1, 'shape_too_large' => 2]);
+        $outages = $response->json('outages');
+
+        // Both are still on the map, at their first point, without a shape.
+        $this->assertSame(['BKK:huge', 'BKK:small'], array_column($outages, 'id'));
+        $this->assertSame([true, true], array_column($outages, 'shape_dropped'));
+        $this->assertSame([[], []], array_column($outages, 'polygons'));
+        $this->assertEquals([5.0, 60.0], $outages[0]['point']);
+        $this->assertEquals([6.0, 61.0], $outages[1]['point']);
     }
 
     public function testLocationChecksAndHealthAreParsed(): void
