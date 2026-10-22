@@ -1,6 +1,6 @@
 import { statusColor, themeController } from './canvas-style';
 import { shortcutAllowed } from './canvas-tools';
-import { clampCenter, fitView, project, TILE, tileUrl, withoutCoordinates, worldSize, type Point } from './geo';
+import { clampCenter, clampToBounds, fitView, insideBounds, minZoomFor, project, TILE, tileUrl, withoutCoordinates, worldSize, type Bounds, type Point } from './geo';
 import { portGraphUrl } from './link-preview';
 import { mountPageNav } from './page-nav';
 import { deviceName, directions, formatBps, LOAD_COLORS, metric, topology } from './topology';
@@ -13,7 +13,7 @@ import './views.css';
 import './world-map.css';
 
 interface WorldLocation { id:string; name:string; lat:number; lng:number }
-interface MapConfig { tiles:string|null; attribution:string; maxZoom:number; center:{lat:number;lng:number;zoom:number} }
+interface MapConfig { tiles:string|null; attribution:string; maxZoom:number; center:{lat:number;lng:number;zoom:number}; bounds:Bounds|null }
 interface Locations { locations:WorldLocation[]; devices:Record<string,string>; map:MapConfig }
 interface Site extends WorldLocation { nodes:MapNode[]; status:'up'|'down'|'unknown' }
 interface SiteLink { key:string; a:Site; b:Site; links:Link[]; color:string; state:string; label:string }
@@ -65,6 +65,8 @@ export function mountWorldMap(root:HTMLElement) {
 
   let snapshot:Snapshot|undefined, graph:Topology={nodes:[],links:[],deviceGroups:[]}, places:Locations|undefined;
   let sites:Site[]=[], siteLinks:SiteLink[]=[], unlocated:MapNode[]=[];
+  // Devices whose location lies outside the map area: listed, not placed.
+  let outside:MapNode[]=[];
   // Visible links that are not lines: both ends at one location, or an end without coordinates.
   let withinSite=new Map<string,Link[]>(), undrawnUnlocated=0;
   let view={zoom:2,center:{x:worldSize(2)/2,y:worldSize(2)/2}};
@@ -172,7 +174,16 @@ export function mountWorldMap(root:HTMLElement) {
       attribution:typeof map.attribution==='string' ? map.attribution : '',
       maxZoom:Math.max(1,Math.min(19,Math.round(number(map.maxZoom,18)))),
       center:{lat:number(center.lat,0),lng:number(center.lng,0),zoom:Math.max(1,Math.min(18,Math.round(number(center.zoom,2))))},
+      bounds:parseBounds(map.bounds),
     }};
+  }
+
+  /** The map area from the server, or null (the whole world) when absent or not a sensible box. */
+  function parseBounds(value:unknown):Bounds|null {
+    if(!object(value)) return null;
+    const [south,west,north,east]=[value.south,value.west,value.north,value.east];
+    const ok=(n:unknown,limit:number):n is number=>typeof n==='number' && Number.isFinite(n) && Math.abs(n)<=limit;
+    return ok(south,85) && ok(north,85) && ok(west,180) && ok(east,180) && south<north && west<east ? {south,west,north,east} : null;
   }
 
   /** Group the visible devices by location and join them with discovered links. */
@@ -193,6 +204,7 @@ export function mountWorldMap(root:HTMLElement) {
     for(const node of visible){
       const place=locationOf(node.id);
       if(!place){unlocated.push(node);continue;}
+      if(!insideBounds(place,places?.map.bounds)){outside.push(node);continue;}
       let site=bySite.get(place.id);
       if(!site){site={...place,nodes:[],status:'up'};bySite.set(place.id,site);}
       site.nodes.push(node);siteOf.set(node.id,site);
@@ -510,24 +522,39 @@ export function mountWorldMap(root:HTMLElement) {
     renderTiles();
   }
   const schedule=()=>{if(!frame)frame=requestAnimationFrame(render);};
+  /** The lowest zoom: the whole map area in view, or the whole world without one. */
+  function minZoom(){
+    const bounds=places?.map.bounds, {w,h}=size();
+    return bounds && w && h ? Math.max(1,minZoomFor(bounds,w,h,places?.map.maxZoom ?? 18)) : 1;
+  }
+  /**
+   * Every view change ends here: whatever asked for it (fitting, selecting, panning, keys), the
+   * view stays inside the map area, so it can never drift off to another part of the world.
+   */
+  function keepInArea(center:Point,zoom:number):Point {
+    const {w,h}=size(), bounds=places?.map.bounds, clamped=clampCenter(center,zoom,h);
+    return bounds ? clampToBounds(clamped,zoom,w,h,bounds) : clamped;
+  }
   function setView(zoom:number,center:Point){
     const max=places?.map.maxZoom ?? 18;
-    zoom=Math.max(1,Math.min(max,Math.round(zoom)));
-    view={zoom,center:clampCenter(center,zoom,size().h)};
+    zoom=Math.max(minZoom(),Math.min(max,Math.round(zoom)));
+    view={zoom,center:keepInArea(center,zoom)};
     syncControls();schedule();
   }
   /** Zoom by whole steps, keeping the point under `anchor` (viewport pixels) still. */
   function zoomBy(step:number,anchor?:Point){
     const {w,h}=size(), max=places?.map.maxZoom ?? 18;
-    const zoom=Math.max(1,Math.min(max,view.zoom+step));
+    const zoom=Math.max(minZoom(),Math.min(max,view.zoom+step));
     if(zoom===view.zoom) return;
     const a=anchor ?? {x:w/2,y:h/2}, scale=2**(zoom-view.zoom);
     const offset={x:a.x-w/2,y:a.y-h/2};
     setView(zoom,{x:(view.center.x+offset.x)*scale-offset.x,y:(view.center.y+offset.y)*scale-offset.y});
   }
   function fit(){
-    const {w,h}=size();
+    const {w,h}=size(), bounds=places?.map.bounds;
     if(!sites.length){
+      // Nothing to fit: the whole map area, not LibreNMS's default centre (often far out at sea).
+      if(bounds){const whole=fitView([{lat:bounds.north,lng:bounds.west},{lat:bounds.south,lng:bounds.east}],w,h,0,places?.map.maxZoom ?? 18);setView(whole.zoom,whole.center);return;}
       const fallback=places?.map.center ?? {lat:0,lng:0,zoom:2};
       setView(fallback.zoom,project(fallback,fallback.zoom));return;
     }
@@ -542,7 +569,7 @@ export function mountWorldMap(root:HTMLElement) {
   }
   function syncControls(){
     const max=places?.map.maxZoom ?? 18, off=!snapshot;
-    button('zoom-in').disabled=view.zoom>=max;button('zoom-out').disabled=view.zoom<=1;button('fit').disabled=off;
+    button('zoom-in').disabled=view.zoom>=max;button('zoom-out').disabled=view.zoom<=minZoom();button('fit').disabled=off;
     search.disabled=off;groupSelect.disabled=off;button('problems').disabled=off;button('links').disabled=off;
     button('addresses').disabled=off;button('names').disabled=off;
     button('weather').hidden=!weatherEndpoint;button('weather').disabled=weatherBusy;
@@ -562,6 +589,10 @@ export function mountWorldMap(root:HTMLElement) {
       const item=el(jump ? 'button' : 'div');item.append(el('strong',String(value)),el('span',label));
       if(jump){item.className='lm-summary-down';item.dataset.world='next-down';item.title='Show the next location with a down device (D)';item.setAttribute('aria-label',`${down} problem sites. Show the next one`);}
       summary.append(item);
+    }
+    if(outside.length){
+      const item=el('div',undefined,'lm-summary-outside');item.title='Devices whose LibreNMS location lies outside the map area';
+      item.append(el('strong',String(outside.length)),el('span','Outside map area'));summary.append(item);
     }
     if(weatherOn){
       const item=el('div',undefined,'lm-summary-weather');item.append(el('strong',String(siteWarnings.size)),el('span','Under warning'));
@@ -625,7 +656,7 @@ export function mountWorldMap(root:HTMLElement) {
     if(internal || undrawnUnlocated){
       const parts=[
         internal ? `${internal} join devices at the same location (listed under that location)` : '',
-        undrawnUnlocated ? `${undrawnUnlocated} reach a device without coordinates` : '',
+        undrawnUnlocated ? `${undrawnUnlocated} reach a device without coordinates${outside.length ? ' or outside the map area' : ''}` : '',
       ].filter(Boolean);
       panel.append(el('p',`${internal+undrawnUnlocated} link${internal+undrawnUnlocated===1 ? ' is' : 's are'} not drawn as lines: ${parts.join('; ')}.`,'lm-hint lm-world-undrawn'));
     }
@@ -649,6 +680,19 @@ export function mountWorldMap(root:HTMLElement) {
       for(const n of unlocated.slice(0,50)) names.append(el('li',nameOf(n)));
       if(unlocated.length>50) names.append(el('li',`…and ${unlocated.length-50} more`));
       more.append(names,el('p','Give these devices a LibreNMS location with coordinates to place them on the map.'));
+      panel.append(more);
+    }
+    if(outside.length){
+      // Usually a wrong geocode: listed so it can be corrected, never allowed to drag the map away.
+      const more=el('details','','lm-world-unlocated lm-world-outside');
+      more.append(el('summary',`${outside.length} device${outside.length===1 ? ' is' : 's are'} outside the map area`));
+      const names=el('ul');
+      for(const n of outside.slice(0,50)){
+        const place=places?.locations.find(l=>l.id===places?.devices[n.id]);
+        names.append(el('li',`${nameOf(n)}${place && showAddresses ? ` · ${place.lat.toFixed(3)}, ${place.lng.toFixed(3)}` : ''}`));
+      }
+      if(outside.length>50) names.append(el('li',`…and ${outside.length-50} more`));
+      more.append(names,el('p','Their LibreNMS location lies outside the area this map shows, which is usually a wrong coordinate or geocode. Correct the location in LibreNMS to place them.'));
       panel.append(more);
     }
   }
@@ -1014,7 +1058,7 @@ export function mountWorldMap(root:HTMLElement) {
     const dx=event.clientX-drag.start.x, dy=event.clientY-drag.start.y;
     if(!drag.moved && Math.hypot(dx,dy)<4) return;
     drag.moved=true;
-    view={zoom:view.zoom,center:clampCenter({x:drag.center.x-dx,y:drag.center.y-dy},view.zoom,size().h)};schedule();
+    view={zoom:view.zoom,center:keepInArea({x:drag.center.x-dx,y:drag.center.y-dy},view.zoom)};schedule();
   });
   const endDrag=(event:PointerEvent)=>{
     if(!drag || event.pointerId!==drag.id) return;
@@ -1098,7 +1142,7 @@ export function mountWorldMap(root:HTMLElement) {
     zoom:view.zoom,center:{...view.center},
     markers:sites.map(site=>({id:site.id,name:site.name,label:mapName(site),text:markers.get(site.id)?.querySelector('.lm-world-label')?.textContent ?? '',count:site.nodes.length,status:site.status,warning:worstLevel(siteWarnings.get(site.id) ?? []) ?? null,outage:siteOutages.get(site.id)?.[0]?.kind ?? null,nearOutage:siteNear.get(site.id)?.[0]?.outage.kind ?? null,position:screen(project(site,view.zoom))})),
     links:siteLinks.map(pair=>({key:pair.key,count:pair.links.length,state:pair.state,label:pair.label,color:pair.color})),
-    undrawn:{withinSite:Object.fromEntries([...withinSite].map(([id,list])=>[id,list.length])),unlocated:undrawnUnlocated},
+    outside:outside.map(n=>n.id),bounds:places?.map.bounds ?? null,undrawn:{withinSite:Object.fromEntries([...withinSite].map(([id,list])=>[id,list.length])),unlocated:undrawnUnlocated},
     warnings:weatherOn ? warnings.map(w=>({id:w.id,level:w.level,drawn:!!weatherPaths.get(w.id)?.getAttribute('d')})) : [],
     outages:powerOn ? outages.map(o=>({id:o.id,kind:o.kind,shape:outageShape(o),drawn:!!powerPaths.get(o.id)?.getAttribute('d') || !!powerPins.get(o.id)?.getAttribute('transform'),pinned:!!powerPins.get(o.id)?.getAttribute('transform')})) : [],
     tiles:[...tiles.values()].map(image=>image.src),

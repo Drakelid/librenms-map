@@ -71,6 +71,20 @@ class WorldMapIntegrationTest extends TestCase
         $this->assertMatchesRegularExpression('#^https://.+/\{z\}/\{x\}/\{y\}\.png$#', $this->getJson('/libremap/locations')->json('map.tiles'));
     }
 
+    public function testTheMapAreaIsNorwayUnlessConfiguredOtherwise(): void
+    {
+        $this->actingAs(User::factory()->create(['enabled' => 1]));
+        $this->getJson('/libremap/locations')->assertOk()
+            ->assertJsonPath('map.bounds', ['south' => 57.8, 'west' => 4.3, 'north' => 71.3, 'east' => 31.3]);
+
+        config(['libremap.world_bounds' => null]);
+        $this->getJson('/libremap/locations')->assertOk()->assertJsonPath('map.bounds', null);
+
+        // A box that is not one (south above north) is the whole world, not a broken map.
+        config(['libremap.world_bounds' => ['south' => 70, 'west' => 4, 'north' => 60, 'east' => 31]]);
+        $this->getJson('/libremap/locations')->assertOk()->assertJsonPath('map.bounds', null);
+    }
+
     public function testWorldPageRenders(): void
     {
         $this->actingAs(User::factory()->create(['enabled' => 1]));

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { clampCenter, fitView, pathData, project, tileUrl, unproject, withoutCoordinates, worldSize } from '../frontend/geo';
+import { clampCenter, clampToBounds, fitView, insideBounds, minZoomFor, pathData, project, tileUrl, unproject, withoutCoordinates, worldSize } from '../frontend/geo';
 
 const close=(actual:number,expected:number,tolerance=1e-6)=>assert.ok(Math.abs(actual-expected)<=tolerance,`${actual} ≉ ${expected}`);
 
@@ -73,4 +73,31 @@ test('paths drop points that share a pixel, but keep small shapes whole',()=>{
   const tiny:[number,number][]=[[5,60],[5.0001,60],[5.0001,60.0001],[5,60]];
   assert.equal(points(pathData(tiny,2,true)),4);
   assert.match(pathData([[5,60],[5.0001,60.0001]],2,false),/^M[\d. ]+L[\d. ]+$/);
+});
+
+test('the view stays inside the map area, and cannot zoom out past it',()=>{
+  const norway={south:57.8,west:4.3,north:71.3,east:31.3};
+  assert.equal(insideBounds({lat:59.41,lng:5.27},norway),true);
+  assert.equal(insideBounds({lat:64.18,lng:-51.72},norway),false); // Nuuk, Greenland.
+  assert.equal(insideBounds({lat:64.18,lng:-51.72},null),true);
+
+  const zoom=7, w=1000, h=520;
+  const nw=project({lat:norway.north,lng:norway.west},zoom), se=project({lat:norway.south,lng:norway.east},zoom);
+  // Panned far west, over Greenland: pulled back so the view's left edge is Norway's western edge.
+  const west=clampToBounds(project({lat:64.18,lng:-51.72},zoom),zoom,w,h,norway);
+  close(west.x-w/2,nw.x);
+  assert.ok(west.y-h/2>=nw.y-1e-6 && west.y+h/2<=se.y+1e-6);
+  // A view already inside is left alone.
+  const middle=project({lat:65,lng:14},zoom);
+  assert.deepEqual(clampToBounds(middle,zoom,w,h,norway),middle);
+
+  // At the lowest zoom the whole of Norway fits; one step out would show more than it.
+  const min=minZoomFor(norway,w,h,18);
+  const span=(z:number)=>{const a=project({lat:norway.north,lng:norway.west},z), b=project({lat:norway.south,lng:norway.east},z);return {x:b.x-a.x,y:b.y-a.y};};
+  assert.ok(span(min).x<=w && span(min).y<=h);
+  assert.ok(span(min+1).x>w || span(min+1).y>h);
+  // Narrower than the viewport there, so the view is centred on Norway on that axis.
+  const centred=clampToBounds(project({lat:64.18,lng:-51.72},min),min,w,h,norway);
+  const a=project({lat:norway.north,lng:norway.west},min), b=project({lat:norway.south,lng:norway.east},min);
+  close(centred.x,(a.x+b.x)/2);close(centred.y,(a.y+b.y)/2);
 });

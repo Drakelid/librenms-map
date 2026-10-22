@@ -84,7 +84,32 @@ class DeviceLocations
                 'lng' => $this->coordinate($this->librenmsConfig('leaflet.default_lng', 0), 180) ?? 0.0,
                 'zoom' => max(1, min(18, (int) $this->librenmsConfig('leaflet.default_zoom', 2))),
             ],
+            'bounds' => $this->bounds(),
         ];
+    }
+
+    /**
+     * The area the map stays within (libremap.world_bounds), or null for the
+     * whole world. An invalid setting is treated as the whole world rather
+     * than as a broken map.
+     *
+     * @return array{south: float, west: float, north: float, east: float}|null
+     */
+    private function bounds(): ?array
+    {
+        $bounds = config('libremap.world_bounds');
+        if (! is_array($bounds)) {
+            return null;
+        }
+        $south = $this->coordinate($bounds['south'] ?? null, 85);
+        $north = $this->coordinate($bounds['north'] ?? null, 85);
+        $west = $this->coordinate($bounds['west'] ?? null, 180);
+        $east = $this->coordinate($bounds['east'] ?? null, 180);
+        if ($south === null || $north === null || $west === null || $east === null || $south >= $north || $west >= $east) {
+            return null;
+        }
+
+        return ['south' => $south, 'west' => $west, 'north' => $north, 'east' => $east];
     }
 
     /** LibreNMS renamed its configuration facade; read whichever this host has. */

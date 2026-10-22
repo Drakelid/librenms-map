@@ -15,6 +15,10 @@ return [
     'world_tiles' => null,
     'world_attribution' => '© OpenStreetMap contributors',
     'world_max_zoom' => 18,
+    // The area the world map stays within: it cannot be panned or zoomed out
+    // beyond it, and locations outside it are listed rather than placed.
+    // Mainland Norway by default; null shows the whole world.
+    'world_bounds' => ['south' => 57.8, 'west' => 4.3, 'north' => 71.3, 'east' => 31.3],
     // World map weather warnings from MET Norway (MetAlerts). The LibreNMS
     // server fetches and caches them; false removes the toggle.
     'weather_warnings' => true,

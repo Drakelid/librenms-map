@@ -91,6 +91,27 @@ export function insidePolygon(point:LatLng, polygon:Ring[]):boolean {
   return !polygon.slice(1).some(hole=>insideRing(point,hole));
 }
 
+/** A latitude/longitude box the map stays within. */
+export interface Bounds { south:number; west:number; north:number; east:number }
+
+export const insideBounds=(p:LatLng, b:Bounds|null|undefined)=>!b || (p.lat>=b.south && p.lat<=b.north && p.lng>=b.west && p.lng<=b.east);
+
+/**
+ * The view centre (world pixels at `zoom`) moved just enough that a `width`
+ * by `height` viewport stays inside the bounds; centred on an axis where the
+ * bounds are narrower than the viewport.
+ */
+export function clampToBounds(center:Point, zoom:number, width:number, height:number, b:Bounds):Point {
+  const nw=project({lat:b.north,lng:b.west},zoom), se=project({lat:b.south,lng:b.east},zoom);
+  const axis=(c:number,low:number,high:number,half:number)=>high-low<=2*half ? (low+high)/2 : Math.max(low+half,Math.min(high-half,c));
+  return {x:axis(center.x,nw.x,se.x,width/2),y:axis(center.y,nw.y,se.y,height/2)};
+}
+
+/** The lowest zoom worth allowing: the highest at which the whole of the bounds still fits the viewport. */
+export function minZoomFor(b:Bounds, width:number, height:number, maxZoom:number):number {
+  return fitView([{lat:b.north,lng:b.west},{lat:b.south,lng:b.east}],width,height,0,maxZoom).zoom;
+}
+
 /** Keep the viewport centre on the map vertically; the map wraps horizontally. */
 export function clampCenter(center:Point, zoom:number, height:number):Point {
   const size=worldSize(zoom), half=height/2;

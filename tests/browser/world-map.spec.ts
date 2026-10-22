@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { demoSnapshot } from '../../frontend/demo';
+import { minZoomFor, project } from '../../frontend/geo';
 
 type Debug={zoom:number;markers:{id:string;name:string;label:string;text:string;count:number;status:string;warning:string|null}[];links:{key:string;count:number;state:string}[];undrawn:{withinSite:Record<string,number>;unlocated:number};warnings:{id:string;level:string;drawn:boolean}[];tiles:string[]};
 const debug=(page:Page)=>page.evaluate(()=>(window as unknown as {libremapWorldDebug:()=>Debug}).libremapWorldDebug());
@@ -391,5 +392,49 @@ test('every link line can be clicked, and shows the load in each direction',asyn
   // A down link says why it has no load.
   await page.locator('.lm-world-link[data-link="2|3"] .lm-world-hit').click();
   await expect(details.locator('.lm-world-links-list')).toContainText('The link is down.');
+  expect(errors).toEqual([]);
+});
+
+test('the map stays on Norway, and a location outside it is listed instead of placed',async({page})=>{
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+  const norway={south:57.8,west:4.3,north:71.3,east:31.3};
+  // Kvala's device geocoded to Nuuk, Greenland, as a wrong LibreNMS location can be.
+  const located={...locations,locations:locations.locations.map(l=>l.id==='4' ? {...l,name:'Nuuk',lat:64.18,lng:-51.72} : l),map:{...locations.map,tiles:null,bounds:norway}};
+  await page.route('**/world-page',route=>route.fulfill({contentType:'text/html',body:'<div id="libremap" data-mode="world" data-debug="true" data-storage-key="world-norway" data-endpoint="/world-topology" data-locations-endpoint="/world-locations" data-topology-url="/topology" data-custom-url="/custom"></div><script type="module" src="/frontend/main.ts"></script>'}));
+  await page.route('**/world-topology',route=>route.fulfill({json:demoSnapshot()}));
+  await page.route('**/world-locations',route=>route.fulfill({json:located}));
+  await page.goto('/world-page');
+  await expect(page.getByRole('status')).toContainText('11 devices at 3 locations');
+  type AreaDebug={zoom:number;center:{x:number;y:number};markers:{name:string}[];outside:string[]};
+  const state=()=>page.evaluate(()=>(window as unknown as {libremapWorldDebug:()=>AreaDebug}).libremapWorldDebug());
+
+  // Nuuk is not placed (the fit would otherwise span the Atlantic); its device is listed for correction.
+  expect((await state()).markers.map(m=>m.name).sort()).toEqual(['Heiane','Rossa','SE']);
+  expect((await state()).outside).toEqual(['10']);
+  await expect(page.locator('.lm-summary')).toContainText('1Outside map area');
+  await expect(page.locator('.lm-details')).toContainText('1 device is outside the map area');
+
+  // However far the view is pushed west, its left edge stops at Norway's western edge.
+  const box=(await page.locator('.lm-world').boundingBox())!;
+  const insideNorway=async()=>{
+    const {zoom,center}=await state();
+    const nw=project({lat:norway.north,lng:norway.west},zoom), se=project({lat:norway.south,lng:norway.east},zoom);
+    const fits=(low:number,high:number,c:number,half:number)=>high-low<=2*half ? Math.abs(c-(low+high)/2)<1 : c-half>=low-1 && c+half<=high+1;
+    return fits(nw.x,se.x,center.x,box.width/2) && fits(nw.y,se.y,center.y,box.height/2);
+  };
+  for(let i=0;i<40;i++)await page.keyboard.press('ArrowLeft');
+  for(let i=0;i<20;i++)await page.keyboard.press('ArrowUp');
+  expect(await insideNorway()).toBe(true);
+  // Dragging cannot take it there either.
+  await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
+  await page.mouse.move(box.x+box.width-5,box.y+box.height-5,{steps:5});await page.mouse.up();
+  expect(await insideNorway()).toBe(true);
+
+  // Zooming out stops where all of Norway is in view.
+  for(let i=0;i<20;i++)await page.keyboard.press('-');
+  const size=await page.locator('.lm-world').evaluate(e=>({w:e.clientWidth,h:e.clientHeight}));
+  expect((await state()).zoom).toBe(Math.max(1,minZoomFor(norway,size.w,size.h,18)));
+  await expect(page.getByRole('button',{name:'Zoom out'})).toBeDisabled();
+  expect(await insideNorway()).toBe(true);
   expect(errors).toEqual([]);
 });
