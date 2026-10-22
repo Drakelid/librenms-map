@@ -31,6 +31,8 @@ class PowerOutagesIntegrationTest extends TestCase
         $manager->shouldReceive('pluginEnabled')->with('libremap')->andReturn(true);
         $this->app->instance(PluginManagerInterface::class, $manager);
         require __DIR__.'/../../routes/web.php';
+        // Routes added after boot are not in the name lookup that route() reads until it is refreshed.
+        $this->app['router']->getRoutes()->refreshNameLookups();
         // The provider registers the views only when the plugin was enabled at boot; here it is enabled afterwards.
         $this->app['view']->addNamespace('libremap', __DIR__.'/../../resources/views');
         config(['libremap.drift_url' => self::BASE.'/', 'libremap.drift_token' => self::TOKEN]);
