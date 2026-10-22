@@ -21,6 +21,10 @@
 #libremap .lm-world:focus-visible { box-shadow: inset 0 0 0 2px #299e9b; }
 #libremap .lm-world.lm-dragging { cursor: grabbing; }
 /* Every layer sits in one pane that panning moves on the compositor; its contents are laid out only on zoom, resize or rebuild. */
+/* The pane is one compositor layer. Everything in it is bounded to the laid-out area (the view plus one
+   viewport each side): a weather or outage area is millions of pixels across when zoomed in, and an
+   unbounded layer that size exhausts GPU memory, which turns the whole map black. The SVG layers are
+   sized and clipped to that area in layout(); markers beyond it are hidden. */
 #libremap .lm-world-pane { position: absolute; inset: 0; will-change: transform; }
 /* While dragging, nothing under the pointer needs hit-testing or hover repaints. */
 #libremap .lm-world.lm-dragging .lm-world-pane * { pointer-events: none; }
@@ -30,14 +34,14 @@
 /* Light map tiles read as a dark map without a second tile source. */
 #libremap.lm-dark .lm-world-tiles img { filter: invert(1) hue-rotate(180deg) brightness(.82) contrast(.92); }
 /* Weather warning areas, under the links and markers. */
-#libremap .lm-world-weather { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+#libremap .lm-world-weather { position: absolute; left: 0; top: 0; overflow: hidden; pointer-events: none; }
 #libremap .lm-world-warning { fill: var(--area); fill-opacity: .2; stroke: var(--area); stroke-width: 1.5; stroke-opacity: .85; pointer-events: visiblePainted; cursor: pointer; }
 #libremap .lm-world-warning:hover { fill-opacity: .3; }
 #libremap .lm-world-warning.lm-selected { fill-opacity: .36; stroke-width: 3; }
 #libremap .lm-legend i.lm-world-area { width: 14px; height: 10px; border: 1.5px solid var(--area); border-radius: 2px; background: color-mix(in srgb, var(--area) 25%, transparent); }
 #libremap .lm-world-weather-key[hidden] { display: none; }
 /* Power outage areas, lines and points, above the warnings. Planned ones are dashed and lighter. */
-#libremap .lm-world-power { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+#libremap .lm-world-power { position: absolute; left: 0; top: 0; overflow: hidden; pointer-events: none; }
 #libremap .lm-world-outage { fill: var(--area); fill-opacity: .34; stroke: var(--area); stroke-width: 2.5; stroke-opacity: 1; stroke-linejoin: round; pointer-events: visiblePainted; cursor: pointer; }
 #libremap .lm-world-outage.lm-world-planned { fill-opacity: .2; stroke-dasharray: 7 4; }
 #libremap .lm-world-outage-lines { fill: none; stroke-width: 4; stroke-linecap: round; pointer-events: visibleStroke; }
@@ -77,7 +81,7 @@
 #libremap .lm-world-badge { position: absolute; right: -7px; top: -7px; display: flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: var(--area); border: 1.5px solid #fff; color: #1b1b1b; font-size: 10px; font-weight: 800; line-height: 1; box-shadow: 0 1px 3px #0006; pointer-events: none; }
 #libremap .lm-world-section { margin-top: 22px; }
 #libremap .lm-world-warnings { margin-top: 10px; }
-#libremap .lm-world-links { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+#libremap .lm-world-links { position: absolute; left: 0; top: 0; overflow: hidden; pointer-events: none; }
 #libremap .lm-world-link { cursor: pointer; outline: none; }
 #libremap .lm-world-hit { stroke: transparent; stroke-width: 14; pointer-events: stroke; }
 #libremap .lm-world-line { stroke-linecap: round; opacity: .85; pointer-events: none; }

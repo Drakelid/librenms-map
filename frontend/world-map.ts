@@ -452,6 +452,15 @@ export function mountWorldMap(root:HTMLElement) {
   function layout(){
     const {w,h}=size(), zoom=view.zoom;
     origin={x:Math.round(view.center.x-w/2),y:Math.round(view.center.y-h/2)};
+    if(laidOut.w!==w || laidOut.h!==h){
+      // Each SVG layer spans the view plus one viewport on every side (as far as the view pans before the
+      // next layout) and clips there; its user units stay pane pixels. Unclipped, a zoomed-in weather or
+      // outage area made the pane's compositor layer millions of pixels across and the map went black.
+      for(const layer of [weatherSvg,powerSvg,svg]){
+        layer.style.left=`${-w}px`;layer.style.top=`${-h}px`;layer.style.width=`${3*w}px`;layer.style.height=`${3*h}px`;
+        layer.setAttribute('viewBox',`${-w} ${-h} ${3*w} ${3*h}`);layer.setAttribute('preserveAspectRatio','none');
+      }
+    }
     laidOut={zoom,x:view.center.x,y:view.center.y,w,h};
     renderWeather();
     renderPower();
