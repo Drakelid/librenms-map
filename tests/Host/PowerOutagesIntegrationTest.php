@@ -31,7 +31,8 @@ class PowerOutagesIntegrationTest extends TestCase
         $manager->shouldReceive('pluginEnabled')->with('libremap')->andReturn(true);
         // The LibreNMS menu asks for other plugins' menu hooks while the page renders.
         $manager->shouldReceive('hasHooks')->andReturn(false);
-        $manager->shouldReceive('call')->andReturn(collect());
+        $manager->shouldReceive('call')->andReturn([]);
+        $manager->shouldReceive('getSettings')->andReturn([]);
         $this->app->instance(PluginManagerInterface::class, $manager);
         require __DIR__.'/../../routes/web.php';
         // Routes added after boot are not in the name lookup that route() reads until it is refreshed.
