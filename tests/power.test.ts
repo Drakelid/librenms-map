@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { distanceToOutage, mapsReadAt, outageAnchorAt, outagePath, outagePeriod, outagesAt, outagesNear, outageShape, parseCheck, parseHealth, parseOutages, verdictText } from '../frontend/power';
+import { distanceToOutage, interiorPoint, mapsReadAt, outageAnchorAt, outagePath, outagePeriod, outagesAt, outagesNear, outageShape, parseCheck, parseHealth, parseOutages, verdictText } from '../frontend/power';
 
 const square=(lng:number,lat:number,size=1)=>[[lng,lat],[lng+size,lat],[lng+size,lat+size],[lng,lat+size],[lng,lat]];
 const outage=(id:string,kind:string,shape:Record<string,unknown>)=>({id,kind,provider:'BKK',polygons:[],lines:[],point:null,...shape});
@@ -70,8 +70,10 @@ test('every outage has a pin, and places near one are found',()=>{
   // Only reasons with a count are kept.
   assert.deepEqual(feed.skipped,{unknown_kind:2,shape_too_large:1});
   const byId=(id:string)=>feed.outages.find(o=>o.id===id)!;
-  // The largest area's middle, unless the operator gave a point; a line's middle point.
-  assert.deepEqual(byId('area').anchor,[5.5,60.5]);
+  // The operator's point when it is inside the area; a line's middle point.
+  // The area's middle falls in its hole, so the pin moves to a point inside the area itself.
+  const [lng,lat]=byId('area').anchor!;
+  assert.deepEqual(outagesAt({lat,lng},[byId('area')]).map(o=>o.id),['area']);
   assert.deepEqual(byId('reported').anchor,[5.3,60.2]);
   assert.deepEqual(byId('line').anchor,[6.2,61]);
   assert.equal(byId('point').shapeDropped,true);
@@ -90,4 +92,20 @@ test('every outage has a pin, and places near one are found',()=>{
   assert.deepEqual(outagesNear({lat:63,lng:8.01},feed.outages).map(n=>n.outage.id),['point']);
   assert.deepEqual(outagesNear({lat:63.03,lng:8},feed.outages),[]);
   assert.ok(Math.abs(distanceToOutage({lat:63,lng:8},byId('point')))<1e-9);
+});
+
+test('pins and bounds follow the drawn area, not a stray operator point',()=>{
+  // The operator's point is 50 km away from its area: it moves neither the pin nor the bounds.
+  const feed=parseOutages({evidence,outages:[outage('stray','current',{polygons:[[square(5,60,.01)]],point:[6,60.4]})]});
+  const stray=feed.outages[0];
+  const close=(a:number,b:number)=>assert.ok(Math.abs(a-b)<1e-9,`${a} ≉ ${b}`);
+  close(stray.anchor![0],5.005);close(stray.anchor![1],60.005);
+  close(stray.bounds!.maxLat,60.01);close(stray.bounds!.maxLng,5.01);close(stray.bounds!.minLat,60);close(stray.bounds!.minLng,5);
+  // Nor does it make a place beside it count as near the outage.
+  assert.deepEqual(outagesNear({lat:60.4,lng:6},feed.outages),[]);
+
+  // A U-shaped area, open at the top: its box's middle is in the gap, outside the area.
+  const u:[number,number][]=[[0,0],[3,0],[3,3],[2,3],[2,1],[1,1],[1,3],[0,3],[0,0]];
+  const [x,y]=interiorPoint([u]);
+  assert.deepEqual(outagesAt({lat:y,lng:x},parseOutages({evidence,outages:[outage('u','current',{polygons:[[u]]})]}).outages).map(o=>o.id),['u']);
 });

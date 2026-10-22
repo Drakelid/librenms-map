@@ -250,7 +250,8 @@ test('power outages mark their areas with pins and flag the locations inside or 
   // A small current area around Rossa, a point outage about 500 m from Heiane, and a far planned area.
   const ring=(lng:number,lat:number,d:number)=>[[[lng-d,lat-d],[lng+d,lat-d],[lng+d,lat+d],[lng-d,lat+d],[lng-d,lat-d]]];
   const feed={count:4,complete:true,evidence,skipped:{unknown_kind:1},outages:[
-    {id:'Fagne:1',kind:'current',provider:'Fagne',municipality:'Haugesund',customers:42,polygons:[ring(5.268,59.4138,.002)],lines:[],point:null},
+    // Its operator point is about 10 km off the area, as some operators report.
+    {id:'Fagne:1',kind:'current',provider:'Fagne',municipality:'Haugesund',customers:42,polygons:[ring(5.268,59.4138,.002)],lines:[],point:[5.4,59.5]},
     {id:'Lyse:2',kind:'current',provider:'Lyse Elnett',municipality:'Stavanger',polygons:[],lines:[],point:[5.733,58.9745]},
     {id:'BKK:3',kind:'planned',provider:'BKK',municipality:'Voss',polygons:[ring(6.4,60.6,.001)],lines:[],point:null},
   ]};
@@ -288,5 +289,18 @@ test('power outages mark their areas with pins and flag the locations inside or 
   // A location near an outage says how near.
   await page.getByRole('button',{name:/from a current power outage/}).click();
   await expect(page.locator('.lm-world-outage-banner')).toContainText(/FROM A POWER OUTAGE/);
+
+  // "Show on the map" centres the outage: its pin lands in the middle of the map, not at the operator's stray point.
+  const offCentre=async(id:string)=>{
+    const pin=await page.locator(`.lm-world-outage-pin[data-outage="${id}"] circle`).boundingBox(), map=await page.locator('.lm-world').boundingBox();
+    return pin && map ? Math.hypot(pin.x+pin.width/2-(map.x+map.width/2),pin.y+pin.height/2-(map.y+map.height/2)) : Infinity;
+  };
+  await page.locator('.lm-world-outage-banner').getByRole('button',{name:'Show the outage'}).click();
+  await page.getByRole('button',{name:'Show on the map'}).click();
+  await expect.poll(()=>offCentre('Lyse:2')).toBeLessThan(2);
+  await page.getByRole('button',{name:'Close details'}).click();
+  await page.locator('.lm-details').getByRole('button',{name:'Fagne · Haugesund · 42 customers',exact:true}).click();
+  await page.getByRole('button',{name:'Show on the map'}).click();
+  await expect.poll(()=>offCentre('Fagne:1')).toBeLessThan(2);
   expect(errors).toEqual([]);
 });

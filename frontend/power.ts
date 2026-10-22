@@ -46,17 +46,55 @@ function parseEvidence(value:unknown):Evidence {
   };
 }
 
-/** The outage's reported point, else the middle of its largest area, else the middle point of its first line. */
+const boxArea=(ring:Ring)=>{
+  const lngs=ring.map(p=>p[0]), lats=ring.map(p=>p[1]);
+  return (Math.max(...lngs)-Math.min(...lngs))*(Math.max(...lats)-Math.min(...lats));
+};
+/**
+ * A point inside a polygon: the middle of its bounding box when that is
+ * inside, else the middle of the widest stretch inside the outline on a row
+ * near the middle. The box's middle alone can fall outside an L- or U-shaped
+ * area, or in a hole.
+ */
+export function interiorPoint(polygon:Ring[]):[number,number] {
+  const outer=polygon[0], lngs=outer.map(p=>p[0]), lats=outer.map(p=>p[1]);
+  const minLat=Math.min(...lats), maxLat=Math.max(...lats);
+  const centre={lng:(Math.min(...lngs)+Math.max(...lngs))/2,lat:(minLat+maxLat)/2};
+  if(insidePolygon(centre,polygon)) return [centre.lng,centre.lat];
+  for(const share of [.5,.45,.55,.35,.65,.25,.75,.15,.85]){
+    const lat=minLat+(maxLat-minLat)*share, xs:number[]=[];
+    for(let i=0,j=outer.length-1;i<outer.length;j=i++){
+      const [xi,yi]=outer[i], [xj,yj]=outer[j];
+      if((yi>lat)!==(yj>lat)) xs.push(xi+(lat-yi)*(xj-xi)/(yj-yi));
+    }
+    xs.sort((a,b)=>a-b);
+    let best:[number,number]|undefined, width=0;
+    for(let k=0;k+1<xs.length;k+=2){
+      const mid:[number,number]=[(xs[k]+xs[k+1])/2,lat];
+      if(xs[k+1]-xs[k]>width && insidePolygon({lng:mid[0],lat},polygon)){best=mid;width=xs[k+1]-xs[k];}
+    }
+    if(best) return best;
+  }
+  return outer[0];
+}
+/**
+ * Where an outage's pin goes. The operator's point is used only when it lies
+ * in the outage's area (or within 500 m of its lines): it is not always the
+ * area's own position. Otherwise a point inside the largest area, or the
+ * middle of the longest line.
+ */
 function anchorOf(point:[number,number]|null, polygons:Ring[][], lines:Ring[]):[number,number]|null {
-  if(point) return point;
-  const box=(ring:Ring)=>{
-    const lngs=ring.map(p=>p[0]), lats=ring.map(p=>p[1]);
-    return {lng:(Math.min(...lngs)+Math.max(...lngs))/2,lat:(Math.min(...lats)+Math.max(...lats))/2,size:(Math.max(...lngs)-Math.min(...lngs))*(Math.max(...lats)-Math.min(...lats))};
-  };
-  const largest=polygons.map(p=>box(p[0])).sort((a,b)=>b.size-a.size)[0];
-  if(largest) return [largest.lng,largest.lat];
-  const line=lines[0];
-  return line ? line[Math.floor(line.length/2)] : null;
+  const at=point ? {lng:point[0],lat:point[1]} : undefined;
+  if(polygons.length){
+    if(point && at && polygons.some(p=>insidePolygon(at,p))) return point;
+    return interiorPoint([...polygons].sort((a,b)=>boxArea(b[0])-boxArea(a[0]))[0]);
+  }
+  if(lines.length){
+    if(point && at && lines.some(line=>line.some((p,i)=>i>0 && segmentKm(at,line[i-1],p)<=.5))) return point;
+    const line=lines.reduce((a,b)=>b.length>a.length ? b : a);
+    return line[Math.floor(line.length/2)];
+  }
+  return point;
 }
 
 /** One outage; the server already simplifies DRIFT's answer, but it is still treated as untrusted. */
@@ -70,7 +108,9 @@ function parseOutage(o:unknown):Outage|undefined {
   }
   const lines=(Array.isArray(o.lines) ? o.lines : []).filter((line):line is Ring=>Array.isArray(line) && line.length>=2 && line.every(isPoint));
   const point=isPoint(o.point) ? o.point : null;
-  const points=[...polygons.flatMap(p=>p[0]),...lines.flat(),...(point ? [point] : [])];
+  // The bounds are the drawn shape's; the operator's point counts only for an outage without one.
+  const shape=[...polygons.flatMap(p=>p[0]),...lines.flat()];
+  const points=shape.length ? shape : point ? [point] : [];
   const lngs=points.map(p=>p[0]), lats=points.map(p=>p[1]);
   return {
     id:o.id,provider:text(o.provider,80) || 'Grid operator',kind:o.kind,
@@ -137,7 +177,8 @@ export function distanceToOutage(place:LatLng, outage:Outage):number {
   const edges=(ring:Ring,closed:boolean)=>{for(let i=1;i<ring.length;i++)best=Math.min(best,segmentKm(place,ring[i-1],ring[i]));if(closed && ring.length>1)best=Math.min(best,segmentKm(place,ring[ring.length-1],ring[0]));};
   for(const polygon of outage.polygons)for(const ring of polygon)edges(ring,true);
   for(const line of outage.lines)edges(line,false);
-  if(outage.point){const p=km(place,outage.point);best=Math.min(best,Math.hypot(p.x,p.y));}
+  // The operator's point stands in only for an outage without an area or lines.
+  if(outage.point && !outage.polygons.length && !outage.lines.length){const p=km(place,outage.point);best=Math.min(best,Math.hypot(p.x,p.y));}
   return best;
 }
 /** Outages within `limit` km of a place that do not contain it, nearest first. */

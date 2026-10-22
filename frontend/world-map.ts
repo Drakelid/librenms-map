@@ -762,6 +762,16 @@ export function mountWorldMap(root:HTMLElement) {
     }
     if(powerOn && selected?.type==='site' && selected.id===site.id) renderDetails();
   }
+  /** Fit the whole outage area or lines into view; a point-only outage is centred at a street-level zoom. */
+  function focusOutage(outage:Outage){
+    const b=outage.bounds;
+    const points=b ? [{lat:b.minLat,lng:b.minLng},{lat:b.maxLat,lng:b.maxLng}] : outage.anchor ? [{lat:outage.anchor[1],lng:outage.anchor[0]}] : [];
+    if(!points.length) return;
+    const {w,h}=size();
+    // A tiny area is not zoomed in further than street level.
+    const target=fitView(points,w,h,FIT_PADDING,Math.min(places?.map.maxZoom ?? 18,15),14);
+    setView(target.zoom,target.center);
+  }
   function outageDetails(outage:Outage){
     const affected=sites.filter(site=>siteOutages.get(site.id)?.includes(outage));
     const nearby=sites.map(site=>({site,near:siteNear.get(site.id)?.find(n=>n.outage===outage)})).filter((s):s is {site:Site;near:NearOutage}=>!!s.near);
@@ -779,7 +789,7 @@ export function mountWorldMap(root:HTMLElement) {
     if(outageShape(outage)==='point') panel.append(el('p','The grid operator gives this outage as a point, without an area, so the map cannot tell which locations it covers. Locations within 1 km are listed as near it.','lm-hint'));
     if(outage.shapeDropped) panel.append(el('p','This outage\'s area was too detailed to draw alongside the others, so it is shown as a pin.','lm-hint'));
     const show=el('button','Show on the map','lm-world-back');
-    show.onclick=()=>{const at=outageAnchorAt(outage,0);if(at){const zoom=Math.max(view.zoom,Math.min(places?.map.maxZoom ?? 18,LABEL_ZOOM+3));setView(zoom,{x:at.x*2**zoom,y:at.y*2**zoom});}};
+    show.onclick=()=>focusOutage(outage);
     panel.append(show);
     if(affected.length){
       const locations=el('div',undefined,'lm-device-list lm-world-in-outage-list');
