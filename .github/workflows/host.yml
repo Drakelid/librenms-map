@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        librenms: ['26.7.0', '26.8.0']
+        librenms: ['26.7.0', '26.8.0', '26.11.0']
         database: ['mysql:8.0', 'mariadb:11.7']
     services:
       database:
@@ -71,6 +71,9 @@ jobs:
           extensions: curl, gd, mbstring, pdo_mysql, snmp, sockets, xml, zip, pcntl, posix
           tools: composer
           coverage: none
+      - name: Validate the plugin package metadata
+        working-directory: plugin
+        run: composer validate --strict
       - name: Install the client used by Laravel's MySQL schema loader
         run: |
           sudo apt-get update

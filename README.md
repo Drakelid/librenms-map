@@ -23,10 +23,10 @@ See [PLAN.md](PLAN.md) for later phases and [VERIFICATION.md](VERIFICATION.md) f
 | --- | --- |
 | Node.js | 20.19+ or 22.12+ (build tooling only; not needed on the LibreNMS host) |
 | PHP | 8.2+ |
-| Laravel | 12.x, as shipped with the LibreNMS host |
+| Laravel | 12.x or 13.x, as shipped with the LibreNMS host |
 | LibreNMS | A release providing the plugin system's `PluginManagerInterface` and `MenuEntryHook` |
 
-The host CI targets LibreNMS 26.7.0 and 26.8.0 on PHP 8.4, with MySQL 8.0 and MariaDB 11.7. Port status handling accepts both enum casts and older string attributes. The host workflow passes on all four combinations.
+The host CI targets LibreNMS 26.7.0, 26.8.0 and 26.11.0 on PHP 8.4, with MySQL 8.0 and MariaDB 11.7. Port status handling accepts both enum casts and older string attributes. The earlier four combinations passed; the added 26.11.0 combinations require a fresh CI run. The host's own PHP requirement still applies when it is higher than this package's minimum.
 
 ## Run the demo
 
@@ -78,6 +78,8 @@ sudo -H -u librenms bash /tmp/libremap-install.sh
 Rerun it to upgrade. Use `--dir` for a LibreNMS checkout outside `/opt/librenms`, or `--version` to install a specific release. An existing `config/libremap.php` is kept. If a source install left a `repositories.libremap` path entry, the script removes it, because Composer would otherwise keep resolving the package from that path. The script requires LibreNMS with `lnms plugin:add`.
 
 ### From source
+
+LibreMap 1.5.2 only allows Laravel 12 and cannot be installed on a Laravel 13 host (including LibreNMS 26.11.0). Use LibreMap 1.5.3 or newer, which allows both Laravel 12 and 13. If Packagist has not indexed the new release yet, use the source installation below with this checkout.
 
 **1. Build, then copy.** Run `npm run build` locally and copy this project, including the built `dist/`, to `/opt/libremap` on the LibreNMS host.
 
